@@ -18,7 +18,7 @@ export default function Home() {
         try {
             const sum = await add(BigInt(num1), BigInt(num2));
             setResult(sum.toString());
-        } catch (error) {
+        } catch  {
             setError('Error: Please enter valid numbers');
             setResult("");
         }
