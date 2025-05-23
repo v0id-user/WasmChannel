@@ -1,8 +1,9 @@
 use serde::{Serialize, Deserialize};
 use wasm_bindgen::prelude::*;
 use js_sys::Uint8Array;
+use bincode;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode)]
 pub struct Packet {
     kind: u8,
     payload: Vec<u8>,
@@ -50,5 +51,14 @@ impl Packet {
 
     pub fn payload(&self) -> &[u8] {
         &self.payload
+    }
+
+    pub fn serde_serialize(&self) -> Result<Vec<u8>, bincode::error::EncodeError> {
+        bincode::encode_to_vec(self, bincode::config::standard())
+    }
+
+    pub fn serde_deserialize(bytes: &[u8]) -> Result<Self, bincode::error::DecodeError> {
+        let (packet, _) = bincode::decode_from_slice(bytes, bincode::config::standard())?;
+        Ok(packet)
     }
 } 

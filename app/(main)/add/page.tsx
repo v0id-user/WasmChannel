@@ -77,107 +77,116 @@ export default function Home() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <main className="flex flex-col items-center justify-center w-full max-w-md">
-                <h1 className="text-4xl font-bold mb-8">Wasm Channel</h1>
+        <div className="hero min-h-screen flex items-center justify-center">
+            <main className="hero-content flex-col items-center w-full max-w-md">
+                <h1 className="text-4xl font-bold text-center">Wasm Channel</h1>
                 
-                <div className="w-full mb-8 p-4 bg-gray-50 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Simple Addition</h2>
-                    <form onSubmit={handleAdd} className="space-y-4">
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="num1" className="text-sm font-medium">First Number</label>
-                            <input
-                                id="num1"
-                                type="number"
-                                value={num1}
-                                onChange={(e) => setNum1(e.target.value)}
-                                className="p-2 border rounded-md"
-                                placeholder="Enter first number"
-                            />
-                        </div>
+                <div className="card w-full bg-base-100 shadow-xl mb-4">
+                    <div className="card-body">
+                        <h2 className="card-title justify-center">Simple Addition</h2>
+                        <form onSubmit={handleAdd} className="form-control gap-4 flex flex-col items-center">
+                            <div className="form-control">
+                                <label className="label justify-center">
+                                    <span className="label-text">First Number</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={num1}
+                                    onChange={(e) => setNum1(e.target.value)}
+                                    className="input input-bordered text-center"
+                                    placeholder="Enter first number"
+                                />
+                            </div>
 
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="num2" className="text-sm font-medium">Second Number</label>
-                            <input
-                                id="num2"
-                                type="number"
-                                value={num2}
-                                onChange={(e) => setNum2(e.target.value)}
-                                className="p-2 border rounded-md"
-                                placeholder="Enter second number"
-                            />
-                        </div>
+                            <div className="form-control">
+                                <label className="label justify-center">
+                                    <span className="label-text">Second Number</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={num2}
+                                    onChange={(e) => setNum2(e.target.value)}
+                                    className="input input-bordered text-center"
+                                    placeholder="Enter second number"
+                                />
+                            </div>
 
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-blue-300"
-                        >
-                            Add Numbers
-                        </button>
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="btn btn-primary mx-auto w-full"
+                            >
+                                Add Numbers
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                <div className="w-full p-4 bg-gray-50 rounded-lg">
-                    <h2 className="text-xl font-semibold mb-4">Complex Operations</h2>
-                    <div className="space-y-4">
-                        <div className="flex flex-col space-y-2">
-                            <label htmlFor="singleNumber" className="text-sm font-medium">Number for Operations</label>
-                            <input
-                                id="singleNumber"
-                                type="number"
-                                value={singleNumber}
-                                onChange={(e) => setSingleNumber(e.target.value)}
-                                className="p-2 border rounded-md"
-                                placeholder="Enter a number"
-                            />
-                        </div>
+                <div className="card w-full bg-base-100 shadow-xl">
+                    <div className="card-body">
+                        <h2 className="card-title justify-center">Complex Operations</h2>
+                        <div className="form-control gap-4">
+                            <div className="form-control">
+                                <label className="label justify-center">
+                                    <span className="label-text">Number for Operations</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={singleNumber}
+                                    onChange={(e) => setSingleNumber(e.target.value)}
+                                    className="input input-bordered text-center"
+                                    placeholder="Enter a number"
+                                />
+                            </div>
 
-                        <div className="grid grid-cols-1 gap-2">
-                            <button
-                                onClick={handleFactorial}
-                                disabled={isLoading}
-                                className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-green-300"
-                            >
-                                Calculate Factorial
-                            </button>
-                            <button
-                                onClick={handleFibonacci}
-                                disabled={isLoading}
-                                className="p-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:bg-purple-300"
-                            >
-                                Generate Fibonacci Sequence
-                            </button>
-                            <button
-                                onClick={handleComplexOperation}
-                                disabled={isLoading}
-                                className="p-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:bg-indigo-300"
-                            >
-                                Run Complex Operation
-                            </button>
+                            <div className="flex flex-col items-center gap-2">
+                                <button
+                                    onClick={handleFactorial}
+                                    disabled={isLoading}
+                                    className="btn btn-success w-full"
+                                >
+                                    Calculate Factorial
+                                </button>
+                                <button
+                                    onClick={handleFibonacci}
+                                    disabled={isLoading}
+                                    className="btn btn-secondary w-full"
+                                >
+                                    Generate Fibonacci Sequence
+                                </button>
+                                <button
+                                    onClick={handleComplexOperation}
+                                    disabled={isLoading}
+                                    className="btn btn-accent w-full"
+                                >
+                                    Run Complex Operation
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {isLoading && (
-                    <div className="mt-4 p-4 bg-blue-100 text-blue-700 rounded-md w-full">
+                    <div className="alert alert-info text-center">
                         Calculating...
                     </div>
                 )}
 
                 {error && (
-                    <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md w-full">
+                    <div className="alert alert-error text-center">
                         {error}
                     </div>
                 )}
 
                 {result && (
-                    <div className="mt-6 p-4 bg-gray-100 rounded-md w-full">
-                        <p className="text-lg font-medium">Result:</p>
-                        <pre className="text-md font-mono whitespace-pre-wrap">{result}</pre>
+                    <div className="card bg-base-100 shadow-xl w-full">
+                        <div className="card-body">
+                            <h3 className="card-title justify-center">Result:</h3>
+                            <pre className="font-mono whitespace-pre-wrap text-center">{result}</pre>
+                        </div>
                     </div>
                 )}
             </main>
         </div>
     );
-} 
+}
