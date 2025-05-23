@@ -4,25 +4,30 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:wasm": "node build-wasm.js",
+    "build:wasm": "bun build-wasm.ts dev",
+    "build:wasm:dev": "bun build-wasm.ts dev",
+    "build:wasm:release": "bun build-wasm.ts release",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@ably/chat": "^0.7.0",
+    "ably": "^2.9.0",
+    "next": "15.1.8",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.1.8"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@types/bun": "^1.2.14",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.8",
-    "@eslint/eslintrc": "^3"
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }

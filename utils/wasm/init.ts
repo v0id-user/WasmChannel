@@ -1,14 +1,26 @@
-import wasmInit, { add } from '@/public/wasm/wasmchannel';
+import wasmInit, { add, calculate_factorial, fibonacci_sequence, complex_operation } from '@/public/wasm/wasmchannel';
 
-let wasm: { add: typeof add } | null = null;
-let wasmReady: Promise<{ add: typeof add }> | null = null;
+interface WasmModule {
+  add: typeof add;
+  calculate_factorial: typeof calculate_factorial;
+  fibonacci_sequence: typeof fibonacci_sequence;
+  complex_operation: typeof complex_operation;
+}
 
-export async function initWasm(): Promise<{ add: typeof add }> {
+let wasm: WasmModule | null = null;
+let wasmReady: Promise<WasmModule> | null = null;
+
+export async function initWasm(): Promise<WasmModule> {
   if (!wasmReady) {
     wasmReady = (async () => {
       try {
         await wasmInit();
-        wasm = { add };
+        wasm = { 
+          add,
+          calculate_factorial,
+          fibonacci_sequence,
+          complex_operation
+        };
         console.log('WASM module initialized successfully');
         return wasm;
       } catch (error) {
@@ -20,6 +32,6 @@ export async function initWasm(): Promise<{ add: typeof add }> {
   return wasmReady;
 }
 
-export function getWasmInstance(): { add: typeof add } | null {
+export function getWasmInstance(): WasmModule | null {
   return wasm;
 }
