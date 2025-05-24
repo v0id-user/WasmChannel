@@ -103,8 +103,8 @@ export default function PacketPage() {
         lines.push('│ K  │ I  │ N  │ D  │ L  │ E  │ N  │... │ D  │ A  │ T  │ A  │ ... ');
         lines.push('└────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴─────');
         lines.push(' \\____________/ \\___________________/ \\________________________/');
-        lines.push('      KIND           PAYLOAD LEN           PAYLOAD DATA         ');
-        lines.push('   (1-8 bytes)       (variable)           (variable)           ');
+        lines.push('      KIND           PAYLOAD LEN           COMPRESSED DATA        ');
+        lines.push('   (1-8 bytes)       (variable)           (LZ4 compressed)       ');
         lines.push('');
 
         // CRC section
@@ -122,17 +122,19 @@ export default function PacketPage() {
         lines.push('│ PAYLOAD LEN: Vec<u8> length prefix (bincode varint)              │');
         lines.push('│              Can be 1-8 bytes depending on payload size          │');
         lines.push('│                                                                  │');
-        lines.push('│ PAYLOAD DATA: Raw byte array containing the actual message       │');
-        lines.push('│               Length determined by preceding length field        │');
+        lines.push('│ COMPRESSED DATA: LZ4 frame-compressed payload data               │');
+        lines.push('│                 Original payload is compressed before storage    │');
+        lines.push('│                 Decompressed on retrieval                       │');
         lines.push('│                                                                  │');
         lines.push('│ CRC32: 32-bit cyclic redundancy check for data integrity         │');
-        lines.push('│        Calculated from payload bytes only                        │');
+        lines.push('│        Calculated from compressed payload bytes                  │');
         lines.push('└──────────────────────────────────────────────────────────────────┘');
         lines.push('');
 
         // Technical details
         lines.push('SERIALIZATION FORMAT: BINCODE (Little-Endian, Compact)');
-        lines.push('MINIMUM SIZE: ~6-12 bytes + payload length');
+        lines.push('COMPRESSION: LZ4 Frame Format (High compression ratio, fast decompression)');
+        lines.push('MINIMUM SIZE: ~6-12 bytes + compressed payload length');
         lines.push('MAXIMUM SIZE: Limited by Vec<u8> capacity (~18 exabytes)');
 
         return lines.join('\n');
@@ -142,7 +144,7 @@ export default function PacketPage() {
         const lines = [
             'pub struct Packet {',
             '    pub kind: PacketKind,    // enum: Message(0) | Reaction(1)',
-            '    pub payload: Vec<u8>,    // variable length byte array',
+            '    pub payload: Vec<u8>,    // LZ4 compressed byte array',
             '    pub crc: u32,           // 32-bit CRC checksum',
             '}',
             '',
@@ -169,6 +171,7 @@ export default function PacketPage() {
                     </h3>
                     <ul className="text-gray-600 space-y-1 text-sm">
                         <li>• PACKETS ARE CREATED WITH A TYPE (MESSAGE/REACTION) AND PAYLOAD</li>
+                        <li>• PAYLOAD IS COMPRESSED USING LZ4 FRAME COMPRESSION</li>
                         <li>• SERIALIZATION CONVERTS THE PACKET TO BINARY FORMAT USING BINCODE</li>
                         <li>• BINARY DATA IS DISPLAYED AS HEXADECIMAL FOR READABILITY</li>
                         <li>• DESERIALIZATION RECONSTRUCTS THE ORIGINAL PACKET FROM BINARY DATA</li>
