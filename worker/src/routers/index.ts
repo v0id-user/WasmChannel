@@ -1,10 +1,11 @@
-import { ping, pong } from "./helpers";
+import { ping } from "./helpers";
 import { getAblyAuthToken } from "./auth";
 import type { RouterClient } from "@orpc/server";
 
 export const router = {
-	ping,
-	pong,
+	helper: {
+		ping,
+	},
 	getAblyAuthToken,
 };
 

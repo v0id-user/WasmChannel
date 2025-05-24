@@ -4,15 +4,18 @@ import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
 import { createAuthWithD1 } from "../auth";
-import { StrictGetMethodPlugin } from "@orpc/server/plugins";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
+import { Cloudflare } from "@cloudflare/workers-types";
 
-const app = new Hono<{ Bindings: CloudflareBindings }>();
+type Env = Cloudflare.Env & {
+	DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Env }>();
 
 const handler = new OpenAPIHandler(router, {
 	eventIteratorKeepAliveEnabled: false,
-	plugins: [new StrictGetMethodPlugin()],
 });
 
 const openAPIGenerator = new OpenAPIGenerator({
@@ -30,11 +33,10 @@ const openAPI = openAPIGenerator.generate(router, {
 app.use(
 	"/rpc/*",
 	cors({
-		origin: "http://localhost:3000",
+		origin: process.env.FRONTEND_URL || "http://localhost:3000",
 		allowMethods: ["GET", "POST", "OPTIONS"],
 		allowHeaders: ["Content-Type", "Authorization"],
 		exposeHeaders: ["Content-Length"],
-		maxAge: 600,
 		credentials: true,
 	}),
 );

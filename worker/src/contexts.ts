@@ -12,11 +12,9 @@ export interface AppContext {
 export const base = os.$context<AppContext>().errors({
 	Unauthorized: {
 		status: 401,
-		message: "Unauthorized",
+		message: "You must be authenticated to access this resource.",
 	},
 });
-
-// TODO: protected base context
 
 export const protectedBase = base.use(async ({ context, errors, next }) => {
 	const { req } = context;

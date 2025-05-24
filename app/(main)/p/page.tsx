@@ -1,15 +1,25 @@
 "use client";
-import { client } from "@/lib/orpc";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useORPC } from "@/lib/orpc";
 
 export default function P() {
-	useEffect(() => {
-		async function main() {
-			const res = await client.ping();
-			console.log(res);
-		}
-		main();
-	}, []);
+	const orpc = useORPC();
+	const { data, isPending, isError, error } = useQuery(
+		orpc.helper.ping.queryOptions(),
+	);
 
-	return <div>P</div>;
+	if (isPending) {
+		return <div>Loading...</div>;
+	}
+
+	if (isError) {
+		return <div>Error: {error?.message}</div>;
+	}
+
+	return (
+		<div>
+			<h2>Ping Response:</h2>
+			<pre>{JSON.stringify(data, null, 2)}</pre>
+		</div>
+	);
 }
