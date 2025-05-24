@@ -1,5 +1,151 @@
 @import "tailwindcss";
 
+
 @plugin "daisyui" {
-	themes: cupcake --default;
+	themes: lofi --default;
+}
+
+/* Arabic font family setup */
+.font-arabic {
+	font-family: var(--font-ibm-plex-sans-arabic), 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-feature-settings: "liga" on, "calt" on;
+}
+
+/* RTL improvements */
+html[dir="rtl"] {
+	text-align: right;
+}
+
+html[dir="rtl"] .chat-end {
+	text-align: left;
+}
+
+html[dir="rtl"] .chat-start {
+	text-align: right;
+}
+
+/* Scrollbar customization for RTL */
+html[dir="rtl"] ::-webkit-scrollbar {
+	width: 6px;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-track {
+	background: #f1f5f9;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 3px;
+}
+
+html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
+	background: #94a3b8;
+}
+
+/* Custom animations for chat messages */
+@keyframes slideInRight {
+	from {
+		opacity: 0;
+		transform: translateX(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes slideInLeft {
+	from {
+		opacity: 0;
+		transform: translateX(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-slide-in-right {
+	animation: slideInRight 0.2s ease-out;
+}
+
+.animate-slide-in-left {
+	animation: slideInLeft 0.2s ease-out;
+}
+
+.animate-fade-in-up {
+	animation: fadeInUp 0.2s ease-out;
+}
+
+/* Typing indicator animation */
+@keyframes pulse-dots {
+	0%, 20% {
+		opacity: 0.4;
+		transform: scale(0.9);
+	}
+	50% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	80%, 100% {
+		opacity: 0.4;
+		transform: scale(0.9);
+	}
+}
+
+.animate-pulse-dots {
+	animation: pulse-dots 1.4s infinite;
+}
+
+.animate-pulse-dots:nth-child(2) {
+	animation-delay: 0.2s;
+}
+
+.animate-pulse-dots:nth-child(3) {
+	animation-delay: 0.4s;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+	.chat-container {
+		margin: 1rem;
+		height: calc(100vh - 2rem);
+		max-height: none;
+	}
+}
+
+@media (max-width: 640px) {
+	.chat-container {
+		margin: 0.5rem;
+		height: calc(100vh - 1rem);
+	}
+}
+
+/* Enhanced focus states for accessibility */
+.textarea:focus,
+.btn:focus {
+	outline: 2px solid oklch(var(--p));
+	outline-offset: 2px;
+}
+
+/* Chat message hover effects */
+.chat:hover .chat-bubble {
+	transform: translateY(-1px);
+	transition: transform 0.2s ease;
+}
+
+/* Status indicator enhancements */
+.status {
+	border: 2px solid oklch(var(--b1));
 }

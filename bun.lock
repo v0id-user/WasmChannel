@@ -11,6 +11,7 @@
         "@tailwindcss/postcss": "^4.1.7",
         "@tanstack/react-query": "^5.77.0",
         "@tanstack/react-query-devtools": "^5.77.0",
+        "@thumbmarkjs/thumbmarkjs": "^0.20.2",
         "ably": "^2.9.0",
         "better-auth": "^1.2.8",
         "next": "15.1.8",
@@ -274,6 +275,8 @@
     "@tanstack/react-query": ["@tanstack/react-query@5.77.0", "", { "dependencies": { "@tanstack/query-core": "5.77.0" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-jX52ot8WxWzWnAknpRSEWj6PTR/7nkULOfoiaVPk6nKu0otwt30UMBC9PTg/m1x0uhz1g71/imwjViTm/oYHxA=="],
 
     "@tanstack/react-query-devtools": ["@tanstack/react-query-devtools@5.77.0", "", { "dependencies": { "@tanstack/query-devtools": "5.76.0" }, "peerDependencies": { "@tanstack/react-query": "^5.77.0", "react": "^18 || ^19" } }, "sha512-Dwvs+ksXiK1tW4YnTtHwYPO5+d8IUk1l8QQJ4aGEIqKz6uTLu/67NIo7EnUF0G/Edv+UOn9P1V3tYWuVfvhbmg=="],
+
+    "@thumbmarkjs/thumbmarkjs": ["@thumbmarkjs/thumbmarkjs@0.20.2", "", {}, "sha512-g77RC/Bwl1x6+kko+odtg47iAhEe8FIKSnRWnT1YMJNa0Uv2/JuEZVIaY0rWYH9P8FU8kDBijgqiSoYjSbX5ag=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw=="],
 

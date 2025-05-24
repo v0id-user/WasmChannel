@@ -87,6 +87,12 @@ app.get("/health", async (c) => {
 	}
 });
 
+
+// Logging fingerprint
+app.get("/f", async (c) => {
+	const headers = c.req.header();
+});
+
 app.get("/openapi.json", (c) => {
 	return c.json(openAPI);
 });
