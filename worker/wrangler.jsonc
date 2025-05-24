@@ -1,17 +1,17 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "worker",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-05-24",
-  "compatibility_flags": ["nodejs_compat_v2"],
-  "observability": {
-    "enabled": true
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "wasmchannel",
-      "database_id": "5dd9d966-9e3b-4e7f-a6f5-056042aa3b01"
-    }
-  ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-05-24",
+	"compatibility_flags": ["nodejs_compat_v2"],
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "wasmchannel",
+			"database_id": "5dd9d966-9e3b-4e7f-a6f5-056042aa3b01"
+		}
+	]
 }

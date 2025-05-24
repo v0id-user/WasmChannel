@@ -1,6 +1,5 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin "daisyui" {
-    themes: cupcake --default;
-  }
-  
+	themes: cupcake --default;
+}
