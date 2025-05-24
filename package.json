@@ -3,6 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
+		"format": "bunx biome format --write",
 		"dev": "next dev",
 		"worker:dev": "cd worker && bun dev",
 		"worker:deploy": "cd worker && bun deploy",

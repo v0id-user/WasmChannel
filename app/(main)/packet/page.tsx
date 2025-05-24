@@ -5,7 +5,7 @@ import {
 	createPacket,
 	serializePacket,
 	deserializePacket,
-	WasmPacket,
+	type WasmPacket,
 	PacketKind,
 } from "@/oop/packet";
 
@@ -66,7 +66,9 @@ export default function PacketPage() {
 		try {
 			// Convert hex string back to Uint8Array
 			const hexArray = binaryStr.split(" ").filter((hex) => hex.length === 2);
-			const bytes = new Uint8Array(hexArray.map((hex) => parseInt(hex, 16)));
+			const bytes = new Uint8Array(
+				hexArray.map((hex) => Number.parseInt(hex, 16)),
+			);
 
 			// Deserialize
 			const deserializedPacket = deserializePacket(bytes);
@@ -84,11 +86,7 @@ export default function PacketPage() {
 		}
 	};
 
-	// ASCII Art Generator Functions
-	const generateHorizontalLine = (length: number, char: string = "─") =>
-		char.repeat(length);
-
-	const generateBox = (width: number, height: number, title?: string) => {
+	const generateBox = () => {
 		const lines = [
 			"", // Add an empty line at the beginning
 			"┌──────────────────────────────────────────────────────────────────────────┐",
@@ -99,13 +97,10 @@ export default function PacketPage() {
 	};
 
 	const generatePacketDiagram = () => {
-		const width = 76;
 		const lines = [];
 
 		// Title box
-		lines.push(
-			...generateBox(width, 4, "PACKET STRUCTURE (BINCODE SERIALIZED)"),
-		);
+		lines.push(...generateBox());
 		lines.push("");
 
 		// Byte positions header
@@ -282,7 +277,7 @@ export default function PacketPage() {
 								PAYLOAD:
 							</label>
 							<p className="text-black">
-								"This is a pre-built message packet!"
+								&quot;This is a pre-built message packet!&quot;
 							</p>
 						</div>
 						<div>

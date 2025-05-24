@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { D1Database } from "@cloudflare/workers-types";
+import type { D1Database } from "@cloudflare/workers-types";
 import { env } from "node:process";
 
 export function createDb(d1: D1Database) {

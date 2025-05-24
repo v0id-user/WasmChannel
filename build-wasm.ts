@@ -17,7 +17,7 @@ const colors = {
 } as const;
 
 // Timeline state
-let currentStep = 0;
+const currentStep = 0;
 const totalSteps = 2;
 
 // Beautiful timeline logging

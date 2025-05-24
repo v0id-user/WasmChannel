@@ -1,5 +1,5 @@
 import { ping, pong } from "./helpers";
-import { RouterClient } from "@orpc/server";
+import type { RouterClient } from "@orpc/server";
 
 export const router = {
 	ping,
