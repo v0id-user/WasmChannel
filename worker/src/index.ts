@@ -9,9 +9,9 @@ const handler = new RPCHandler(router)
 // Enable CORS for all routes
 app.use('/rpc/*', cors({
   origin: 'http://localhost:3000',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST','OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
-  exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  exposeHeaders: ['Content-Length'],
   maxAge: 600,
   credentials: true,
 }))
