@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "worker:dev": "cd worker && bun dev",
+    "worker:deploy": "cd worker && bun deploy",
     "build:wasm": "bun build-wasm.ts dev",
     "build:wasm:dev": "bun build-wasm.ts dev",
     "build:wasm:release": "bun build-wasm.ts release",
@@ -13,8 +15,11 @@
   },
   "dependencies": {
     "@ably/chat": "^0.7.0",
+    "@orpc/client": "^1.3.0",
+    "@orpc/server": "^1.3.0",
     "@tailwindcss/postcss": "^4.1.7",
     "ably": "^2.9.0",
+    "better-auth": "^1.2.8",
     "next": "15.1.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
