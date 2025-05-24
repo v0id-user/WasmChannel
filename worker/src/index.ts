@@ -1,12 +1,12 @@
 import { Hono } from "hono";
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
-import { createAuthWithD1 } from "../auth";
+import { createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
+import { RPCHandler } from "@orpc/server/fetch";
 
 type Env = Cloudflare.Env & {
 	DB: D1Database;
@@ -14,9 +14,7 @@ type Env = Cloudflare.Env & {
 
 const app = new Hono<{ Bindings: Env }>();
 
-const handler = new OpenAPIHandler(router, {
-	eventIteratorKeepAliveEnabled: false,
-});
+const handler = new RPCHandler(router);
 
 const openAPIGenerator = new OpenAPIGenerator({
 	schemaConverters: [new ZodToJsonSchemaConverter()],
