@@ -25,6 +25,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250524.0",
     "@eslint/eslintrc": "^3",
     "@types/bun": "^1.2.14",
     "@types/node": "^20",
