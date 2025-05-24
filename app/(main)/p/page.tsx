@@ -5,15 +5,13 @@ import { useORPC } from "@/lib/orpc";
 export default function P() {
 	const orpc = useORPC();
 	const { data, isPending, isError, error } = useQuery(
-		orpc.helper.ping.queryOptions(
-			{
-				refetchOnWindowFocus: false,
-				refetchOnMount: false,
-				refetchOnReconnect: false,
-				refetchInterval: false,
-				refetchIntervalInBackground: false,
-			}
-		),
+		orpc.helper.ping.queryOptions({
+			refetchOnWindowFocus: false,
+			refetchOnMount: false,
+			refetchOnReconnect: false,
+			refetchInterval: false,
+			refetchIntervalInBackground: false,
+		}),
 	);
 
 	if (isPending) {
