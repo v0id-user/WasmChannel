@@ -7,4 +7,5 @@ export const router = {
 	pong,
 	getAblyAuthToken,
 };
+
 export type Router = RouterClient<typeof router>;

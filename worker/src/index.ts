@@ -1,12 +1,30 @@
 import { Hono } from "hono";
-import { RPCHandler } from "@orpc/server/fetch";
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
 import { createAuthWithD1 } from "../auth";
+import { StrictGetMethodPlugin } from "@orpc/server/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod";
+import { OpenAPIGenerator } from "@orpc/openapi";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
-const handler = new RPCHandler(router);
+
+const handler = new OpenAPIHandler(router, {
+	eventIteratorKeepAliveEnabled: false,
+	plugins: [new StrictGetMethodPlugin()],
+});
+
+const openAPIGenerator = new OpenAPIGenerator({
+	schemaConverters: [new ZodToJsonSchemaConverter()],
+});
+
+const openAPI = openAPIGenerator.generate(router, {
+	info: {
+		title: "WasmChannel API",
+		version: "1.0.0",
+	},
+});
 
 // Enable CORS for all routes
 app.use(
@@ -27,7 +45,7 @@ app.use("/rpc/*", async (c, next) => {
 
 	const { matched, response } = await handler.handle(c.req.raw, {
 		prefix: "/rpc",
-		context: { db },
+		context: { db, req: c.req, session: null },
 	});
 
 	if (matched) {
@@ -44,7 +62,7 @@ app.get("/", (c) => {
 });
 
 // Test auth endpoint
-app.get("/auth/test", async (c) => {
+app.get("/health", async (c) => {
 	try {
 		const db = createDb(c.env.DB);
 		const auth = createAuthWithD1(c.env.DB);
@@ -67,6 +85,10 @@ app.get("/auth/test", async (c) => {
 			500,
 		);
 	}
+});
+
+app.get("/openapi.json", (c) => {
+	return c.json(openAPI);
 });
 
 export default app;
