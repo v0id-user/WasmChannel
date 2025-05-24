@@ -1,4 +1,4 @@
-import { os } from "@orpc/server";
+import { base } from "../contexts";
 
-export const ping = os.handler(async () => "ping");
-export const pong = os.handler(async () => "pong");
+export const ping = base.handler(async () => "ping");
+export const pong = base.handler(async () => "pong");
