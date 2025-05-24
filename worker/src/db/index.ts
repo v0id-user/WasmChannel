@@ -1,11 +1,8 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { D1Database } from '@cloudflare/workers-types';
+import { env } from 'node:process';
 
-export interface Env {
-  DB: D1Database;
+export function createDb(d1: D1Database) {
+  console.log('Creating DB with D1:', !!d1);
+  return drizzle(d1);
 }
-export default {
-  async fetch(request: Request, env: Env) {
-    const db = drizzle(env.DB);
-  },
-};
