@@ -3,6 +3,7 @@ use serde::{Serialize, Deserialize};
 use js_sys::Uint8Array;
 use bincode;
 use crate::hash::calculate_crc32;
+use std::io;
 
 #[wasm_bindgen]
 #[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Copy, Clone)]
@@ -27,7 +28,11 @@ pub struct WasmPacket {
 impl WasmPacket {
     #[wasm_bindgen(constructor)]
     pub fn new(kind: PacketKind, payload: Uint8Array) -> WasmPacket {
-        let payload = payload.to_vec();
+        let mut compressed = Vec::new();
+        let mut encoder = lz4_flex::frame::FrameEncoder::new(&mut compressed);
+        io::copy(&mut payload.to_vec().as_slice(), &mut encoder).expect("Compression failed");
+        encoder.finish().unwrap();
+        let payload = compressed;
         let crc = calculate_crc32(&payload);
         WasmPacket {
             inner: Packet { kind, payload, crc }
@@ -39,7 +44,10 @@ impl WasmPacket {
     }
 
     pub fn payload(&self) -> Uint8Array {
-        Uint8Array::from(&self.inner.payload[..])
+        let mut decompressed = Vec::new();
+        let mut decoder = lz4_flex::frame::FrameDecoder::new(&self.inner.payload[..]);
+        io::copy(&mut decoder, &mut decompressed).expect("Decompression failed");
+        Uint8Array::from(&decompressed[..])
     }
 
     pub fn serialize(&self) -> Result<Uint8Array, JsValue> {

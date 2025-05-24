@@ -1,10 +1,8 @@
-import wasmInit, { add, calculate_factorial, fibonacci_sequence, complex_operation } from '@/public/wasm/wasmchannel';
+import wasmInit, { WasmPacket, PacketKind } from '@/public/wasm/wasmchannel';
 
 interface WasmModule {
-  add: typeof add;
-  calculate_factorial: typeof calculate_factorial;
-  fibonacci_sequence: typeof fibonacci_sequence;
-  complex_operation: typeof complex_operation;
+  WasmPacket: typeof WasmPacket;
+  PacketKind: typeof PacketKind;
 }
 
 let wasm: WasmModule | null = null;
@@ -16,10 +14,8 @@ export async function initWasm(): Promise<WasmModule> {
       try {
         await wasmInit();
         wasm = { 
-          add,
-          calculate_factorial,
-          fibonacci_sequence,
-          complex_operation
+          WasmPacket,
+          PacketKind
         };
         console.log('WASM module initialized successfully');
         return wasm;
@@ -35,3 +31,5 @@ export async function initWasm(): Promise<WasmModule> {
 export function getWasmInstance(): WasmModule | null {
   return wasm;
 }
+
+export { WasmPacket, PacketKind };
