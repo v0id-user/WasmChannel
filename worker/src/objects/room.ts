@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
+
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
 	clientsById = new Map<string, WebSocket>();
@@ -10,26 +11,37 @@ export class Room extends DurableObject {
 		// `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
 		ctx.blockConcurrencyWhile(async () => {
 			// After initialization, future reads do not need to access storage.
-			// WebSocket objects can't be persisted, but we start fresh each time
+			// Restore hibernated WebSocket connections
 			this.clientsById = new Map<string, WebSocket>();
 			this.clientsBySocket = new Map<WebSocket, string>();
+			
+			// Get all hibernated WebSockets and rebuild our maps
+			const hibernatedSockets = this.ctx.getWebSockets();
+			for (const ws of hibernatedSockets) {
+				const clientId = ws.deserializeAttachment() || Math.random().toString(36).substring(7);
+				this.clientsById.set(clientId, ws);
+				this.clientsBySocket.set(ws, clientId);
+			}
 		});
 	}
 
 	async fetch(req: Request) {
 		const websocketPair = new WebSocketPair();
 		const [client, server] = Object.values(websocketPair);
-		this.ctx.acceptWebSocket(server);
+		
+    // TODO: Extract user id from the request headers
 		let clientId = Math.random().toString(36).substring(7);
-
-		// Store the SERVER WebSocket (the one we receive messages from) in maps
+		
+		// Store clientId in the WebSocket for hibernation survival
+		server.serializeAttachment(clientId);
+		this.ctx.acceptWebSocket(server);
+		
+		// Store the SERVER WebSocket in maps
 		this.clientsById.set(clientId, server);
 		this.clientsBySocket.set(server, clientId);
-
-		console.log(req.headers);
-		console.log(
-			`Client ${clientId} connected. Total clients: ${this.clientsById.size}`,
-		);
+		
+		console.log(`Client ${clientId} connected. Total clients: ${this.clientsById.size}`);
+		
 		return new Response(null, {
 			status: 101,
 			webSocket: client,
@@ -141,7 +153,11 @@ export class Room extends DurableObject {
 		const clientsIdsCopy = new Map(this.clientsById);
 
 		for (const [clientId, ws] of clientsIdsCopy) {
-			if (clientId === message.fromClientId) continue;
+      if (clientId === message.fromClientId){
+        console.log("Skipping self ClientId: ", clientId, " from: ", message.fromClientId);
+        continue;
+      }
+			console.log("Broadcasting to: ", clientId, " from: ", message.fromClientId);
 			try {
 				ws.send(messageStr);
 			} catch (error) {
