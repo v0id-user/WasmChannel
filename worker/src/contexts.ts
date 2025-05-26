@@ -11,18 +11,20 @@ export interface AppContext {
 	room: DurableObjectStub<Room>;
 }
 
-export const base = os.$context<AppContext>()
-export const protectedBase = base.errors({
-	Unauthorized: {
-		status: 401,
-		message: "You must be authenticated to access this resource.",
-	},
-}).use(async ({ context, errors, next }) => {
-	const { session } = context;
+export const base = os.$context<AppContext>();
+export const protectedBase = base
+	.errors({
+		Unauthorized: {
+			status: 401,
+			message: "You must be authenticated to access this resource.",
+		},
+	})
+	.use(async ({ context, errors, next }) => {
+		const { session } = context;
 
-	if (!session) {
-		throw errors.Unauthorized();
-	}
+		if (!session) {
+			throw errors.Unauthorized();
+		}
 
-	return next({ context: { session } });
-});
+		return next({ context: { session } });
+	});

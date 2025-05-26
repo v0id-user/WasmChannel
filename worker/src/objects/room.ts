@@ -1,17 +1,18 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-
 export class Room extends DurableObject {
-	// Store active WebSocket clients with their IDs
-	clients = new Map<string, WebSocket>();
+	// Store active WebSocket clients with bidirectional lookups
+	clientsById = new Map<string, WebSocket>();
+	clientsBySocket = new Map<WebSocket, string>();
 
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
 		// `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
 		ctx.blockConcurrencyWhile(async () => {
 			// After initialization, future reads do not need to access storage.
-			this.clients =
-				(await ctx.storage.get("clients")) || new Map<string, WebSocket>();
+			// WebSocket objects can't be persisted, but we start fresh each time
+			this.clientsById = new Map<string, WebSocket>();
+			this.clientsBySocket = new Map<WebSocket, string>();
 		});
 	}
 
@@ -20,10 +21,14 @@ export class Room extends DurableObject {
 		const [client, server] = Object.values(websocketPair);
 		this.ctx.acceptWebSocket(server);
 		let clientId = Math.random().toString(36).substring(7);
-		this.clients.set(clientId, client);
+
+		// Store the SERVER WebSocket (the one we receive messages from) in maps
+		this.clientsById.set(clientId, server);
+		this.clientsBySocket.set(server, clientId);
+
 		console.log(req.headers);
 		console.log(
-			`Client ${clientId} connected. Total clients: ${this.clients.size}`,
+			`Client ${clientId} connected. Total clients: ${this.clientsById.size}`,
 		);
 		return new Response(null, {
 			status: 101,
@@ -31,11 +36,32 @@ export class Room extends DurableObject {
 		});
 	}
 
-	// Add a new client
-	async addClient(clientId: string, ws: any): Promise<void> {
-		this.clients.set(clientId, ws);
+	webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
+		const messageData =
+			typeof event === "string" ? event : new TextDecoder().decode(event);
 		console.log(
-			`Client ${clientId} added. Total clients: ${this.clients.size}`,
+			`Message from client ${this.clientsBySocket.get(ws)}: ${messageData}`,
+		);
+
+		const clientId = this.clientsBySocket.get(ws);
+		if (!clientId) return;
+
+		this.#broadcastMessage(messageData, clientId);
+	}
+
+	webSocketClose(ws: WebSocket) {
+		const clientId = this.clientsBySocket.get(ws);
+		if (!clientId) return;
+		this.removeClient(clientId);
+	}
+
+	// Add a new client
+	async addClient(clientId: string, ws: WebSocket): Promise<void> {
+		this.clientsById.set(clientId, ws);
+		this.clientsBySocket.set(ws, clientId);
+
+		console.log(
+			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
 
 		// Send welcome message to the new client
@@ -43,43 +69,44 @@ export class Room extends DurableObject {
 			JSON.stringify({
 				type: "connected",
 				clientId: clientId,
-				clientCount: this.clients.size,
+				clientCount: this.clientsById.size,
 			}),
 		);
 
 		// Notify other clients about new connection
-		this.broadcastToOthers(
+		this.#broadcastToOthers(
 			{
 				type: "user_joined",
 				clientId: clientId,
-				clientCount: this.clients.size,
+				clientCount: this.clientsById.size,
 			},
-			clientId,
 		);
 	}
 
 	// Remove a client
 	async removeClient(clientId: string): Promise<void> {
-		if (this.clients.has(clientId)) {
-			this.clients.delete(clientId);
+		const ws = this.clientsById.get(clientId);
+		if (ws) {
+			this.clientsById.delete(clientId);
+			this.clientsBySocket.delete(ws);
+
 			console.log(
-				`Client ${clientId} removed. Total clients: ${this.clients.size}`,
+				`Client ${clientId} removed. Total clients: ${this.clientsById.size}`,
 			);
 
 			// Notify remaining clients
-			this.broadcastToOthers(
+			this.#broadcastToOthers(
 				{
 					type: "user_left",
 					clientId: clientId,
-					clientCount: this.clients.size,
+					clientCount: this.clientsById.size,
 				},
-				clientId,
 			);
 		}
 	}
 
 	// Broadcast a message from a specific client to all other clients
-	async broadcastMessage(
+	async #broadcastMessage(
 		data: string | ArrayBuffer,
 		fromClientId: string,
 	): Promise<void> {
@@ -97,46 +124,49 @@ export class Room extends DurableObject {
 
 			const broadcastData = {
 				type: "message",
-				fromClientId: fromClientId,
 				data: message,
+        fromClientId: fromClientId,
 				timestamp: new Date().toISOString(),
 			};
 
-			this.broadcastToAll(broadcastData);
+			this.#broadcastToAll(broadcastData);
 		} catch (error) {
 			console.error("Error broadcasting message:", error);
 		}
 	}
 
 	// Broadcast to all clients
-	private broadcastToAll(message: any): void {
+	#broadcastToAll(message: any): void {
 		const messageStr = JSON.stringify(message);
-		const clientsCopy = new Map(this.clients);
+		const clientsIdsCopy = new Map(this.clientsById);
 
-		for (const [clientId, ws] of clientsCopy) {
+		for (const [clientId, ws] of clientsIdsCopy) {
+			if (clientId === message.fromClientId) continue;
 			try {
 				ws.send(messageStr);
 			} catch (error) {
 				console.error(`Error sending message to client ${clientId}:`, error);
 				// Remove client if send fails
-				this.clients.delete(clientId);
+				this.clientsById.delete(clientId);
+				this.clientsBySocket.delete(ws);
 			}
 		}
 	}
 
 	// Broadcast to all clients except the sender
-	private broadcastToOthers(message: any, excludeClientId: string): void {
+	#broadcastToOthers(message: any): void {
 		const messageStr = JSON.stringify(message);
-		const clientsCopy = new Map(this.clients);
+		const clientsIdsCopy = new Map(this.clientsById);
 
-		for (const [clientId, ws] of clientsCopy) {
-			if (clientId !== excludeClientId) {
+		for (const [clientId, ws] of clientsIdsCopy) {
+			if (clientId !== message.fromClientId) {
 				try {
 					ws.send(messageStr);
 				} catch (error) {
 					console.error(`Error sending message to client ${clientId}:`, error);
 					// Remove client if send fails
-					this.clients.delete(clientId);
+					this.clientsById.delete(clientId);
+					this.clientsBySocket.delete(ws);
 				}
 			}
 		}
@@ -144,16 +174,16 @@ export class Room extends DurableObject {
 
 	// Get current client count
 	async getClientCount(): Promise<number> {
-		return this.clients.size;
+		return this.clientsById.size;
 	}
 
 	// Send message to all clients from external source
 	async sendToAll(message: any): Promise<void> {
-		this.broadcastToAll(message);
+		this.#broadcastToAll(message);
 	}
 
 	// Get list of connected client IDs
 	async getClientIds(): Promise<string[]> {
-		return Array.from(this.clients.keys());
+		return Array.from(this.clientsById.keys());
 	}
 }
