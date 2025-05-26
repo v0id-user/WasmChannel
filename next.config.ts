@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
 		});
 		return config;
 	},
+
+	experimental: {
+		reactCompiler: true,
+	},
 };
 
 export default nextConfig;

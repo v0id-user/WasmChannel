@@ -427,8 +427,22 @@ export default function Chat() {
 					ما هذا المشروع؟
 				</a>
 				<span className="text-gray-300">•</span>
-				<a href="#" className="hover:text-gray-700 transition-colors">
-					تواصل معنا
+				<a href="https://www.v0id.me" className="hover:text-gray-700 transition-colors">
+					موقعي الشخصي
+				</a>
+				<span className="text-gray-300">•</span>
+				<a 
+					href="https://ko-fi.com/v0id_user" 
+					target="_blank" 
+					rel="noopener noreferrer" 
+					title="☕"
+				>
+					<img 
+						src="https://storage.ko-fi.com/cdn/cup-border.png" 
+						alt="Ko-fi"
+						width={16}
+						height={16}
+					/>
 				</a>
 			</div>
 
