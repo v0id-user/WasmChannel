@@ -89,7 +89,7 @@ const getInitialMessages = (): Message[] => [
 
 function UserAvatar({ user, size = "sm" }: { user: User; size?: "xs" | "sm" }) {
 	const sizeClasses = {
-		xs: "w-4 h-4 text-xs",
+		xs: "w-5 h-5 text-xs",
 		sm: "w-6 h-6 text-xs",
 	};
 
@@ -260,20 +260,21 @@ export default function Chat() {
 	// Simulate typing indicators (client side only)
 	useEffect(() => {
 		if (!isClient) return;
+		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
+			const interval = setInterval(() => {
+				if (Math.random() > 0.8) {
+					const randomUsers = users
+						.filter((u) => u.isOnline && u.id !== "1")
+						.sort(() => 0.5 - Math.random())
+						.slice(0, Math.floor(Math.random() * 2) + 1);
+					setTypingUsers(randomUsers);
 
-		const interval = setInterval(() => {
-			if (Math.random() > 0.8) {
-				const randomUsers = users
-					.filter((u) => u.isOnline && u.id !== "1")
-					.sort(() => 0.5 - Math.random())
-					.slice(0, Math.floor(Math.random() * 2) + 1);
-				setTypingUsers(randomUsers);
+					setTimeout(() => setTypingUsers([]), 2000 + Math.random() * 3000);
+				}
+			}, 6000);
 
-				setTimeout(() => setTypingUsers([]), 2000 + Math.random() * 3000);
-			}
-		}, 6000);
-
-		return () => clearInterval(interval);
+			return () => clearInterval(interval);
+		}
 	}, [isClient]);
 
 	const handleSendMessage = useCallback(() => {
@@ -281,6 +282,7 @@ export default function Chat() {
 
 		const message: Message = {
 			id: Date.now().toString(),
+			// TODO: Extract real user id from the database
 			userId: "1",
 			text: newMessage.trim(),
 			timestamp: new Date(),
@@ -289,34 +291,36 @@ export default function Chat() {
 		setMessages((prev) => [...prev, message]);
 		setNewMessage("");
 
-		// Simulate response
-		setTimeout(
-			() => {
-				const responders = users.filter((u) => u.isOnline && u.id !== "1");
-				if (responders.length > 0) {
-					const responder =
-						responders[Math.floor(Math.random() * responders.length)];
-					const responses = [
-						"أتفق معك تماماً!",
-						"فكرة رائعة 👍",
-						"شكراً لك على هذه المعلومة",
-						"هل يمكنك توضيح أكثر؟",
-						"مثير للاهتمام!",
-						"أعتقد أن لديك نقطة مهمة هنا",
-					];
+		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
+			// Simulate response
+			setTimeout(
+				() => {
+					const responders = users.filter((u) => u.isOnline && u.id !== "1");
+					if (responders.length > 0) {
+						const responder =
+							responders[Math.floor(Math.random() * responders.length)];
+						const responses = [
+							"أتفق معك تماماً!",
+							"فكرة رائعة 👍",
+							"شكراً لك على هذه المعلومة",
+							"هل يمكنك توضيح أكثر؟",
+							"مثير للاهتمام!",
+							"أعتقد أن لديك نقطة مهمة هنا",
+						];
 
-					const response: Message = {
-						id: (Date.now() + 1).toString(),
-						userId: responder.id,
-						text: responses[Math.floor(Math.random() * responses.length)],
-						timestamp: new Date(),
-						isOwn: false,
-					};
-					setMessages((prev) => [...prev, response]);
-				}
-			},
-			1000 + Math.random() * 2000,
-		);
+						const response: Message = {
+							id: (Date.now() + 1).toString(),
+							userId: responder.id,
+							text: responses[Math.floor(Math.random() * responses.length)],
+							timestamp: new Date(),
+							isOwn: false,
+						};
+						setMessages((prev) => [...prev, response]);
+					}
+				},
+				1000 + Math.random() * 2000,
+			);
+		}
 	}, [newMessage, isClient]);
 
 	const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -427,18 +431,22 @@ export default function Chat() {
 					ما هذا المشروع؟
 				</a>
 				<span className="text-gray-300">•</span>
-				<a href="https://www.v0id.me" className="hover:text-gray-700 transition-colors">
+				<a
+					href="https://www.v0id.me"
+					className="hover:text-gray-700 transition-colors"
+				>
 					موقعي الشخصي
 				</a>
 				<span className="text-gray-300">•</span>
-				<a 
-					href="https://ko-fi.com/v0id_user" 
-					target="_blank" 
-					rel="noopener noreferrer" 
+				<a
+					href="https://ko-fi.com/v0id_user"
+					target="_blank"
+					rel="noopener noreferrer"
 					title="☕"
 				>
-					<img 
-						src="https://storage.ko-fi.com/cdn/cup-border.png" 
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						src="https://storage.ko-fi.com/cdn/cup-border.png"
 						alt="Ko-fi"
 						width={16}
 						height={16}
@@ -447,7 +455,7 @@ export default function Chat() {
 			</div>
 
 			<div className="mt-2 text-xs text-gray-400 text-center">
-				مشروع تجريبي • WebAssembly + Next.js
+				تجربة • WebAssembly + Next.js
 			</div>
 		</div>
 	);

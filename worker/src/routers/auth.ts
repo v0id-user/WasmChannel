@@ -1,23 +1,20 @@
 import { protectedBase } from "~/contexts";
 
-export const getAblyAuthToken = protectedBase
+export const getMessages = protectedBase
 	.route({
-		path: "/r",
+		path: "/messages",
 		method: "GET",
-		summary: "Generate Ably authentication token",
-		description:
-			"Generates a scoped authentication token for the client to use with Ably service for real-time communication. These tokens are manageable and can be revoked if needed.",
+		summary: "Get all messages",
+		description: "Get all messages from the database",
 		deprecated: false,
-		tags: ["auth", "realtime", "protected"],
-		successDescription:
-			"Returns a valid Ably authentication token that can be used to establish real-time communication channels",
+		tags: ["auth", "chat", "protected"],
+		successDescription: "Returns all messages from the database",
 	})
 	.handler(async ({ context }) => {
 		const { db, session } = context;
 
-		// TODO: Implement Ably token generation logic here
-		// For now, returning a placeholder token
-		const token = "placeholder-token";
-
-		return token;
+		// TODO: Return all messages from the database
+		return {
+			messages: [],
+		};
 	});

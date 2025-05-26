@@ -1,12 +1,12 @@
 import { ping } from "./helpers";
-import { getAblyAuthToken } from "./auth";
+import { getMessages } from "./auth";
 import type { RouterClient } from "@orpc/server";
 
 export const router = {
 	helper: {
 		ping,
 	},
-	getAblyAuthToken,
+	getMessages,
 };
 
 export type Router = RouterClient<typeof router>;

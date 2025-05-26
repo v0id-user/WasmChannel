@@ -7,12 +7,19 @@ import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
+import { Room } from "./objects/room";
+import { upgradeWebSocket } from "hono/cloudflare-workers";
 
-type Env = Cloudflare.Env & {
+export type Env = Cloudflare.Env & {
 	DB: D1Database;
+	ROOM: DurableObjectNamespace<Room>;
 };
 
-const app = new Hono<{ Bindings: Env }>();
+type Context = {
+	room: DurableObjectStub<Room>;
+};
+
+const app = new Hono<{ Bindings: Env; Variables: Context }>();
 
 const handler = new RPCHandler(router);
 
@@ -25,6 +32,13 @@ const openAPI = openAPIGenerator.generate(router, {
 		title: "WasmChannel API",
 		version: "1.0.0",
 	},
+});
+
+// Append Durable Object namespace to the whole app context
+app.use("*", async (c, next) => {
+	const room = c.env.ROOM.get(c.env.ROOM.idFromName("room"));
+	c.set("room", room);
+	await next();
 });
 
 // Enable CORS for all routes
@@ -60,6 +74,38 @@ app.get("/", (c) => {
 	console.log("DB initialized:", !!db);
 	return c.text("Hello Hono!");
 });
+
+app.get(
+	"/w",
+	upgradeWebSocket((c) => {
+		const room = c.get("room") as DurableObjectStub<Room>;
+		let clientId: string;
+		return {
+			onMessage(event, ws) {
+				console.log(`Message from client: ${event.data}`);
+				// Register client on first message if not already registered
+				if (!clientId) {
+					clientId = Math.random().toString(36).substring(7);
+					room.addClient(clientId, ws);
+				}
+				// Broadcast the message to all clients
+				room.broadcastMessage(event.data, clientId);
+			},
+			onClose: () => {
+				console.log("WebSocket connection closed");
+				if (clientId) {
+					room.removeClient(clientId);
+				}
+			},
+			onError: (event) => {
+				console.error("WebSocket error:", event);
+				if (clientId) {
+					room.removeClient(clientId);
+				}
+			},
+		};
+	}),
+);
 
 // Test auth endpoint
 app.get("/health", async (c) => {
@@ -97,3 +143,5 @@ app.get("/openapi.json", (c) => {
 });
 
 export default app;
+// you must export the Room class to use it in the Durable Object
+export { Room } from "./objects/room";
