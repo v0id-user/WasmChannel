@@ -2,13 +2,12 @@ import { Hono } from "hono";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
-import { createAuthWithD1 } from "@/auth";
+import { auth, createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
-import { upgradeWebSocket } from "hono/cloudflare-workers";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
@@ -19,26 +18,19 @@ type Context = {
 	room: DurableObjectStub<Room>;
 };
 
+// Hono app
 const app = new Hono<{ Bindings: Env; Variables: Context }>();
 
+// RPC handler
 const handler = new RPCHandler(router);
-
 const openAPIGenerator = new OpenAPIGenerator({
 	schemaConverters: [new ZodToJsonSchemaConverter()],
 });
-
 const openAPI = openAPIGenerator.generate(router, {
 	info: {
 		title: "WasmChannel API",
 		version: "1.0.0",
 	},
-});
-
-// Append Durable Object namespace to the whole app context
-app.use("*", async (c, next) => {
-	const room = c.env.ROOM.get(c.env.ROOM.idFromName("room"));
-	c.set("room", room);
-	await next();
 });
 
 // Enable CORS for all routes
@@ -57,9 +49,22 @@ app.use("/rpc/*", async (c, next) => {
 	const db = createDb(c.env.DB);
 	console.log("DB created for RPC:", !!db);
 
+	const session = await auth.api
+		.getSession({
+			headers: new Headers(c.req.header()),
+		})
+		.catch(() => null);
+
 	const { matched, response } = await handler.handle(c.req.raw, {
 		prefix: "/rpc",
-		context: { db, req: c.req, session: null },
+		context: {
+			db,
+			req: c.req,
+			session,
+			room: c.env.ROOM.get(
+				c.env.ROOM.idFromName("room"),
+			) as DurableObjectStub<Room>,
+		},
 	});
 
 	if (matched) {
@@ -72,40 +77,15 @@ app.use("/rpc/*", async (c, next) => {
 app.get("/", (c) => {
 	const db = createDb(c.env.DB);
 	console.log("DB initialized:", !!db);
+
+	// Check if it's a websocket connection
+	if (c.req.header("upgrade") === "websocket") {
+		const room = c.env.ROOM.get(c.env.ROOM.idFromName("room"));
+		return room.fetch(c.req.raw);
+	}
+
 	return c.text("Hello Hono!");
 });
-
-app.get(
-	"/w",
-	upgradeWebSocket((c) => {
-		const room = c.get("room") as DurableObjectStub<Room>;
-		let clientId: string;
-		return {
-			onMessage(event, ws) {
-				console.log(`Message from client: ${event.data}`);
-				// Register client on first message if not already registered
-				if (!clientId) {
-					clientId = Math.random().toString(36).substring(7);
-					room.addClient(clientId, ws);
-				}
-				// Broadcast the message to all clients
-				room.broadcastMessage(event.data, clientId);
-			},
-			onClose: () => {
-				console.log("WebSocket connection closed");
-				if (clientId) {
-					room.removeClient(clientId);
-				}
-			},
-			onError: (event) => {
-				console.error("WebSocket error:", event);
-				if (clientId) {
-					room.removeClient(clientId);
-				}
-			},
-		};
-	}),
-);
 
 // Test auth endpoint
 app.get("/health", async (c) => {
@@ -131,11 +111,6 @@ app.get("/health", async (c) => {
 			500,
 		);
 	}
-});
-
-// Logging fingerprint
-app.get("/f", async (c) => {
-	const headers = c.req.header();
 });
 
 app.get("/openapi.json", (c) => {

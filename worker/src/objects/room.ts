@@ -1,13 +1,34 @@
 import { DurableObject } from "cloudflare:workers";
-import { Env } from '../index'
-
+import { Env } from "../index";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with their IDs
-	private clients = new Map<string, any>();
+	clients = new Map<string, WebSocket>();
 
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
+		// `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
+		ctx.blockConcurrencyWhile(async () => {
+			// After initialization, future reads do not need to access storage.
+			this.clients =
+				(await ctx.storage.get("clients")) || new Map<string, WebSocket>();
+		});
+	}
+
+	async fetch(req: Request) {
+		const websocketPair = new WebSocketPair();
+		const [client, server] = Object.values(websocketPair);
+		this.ctx.acceptWebSocket(server);
+		let clientId = Math.random().toString(36).substring(7);
+		this.clients.set(clientId, client);
+		console.log(req.headers);
+		console.log(
+			`Client ${clientId} connected. Total clients: ${this.clients.size}`,
+		);
+		return new Response(null, {
+			status: 101,
+			webSocket: client,
+		});
 	}
 
 	// Add a new client
