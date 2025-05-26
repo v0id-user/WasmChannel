@@ -8,6 +8,7 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
+import { user } from "./db/schema/auth-schema";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
@@ -33,7 +34,26 @@ const openAPI = openAPIGenerator.generate(router, {
 	},
 });
 
-// Enable CORS for all routes
+// Enable CORS for auth routes
+app.use(
+	"/api/auth/*",
+	cors({
+		origin: process.env.FRONTEND_URL || "http://localhost:3000",
+		allowHeaders: ["Content-Type", "Authorization"],
+		allowMethods: ["POST", "GET", "OPTIONS"],
+		exposeHeaders: ["Content-Length"],
+		maxAge: 600,
+		credentials: true,
+	}),
+);
+
+// Handle auth routes
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+	const db = createDb(c.env.DB);
+	return createAuthWithD1(db).handler(c.req.raw);
+});
+
+// Enable CORS for RPC routes
 app.use(
 	"/rpc/*",
 	cors({
@@ -45,6 +65,7 @@ app.use(
 	}),
 );
 
+// Handle RPC routes
 app.use("/rpc/*", async (c, next) => {
 	const db = createDb(c.env.DB);
 	console.log("DB created for RPC:", !!db);
@@ -60,7 +81,8 @@ app.use("/rpc/*", async (c, next) => {
 		context: {
 			db,
 			req: c.req,
-			session,
+			user: session?.user ?? null,
+			session: session?.session ?? null,
 			room: c.env.ROOM.get(
 				c.env.ROOM.idFromName("room"),
 			) as DurableObjectStub<Room>,
@@ -89,17 +111,30 @@ app.get("/", (c) => {
 
 // Test auth endpoint
 app.get("/health", async (c) => {
-	try {
-		const db = createDb(c.env.DB);
-		const auth = createAuthWithD1(c.env.DB);
-		console.log("Auth initialized:", !!auth);
-		console.log("DB initialized:", !!db);
+	let dbViaFunction: any;
+	let authViaFunction: any;
+	let resultViaFunction: any;
+	let didIGetTheUserViaFunction: boolean;
 
+	try {
+		// Test via function
+		dbViaFunction = createDb(c.env.DB);
+		authViaFunction = createAuthWithD1(dbViaFunction);
+		console.log("Auth initialized via function:", !!authViaFunction);
+		console.log("DB initialized via function:", !!dbViaFunction);
+		console.log("DB Instance:", dbViaFunction);
+
+		resultViaFunction = await dbViaFunction.select().from(user).limit(1);
+		console.log("Result via function:", resultViaFunction);
+		didIGetTheUserViaFunction = resultViaFunction.length > 0;
+
+		const didIGetTheUser = didIGetTheUserViaFunction;
 		return c.json({
 			success: true,
 			message: "Database and Auth bindings working!",
-			dbReady: !!db,
-			authReady: !!auth,
+			dbReadyViaFunction: !!dbViaFunction,
+			authReadyViaFunction: !!authViaFunction,
+			didIGetTheUser,
 		});
 	} catch (error) {
 		console.error("Auth test error:", error);
@@ -107,6 +142,9 @@ app.get("/health", async (c) => {
 			{
 				success: false,
 				error: error instanceof Error ? error.message : "Unknown error",
+				dbViaFunction: !!dbViaFunction,
+				authViaFunction: !!authViaFunction,
+				resultViaFunction: !!resultViaFunction,
 			},
 			500,
 		);

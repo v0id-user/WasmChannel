@@ -14,7 +14,6 @@ export const user = sqliteTable("user", {
 	updatedAt: integer("updated_at", { mode: "timestamp" })
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
-	isAnonymous: integer("is_anonymous", { mode: "boolean" }),
 });
 
 export const session = sqliteTable("session", {

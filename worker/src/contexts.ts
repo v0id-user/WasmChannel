@@ -7,7 +7,8 @@ import { Room } from "./objects/room";
 export interface AppContext {
 	db: DrizzleD1Database<Record<string, never>> & { $client: D1Database };
 	req: HonoRequest;
-	session: Awaited<ReturnType<typeof auth.api.getSession>>;
+	user: typeof auth.$Infer.Session.user | null;
+	session: typeof auth.$Infer.Session.session | null;
 	room: DurableObjectStub<Room>;
 }
 

@@ -1,18 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
+import ClientBootstrap from "./bootstrap";
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 	variable: "--font-ibm-plex-sans-arabic",
@@ -33,10 +23,12 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="ar">
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} ${ibmPlexSansArabic.variable} antialiased`}
-			>
-				<Providers>{children}</Providers>
+			<body className={`${ibmPlexSansArabic.variable} antialiased`}>
+				<Providers>
+					{/* This is a client side bootstrap component that will setup the store and the wasm modules */}
+					<ClientBootstrap />
+					{children}
+				</Providers>
 			</body>
 		</html>
 	);
