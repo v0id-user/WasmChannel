@@ -143,11 +143,12 @@ try {
 		
 		logSubStep(`Building for ${name}: ${path.relative(process.cwd(), outDir)}`, isLast && mode !== "release");
 
-		// Build command arguments for this output
+		// Build command arguments for this output - use bundler target for worker, web target for public
+		const target = name === "worker" ? "bundler" : "web";
 		const buildArgs = [
 			"build",
 			"--target",
-			"web",
+			target,
 			"--out-dir",
 			outDir,
 			mode === "release" ? "--release" : "--dev",

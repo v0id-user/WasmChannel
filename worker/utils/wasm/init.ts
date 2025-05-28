@@ -1,4 +1,11 @@
-import wasmInit, { WasmPacket, PacketKind, ReactionKind } from "@/wasm/wasmchannel";
+// @ts-ignore - WASM files are generated at build time
+import * as imports from "@/wasm/wasmchannel_bg.js";
+// @ts-ignore - WASM files are generated at build time  
+import { WasmPacket, PacketKind, ReactionKind } from "@/wasm/wasmchannel_bg.js";
+
+// Import the WASM module
+// @ts-ignore - WASM files are generated at build time
+import wkmod from "@/wasm/wasmchannel_bg.wasm";
 
 interface WasmModule {
 	WasmPacket: typeof WasmPacket;
@@ -13,7 +20,12 @@ export async function initWasm(): Promise<WasmModule> {
 	if (!wasmReady) {
 		wasmReady = (async () => {
 			try {
-				await wasmInit();
+				// Create WebAssembly instance for Cloudflare Workers
+				const instance = new WebAssembly.Instance(wkmod, {
+					"./wasmchannel_bg.js": imports,
+				});
+				(imports as any).__wbg_set_wasm(instance.exports);
+
 				wasm = {
 					WasmPacket,
 					PacketKind,

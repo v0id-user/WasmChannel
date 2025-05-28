@@ -9,7 +9,7 @@ import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { user } from "./db/schema/auth-schema";
-import { WasmPacket } from "@/wasm/wasmchannel";
+import { initWasm, WasmPacket } from "@/utils/wasm/init";
 
 
 export type Env = Cloudflare.Env & {
@@ -25,6 +25,17 @@ type Context = {
 
 // Hono app
 const app = new Hono<{ Bindings: Env; Variables: Context }>();
+
+// WASM initialization middleware
+app.use("*", async (c, next) => {
+	try {
+		await initWasm();
+		await next();
+	} catch (error) {
+		console.error("WASM initialization failed:", error);
+		return c.json({ error: "WASM module failed to initialize" }, 500);
+	}
+});
 
 // RPC handler
 const handler = new RPCHandler(router);
