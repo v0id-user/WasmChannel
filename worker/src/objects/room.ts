@@ -53,8 +53,8 @@ export class Room extends DurableObject {
 	}
 
 	webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
-		const messageData =
-			typeof event === "string" ? event : new TextDecoder().decode(event);
+		const messageData = event instanceof ArrayBuffer ? new Uint8Array(event) : new TextEncoder().encode(event);
+      
 		console.log(
 			`Message from client ${this.clientsBySocket.get(ws)}: ${messageData}`,
 		);
@@ -119,57 +119,26 @@ export class Room extends DurableObject {
 
 	// Broadcast a message from a specific client to all other clients
 	async #broadcastMessage(
-		data: string | ArrayBuffer,
+		data: Uint8Array,
 		fromClientId: string,
 	): Promise<void> {
-		const messageData =
-			typeof data === "string" ? data : new TextDecoder().decode(data);
-		console.log(`Broadcasting message from ${fromClientId}: ${messageData}`);
+		console.log(`Broadcasting binary data from ${fromClientId}, length: ${data.length} bytes`);
 
 		try {
-			let message: any;
-			try {
-				message = JSON.parse(messageData);
-			} catch {
-				message = { text: messageData };
-			}
 
-			const broadcastData = {
-				type: "message",
-				data: message,
-				fromClientId: fromClientId,
-				timestamp: new Date().toISOString(),
-			};
-
-			this.#broadcastToAll(broadcastData);
+			this.#broadcastToAll(data);
 		} catch (error) {
 			console.error("Error broadcasting message:", error);
 		}
 	}
 
 	// Broadcast to all clients
-	#broadcastToAll(message: any): void {
-		const messageStr = JSON.stringify(message);
+	#broadcastToAll(message: Uint8Array): void {
 		const clientsIdsCopy = new Map(this.clientsById);
 
 		for (const [clientId, ws] of clientsIdsCopy) {
-			if (clientId === message.fromClientId) {
-				console.log(
-					"Skipping self ClientId: ",
-					clientId,
-					" from: ",
-					message.fromClientId,
-				);
-				continue;
-			}
-			console.log(
-				"Broadcasting to: ",
-				clientId,
-				" from: ",
-				message.fromClientId,
-			);
 			try {
-				ws.send(messageStr);
+				ws.send(message);
 			} catch (error) {
 				console.error(`Error sending message to client ${clientId}:`, error);
 				// Remove client if send fails

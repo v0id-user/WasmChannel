@@ -1,10 +1,11 @@
-import { WasmPacket, PacketKind } from "@/utils/wasm/init";
+import { WasmPacket, PacketKind, ReactionKind } from "@/utils/wasm/init";
 
 export function createPacket(
 	kind: PacketKind,
+	reaction_kind: ReactionKind | null,
 	payload: Uint8Array,
 ): WasmPacket {
-	return new WasmPacket(kind, payload);
+	return new WasmPacket(kind, reaction_kind, payload);
 }
 
 export function serializePacket(packet: WasmPacket): Uint8Array {

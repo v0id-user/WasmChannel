@@ -10,6 +10,7 @@ use std::io;
 pub enum PacketKind {
     Message,
     Reaction,
+    Joined,
     Typing,
 }
 
@@ -21,7 +22,6 @@ pub enum ReactionKind {
     Dislike,
     Heart,
     Star,
-    
 }
 
 #[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Clone)]
@@ -41,7 +41,7 @@ pub struct WasmPacket {
 #[wasm_bindgen]
 impl WasmPacket {
     #[wasm_bindgen(constructor)]
-    pub fn new(kind: PacketKind, payload: Uint8Array, reaction_kind: Option<ReactionKind>) -> WasmPacket {
+    pub fn new(kind: PacketKind, reaction_kind: Option<ReactionKind>, payload: Uint8Array) -> WasmPacket {
         let mut compressed = Vec::new();
         let mut encoder = lz4_flex::frame::FrameEncoder::new(&mut compressed);
         io::copy(&mut payload.to_vec().as_slice(), &mut encoder).expect("Compression failed");

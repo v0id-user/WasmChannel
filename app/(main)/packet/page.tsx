@@ -28,7 +28,7 @@ export default function PacketPage() {
 				const payload = textEncoder.encode(
 					"This is a pre-built message packet!",
 				);
-				const packet = createPacket(PacketKind.Message, payload);
+				const packet = createPacket(PacketKind.Message, null, payload);
 
 				// Serialize and display binary
 				const binary = serializePacket(packet);
@@ -51,7 +51,7 @@ export default function PacketPage() {
 		try {
 			const textEncoder = new TextEncoder();
 			const payload = textEncoder.encode(payloadText);
-			const packet = createPacket(selectedKind, payload);
+			const packet = createPacket(selectedKind, null, payload);
 			setCustomPacket(packet);
 
 			// Serialize and display binary

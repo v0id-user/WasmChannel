@@ -1,8 +1,9 @@
-import wasmInit, { WasmPacket, PacketKind } from "@/public/wasm/wasmchannel";
+import wasmInit, { WasmPacket, PacketKind, ReactionKind } from "@/public/wasm/wasmchannel";
 
 interface WasmModule {
 	WasmPacket: typeof WasmPacket;
 	PacketKind: typeof PacketKind;
+	ReactionKind: typeof ReactionKind;
 }
 
 let wasm: WasmModule | null = null;
@@ -16,6 +17,7 @@ export async function initWasm(): Promise<WasmModule> {
 				wasm = {
 					WasmPacket,
 					PacketKind,
+					ReactionKind,
 				};
 				console.log("WASM module initialized successfully");
 				return wasm;
@@ -32,4 +34,4 @@ export function getWasmInstance(): WasmModule | null {
 	return wasm;
 }
 
-export { WasmPacket, PacketKind };
+export { WasmPacket, PacketKind, ReactionKind };
