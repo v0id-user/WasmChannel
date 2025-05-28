@@ -5,9 +5,10 @@ export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
 	clientsById = new Map<string, WebSocket>();
 	clientsBySocket = new Map<WebSocket, string>();
-
+  env: Env;
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
+    this.env = env;
 		// `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
 		ctx.blockConcurrencyWhile(async () => {
 			// Restore hibernated WebSocket connections | https://developers.cloudflare.com/durable-objects/best-practices/websockets/#websocket-hibernation-api
@@ -26,6 +27,7 @@ export class Room extends DurableObject {
 	}
 
 	async fetch(req: Request) {
+    console.log(this.env.QUEUE_MESSAGES)
 		const websocketPair = new WebSocketPair();
 		const [client, server] = Object.values(websocketPair);
 

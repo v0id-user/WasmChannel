@@ -9,9 +9,13 @@ import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { user } from "./db/schema/auth-schema";
+import { WasmPacket } from "../../public/wasm/wasmchannel";
+
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
+	MESSAGES: KVNamespace;
+	QUEUE_MESSAGES: Queue<WasmPacket>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -154,6 +158,14 @@ app.get("/openapi.json", (c) => {
 	return c.json(openAPI);
 });
 
-export default app;
+export default {
+	fetch: app.fetch,
+	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
+		const db = createDb(env.DB);
+
+		// Batch insert with drizzle
+		batch.messages[0].body.kind()
+	},
+  }
 // you must export the Room class to use it in the Durable Object
 export { Room } from "./objects/room";

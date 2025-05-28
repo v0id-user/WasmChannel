@@ -17,9 +17,32 @@
 			"database_id": "5dd9d966-9e3b-4e7f-a6f5-056042aa3b01"
 		}
 	],
+	"kv_namespaces": [
+		{
+			"binding": "MESSAGES",
+			"id": "7828ed8a073b418a989d261a8463355c",
+		}
+	],
+	"queues": {
+		"consumers": [
+			{
+				"queue": "wasmchannel",
+				"max_batch_size": 10, // 10 messages per batch
+				"max_batch_timeout": 5 // 5 seconds per batch
+			}
+		],
+		"producers": [
+			{
+				"queue": "wasmchannel",
+				"binding": "QUEUE_MESSAGES"
+			}
+		]
+	},
 	"migrations": [
 		{
-			"new_sqlite_classes": ["Room"],
+			"new_sqlite_classes": [
+				"Room"
+			],
 			"tag": "v1"
 		}
 	],
