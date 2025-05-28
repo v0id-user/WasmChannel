@@ -9,7 +9,7 @@ import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { user } from "./db/schema/auth-schema";
-import { WasmPacket } from "../../public/wasm/wasmchannel";
+import { WasmPacket } from "@/wasm/wasmchannel";
 
 
 export type Env = Cloudflare.Env & {

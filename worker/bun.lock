@@ -8,6 +8,7 @@
         "@orpc/openapi": "^1.3.0",
         "@orpc/server": "^1.3.0",
         "@orpc/zod": "^1.3.0",
+        "@paralleldrive/cuid2": "^2.2.2",
         "better-auth": "^1.2.8",
         "dotenv": "^16.5.0",
         "drizzle-orm": "^0.43.1",
@@ -177,6 +178,8 @@
     "@orpc/standard-server-peer": ["@orpc/standard-server-peer@1.3.0", "", { "dependencies": { "@orpc/shared": "1.3.0", "@orpc/standard-server": "1.3.0" } }, "sha512-tiI2Ds59qvHVC4BpcF797Z3w7pMY75yZjmSqIYnYEak3MP6ThstUyQX6bzpON/9GcDyZtw2nr3+BklBHKxNXGQ=="],
 
     "@orpc/zod": ["@orpc/zod@1.3.0", "", { "dependencies": { "@orpc/openapi": "1.3.0", "@orpc/shared": "1.3.0", "escape-string-regexp": "^5.0.0", "wildcard-match": "^5.1.3" }, "peerDependencies": { "@orpc/contract": "1.3.0", "@orpc/server": "1.3.0", "zod": ">=3.24.2" } }, "sha512-/SBbWR4IeVfR16Ck4deHz2P31Pj1g1YBzLJacK0rq6thamRsHypWvg2mx075WSaOcoObuePjhGHtPoyrbCaaeA=="],
+
+    "@paralleldrive/cuid2": ["@paralleldrive/cuid2@2.2.2", "", { "dependencies": { "@noble/hashes": "^1.1.5" } }, "sha512-ZOBkgDwEdoYVlSeRbYYXs0S9MejQofiVYoTbKzy/6GQa39/q5tQU2IX46+shYnUkpEl3wc+J6wRlar7r2EK2xA=="],
 
     "@peculiar/asn1-android": ["@peculiar/asn1-android@2.3.16", "", { "dependencies": { "@peculiar/asn1-schema": "^2.3.15", "asn1js": "^3.0.5", "tslib": "^2.8.1" } }, "sha512-a1viIv3bIahXNssrOIkXZIlI2ePpZaNmR30d4aBL99mu2rO+mT9D6zBsp7H6eROWGtmwv0Ionp5olJurIo09dw=="],
 

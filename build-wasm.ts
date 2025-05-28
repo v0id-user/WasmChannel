@@ -102,25 +102,18 @@ type BuildMode = "dev" | "release";
 // Main build logic
 const mode: BuildMode = (process.argv[2] as BuildMode) || "dev";
 const rustWasmPath = path.resolve(process.cwd(), "rust_wasm");
-const outDir = path.resolve(process.cwd(), "public", "wasm");
-
-// Build command arguments
-const buildArgs = [
-	"build",
-	"--target",
-	"web",
-	"--out-dir",
-	outDir,
-	mode === "release" ? "--release" : "--dev",
+const outDirs = [
+	{ name: "public", path: path.resolve(process.cwd(), "public", "wasm") },
+	{ name: "worker", path: path.resolve(process.cwd(), "worker", "wasm") },
 ];
 
 // Start the build process
 logHeader(`🦀 WASM Build Pipeline - ${mode.toUpperCase()} Mode`);
 
 console.log(`\n${colors.gray}Pipeline Overview:${colors.reset}`);
-logTimeline(1, "🔧 Compile Rust → WebAssembly", "", "pending");
+logTimeline(1, "🔧 Compile Rust → WebAssembly", "Building for public & worker", "pending");
 if (mode === "release") {
-	logTimeline(2, "⚡ Optimize WASM Binary", "", "pending", true);
+	logTimeline(2, "⚡ Optimize WASM Binaries", "Applying optimizations to both outputs", "pending", true);
 } else {
 	console.log(
 		`${connector.last}${timelineStates.pending} ${colors.dim}Optimization skipped in dev mode${colors.reset}`,
@@ -136,38 +129,68 @@ updateTimelineStep(
 	1,
 	"active",
 	"🔧 Compiling Rust to WebAssembly",
-	`Mode: ${mode} | Target: web`,
+	`Mode: ${mode} | Target: web | Outputs: public & worker`,
 );
 logSubStep(`Source: ${path.basename(rustWasmPath)}`);
-logSubStep(`Output: ${path.relative(process.cwd(), outDir)}`);
 
 try {
-	// Use Bun shell to run wasm-pack
-	const result = await $`wasm-pack ${buildArgs}`
-		.cwd(rustWasmPath)
-		.nothrow()
-		.quiet();
+	let totalBuildTime = 0;
+	
+	// Build for each output directory
+	for (let i = 0; i < outDirs.length; i++) {
+		const { name, path: outDir } = outDirs[i];
+		const isLast = i === outDirs.length - 1;
+		
+		logSubStep(`Building for ${name}: ${path.relative(process.cwd(), outDir)}`, isLast && mode !== "release");
 
-	if (result.exitCode !== 0) {
-		const errorMessage =
-			result.stderr.toString() || `Process exited with code ${result.exitCode}`;
-		updateTimelineStep(
-			1,
-			"error",
-			"🔧 Compilation Failed",
-			errorMessage,
-			mode !== "release",
+		// Build command arguments for this output
+		const buildArgs = [
+			"build",
+			"--target",
+			"web",
+			"--out-dir",
+			outDir,
+			mode === "release" ? "--release" : "--dev",
+		];
+
+		const buildStartTime = Date.now();
+		
+		// Use Bun shell to run wasm-pack
+		const result = await $`wasm-pack ${buildArgs}`
+			.cwd(rustWasmPath)
+			.nothrow()
+			.quiet();
+
+		if (result.exitCode !== 0) {
+			const errorMessage =
+				result.stderr.toString() || `Process exited with code ${result.exitCode}`;
+			updateTimelineStep(
+				1,
+				"error",
+				"🔧 Compilation Failed",
+				`Failed building for ${name}: ${errorMessage}`,
+				mode !== "release",
+			);
+			logError(`Build failed for ${name}: ${errorMessage}`);
+			process.exit(1);
+		}
+
+		const buildTime = ((Date.now() - buildStartTime) / 1000).toFixed(2);
+		totalBuildTime += Date.now() - buildStartTime;
+		
+		// Show individual build completion in substep style
+		const subConnector = (isLast && mode !== "release") ? "  " : `${colors.gray}│${colors.reset} `;
+		console.log(
+			`${subConnector}${colors.gray}  ✓${colors.reset} ${colors.green}${name} completed in ${buildTime}s${colors.reset}`,
 		);
-		logError(`Build failed: ${errorMessage}`);
-		process.exit(1);
 	}
 
-	const buildTime = ((Date.now() - startTime) / 1000).toFixed(2);
+	const avgBuildTime = (totalBuildTime / 1000).toFixed(2);
 	updateTimelineStep(
 		1,
 		"success",
 		"🔧 Compilation Complete",
-		`✨ Completed in ${buildTime}s`,
+		`✨ Both outputs completed in ${avgBuildTime}s`,
 		mode !== "release",
 	);
 
@@ -177,65 +200,100 @@ try {
 		updateTimelineStep(
 			2,
 			"active",
-			"⚡ Optimizing WASM Binary",
-			"Running wasm-opt with size optimization",
+			"⚡ Optimizing WASM Binaries",
+			"Running wasm-opt with size optimization on both outputs",
 		);
 
-		const wasmFile = path.join(outDir, "wasmchannel_bg.wasm");
-		const optimizeStartTime = Date.now();
+		let totalOptTime = 0;
+		const optimizationResults = [];
 
-		try {
-			// Get initial file size
-			const initialSize = Bun.file(wasmFile).size;
-			const initialSizeKB = (initialSize / 1024).toFixed(2);
+		for (let i = 0; i < outDirs.length; i++) {
+			const { name, path: outDir } = outDirs[i];
+			const isLast = i === outDirs.length - 1;
+			
+			const wasmFile = path.join(outDir, "wasmchannel_bg.wasm");
+			logSubStep(`Optimizing ${name}: ${path.relative(process.cwd(), wasmFile)}`, isLast);
+			
+			const optimizeStartTime = Date.now();
 
-			const optimizeResult =
-				await $`wasm-opt -Oz --strip-target-features --strip-eh --strip-dwarf --strip-debug --strip-producers --remove-unused-module-elements --flatten --dce --vacuum --reorder-functions --reorder-locals --merge-blocks --local-cse --simplify-locals --coalesce-locals --optimize-instructions --fast-math ${wasmFile} -o ${wasmFile}`
-					.cwd(rustWasmPath)
-					.nothrow()
-					.quiet();
+			try {
+				// Get initial file size
+				const initialSize = Bun.file(wasmFile).size;
+				const initialSizeKB = (initialSize / 1024).toFixed(2);
 
-			if (optimizeResult.exitCode !== 0) {
-				const optErrorMessage =
-					optimizeResult.stderr.toString() ||
-					`Optimization failed with code ${optimizeResult.exitCode}`;
-				updateTimelineStep(
-					2,
-					"error",
-					"⚡ Optimization Failed",
-					optErrorMessage,
-					true,
+				const optimizeResult =
+					await $`wasm-opt -Oz --strip-target-features --strip-eh --strip-dwarf --strip-debug --strip-producers --remove-unused-module-elements --flatten --dce --vacuum --reorder-functions --reorder-locals --merge-blocks --local-cse --simplify-locals --coalesce-locals --optimize-instructions --fast-math ${wasmFile} -o ${wasmFile}`
+						.cwd(rustWasmPath)
+						.nothrow()
+						.quiet();
+
+				if (optimizeResult.exitCode !== 0) {
+					const optErrorMessage =
+						optimizeResult.stderr.toString() ||
+						`Optimization failed with code ${optimizeResult.exitCode}`;
+					throw new Error(optErrorMessage);
+				}
+
+				// Get final file size and calculate reduction
+				const finalSize = Bun.file(wasmFile).size;
+				const finalSizeKB = (finalSize / 1024).toFixed(2);
+				const reduction = ((1 - finalSize / initialSize) * 100).toFixed(1);
+
+				const optimizeTime = ((Date.now() - optimizeStartTime) / 1000).toFixed(2);
+				totalOptTime += Date.now() - optimizeStartTime;
+				
+				optimizationResults.push({ name, initialSizeKB, finalSizeKB, reduction, optimizeTime });
+				
+				// Show individual optimization completion
+				const subConnector = isLast ? "  " : `${colors.gray}│${colors.reset} `;
+				console.log(
+					`${subConnector}${colors.gray}  ✓${colors.reset} ${colors.green}${name}: ${initialSizeKB}KB → ${finalSizeKB}KB (${reduction}% reduction)${colors.reset}`,
 				);
-				logError(`Optimization failed: ${optErrorMessage}`);
-				logSuccess("🎉 Build completed (without optimization)!");
-				process.exit(0);
+
+			} catch (optError) {
+				const subConnector = isLast ? "  " : `${colors.gray}│${colors.reset} `;
+				console.log(
+					`${subConnector}${colors.gray}  ✗${colors.reset} ${colors.red}${name}: optimization failed${colors.reset}`,
+				);
+				logError(`Optimization failed for ${name}: ${optError}`);
 			}
+		}
 
-			// Get final file size and calculate reduction
-			const finalSize = Bun.file(wasmFile).size;
-			const finalSizeKB = (finalSize / 1024).toFixed(2);
-			const reduction = ((1 - finalSize / initialSize) * 100).toFixed(1);
+		const avgOptTime = (totalOptTime / 1000).toFixed(2);
+		const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+		
+		// Create summary of optimizations
+		const successfulOpts = optimizationResults.length;
+		const avgReduction = successfulOpts > 0 
+			? (optimizationResults.reduce((sum, r) => sum + parseFloat(r.reduction), 0) / successfulOpts).toFixed(1)
+			: "0";
 
-			const optimizeTime = ((Date.now() - optimizeStartTime) / 1000).toFixed(2);
-			const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-
+		if (successfulOpts === outDirs.length) {
 			updateTimelineStep(
 				2,
 				"success",
 				"⚡ Optimization Complete",
-				`✨ Completed in ${optimizeTime}s | Size: ${initialSizeKB}KB → ${finalSizeKB}KB (${reduction}% reduction)`,
+				`✨ Both outputs optimized in ${avgOptTime}s | Average reduction: ${avgReduction}%`,
 				true,
 			);
 			logSuccess(`🚀 Release build completed in ${totalTime}s`);
-		} catch (optError) {
+		} else if (successfulOpts > 0) {
+			updateTimelineStep(
+				2,
+				"error",
+				"⚡ Partial Optimization",
+				`${successfulOpts}/${outDirs.length} outputs optimized successfully`,
+				true,
+			);
+			logSuccess(`🎉 Build completed with partial optimization in ${totalTime}s`);
+		} else {
 			updateTimelineStep(
 				2,
 				"error",
 				"⚡ Optimization Failed",
-				String(optError),
+				"All optimization attempts failed",
 				true,
 			);
-			logError(`Optimization failed: ${optError}`);
 			logSuccess("🎉 Build completed (without optimization)!");
 		}
 	} else {
