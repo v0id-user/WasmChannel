@@ -122,7 +122,6 @@ app.get("/health", async (c) => {
 		authViaFunction = createAuthWithD1(dbViaFunction);
 		console.log("Auth initialized via function:", !!authViaFunction);
 		console.log("DB initialized via function:", !!dbViaFunction);
-		console.log("DB Instance:", dbViaFunction);
 
 		resultViaFunction = await dbViaFunction.select().from(user).limit(1);
 		console.log("Result via function:", resultViaFunction);

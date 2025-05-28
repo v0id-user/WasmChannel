@@ -28,7 +28,7 @@ export const send = protectedBase
 	.route({
 		path: "/messages",
 		summary: "Send a message",
-		description: "Send a message to the database",
+		description: "Send a message to the database fallback.",
 		deprecated: false,
 		tags: ["auth", "chat", "protected"],
 		successDescription: "Returns the message that was sent",
