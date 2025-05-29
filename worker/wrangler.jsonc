@@ -20,7 +20,7 @@
 	"kv_namespaces": [
 		{
 			"binding": "MESSAGES",
-			"id": "7828ed8a073b418a989d261a8463355c",
+			"id": "7828ed8a073b418a989d261a8463355c"
 		}
 	],
 	"queues": {
@@ -40,9 +40,7 @@
 	},
 	"migrations": [
 		{
-			"new_sqlite_classes": [
-				"Room"
-			],
+			"new_sqlite_classes": ["Room"],
 			"tag": "v1"
 		}
 	],

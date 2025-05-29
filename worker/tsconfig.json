@@ -10,7 +10,7 @@
 		"jsxImportSource": "hono/jsx",
 		"paths": {
 			"@/*": ["./*"],
-			"~/*": ["./src/*"],
+			"~/*": ["./src/*"]
 		},
 		"composite": true
 	}

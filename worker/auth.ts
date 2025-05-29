@@ -4,7 +4,7 @@ import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
-import type { D1Database } from "@cloudflare/workers-types";
+
 export const auth = betterAuth({
 	database: drizzleAdapter(
 		// @ts-ignore - This trick is used to make the auth work with the D1 binding, and just generates a schemas. Migrations happen with drizzle-kit.
@@ -29,16 +29,21 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: false,
 		requireEmailVerification: false,
+		autoSignIn: true,
+		minPasswordLength: 69,
+		maxPasswordLength: 69,
 	},
+
 	advanced: {
-		crossSubDomainCookies: process.env.FRONTEND_URL ? {
-			enabled: true,
-			domains: [process.env.FRONTEND_URL],
-		} : undefined,
+		crossSubDomainCookies: process.env.FRONTEND_URL
+			? {
+					enabled: true,
+					domains: [process.env.FRONTEND_URL],
+				}
+			: undefined,
 	},
 	trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
 });
-
 
 // For runtime usage with actual D1 database
 export function createAuth(db: DrizzleD1Database) {
@@ -63,12 +68,17 @@ export function createAuth(db: DrizzleD1Database) {
 		emailAndPassword: {
 			enabled: false,
 			requireEmailVerification: false,
+			autoSignIn: true,
+			minPasswordLength: 69,
+			maxPasswordLength: 69,
 		},
 		advanced: {
-			crossSubDomainCookies: process.env.FRONTEND_URL ? {
-				enabled: true,
-				domains: [process.env.FRONTEND_URL],
-			} : undefined,
+			crossSubDomainCookies: process.env.FRONTEND_URL
+				? {
+						enabled: true,
+						domains: [process.env.FRONTEND_URL],
+					}
+				: undefined,
 		},
 		trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
 	});

@@ -7,10 +7,10 @@ export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
 	clientsById = new Map<string, WebSocket>();
 	clientsBySocket = new Map<WebSocket, string>();
-  env: Env;
+	env: Env;
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
-    this.env = env;
+		this.env = env;
 		// `blockConcurrencyWhile()` ensures no requests are delivered until initialization completes.
 		ctx.blockConcurrencyWhile(async () => {
 			// Restore hibernated WebSocket connections | https://developers.cloudflare.com/durable-objects/best-practices/websockets/#websocket-hibernation-api
@@ -29,7 +29,7 @@ export class Room extends DurableObject {
 	}
 
 	async fetch(req: Request) {
-    console.log(this.env.QUEUE_MESSAGES)
+		console.log(this.env.QUEUE_MESSAGES);
 		const websocketPair = new WebSocketPair();
 		const [client, server] = Object.values(websocketPair);
 
@@ -40,7 +40,7 @@ export class Room extends DurableObject {
 		server.serializeAttachment(clientId);
 		this.ctx.acceptWebSocket(server);
 
-    this.addClient(clientId, server);
+		this.addClient(clientId, server);
 
 		console.log(
 			`Client ${clientId} connected. Total clients: ${this.clientsById.size}`,
@@ -53,8 +53,11 @@ export class Room extends DurableObject {
 	}
 
 	webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
-		const messageData = event instanceof ArrayBuffer ? new Uint8Array(event) : new TextEncoder().encode(event);
-      
+		const messageData =
+			event instanceof ArrayBuffer
+				? new Uint8Array(event)
+				: new TextEncoder().encode(event);
+
 		console.log(
 			`Message from client ${this.clientsBySocket.get(ws)}: ${messageData}`,
 		);
@@ -80,11 +83,15 @@ export class Room extends DurableObject {
 		console.log(
 			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
-    
-    const packet = createPacket(PacketKind.Joined, null, new TextEncoder().encode(clientId));
-    const serializedPacket = serializePacket(packet);
 
-    // Notify other clients about new connection
+		const packet = createPacket(
+			PacketKind.Joined,
+			null,
+			new TextEncoder().encode(clientId),
+		);
+		const serializedPacket = serializePacket(packet);
+
+		// Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);
 	}
 
@@ -93,10 +100,11 @@ export class Room extends DurableObject {
 		data: Uint8Array,
 		fromClientId: string,
 	): Promise<void> {
-		console.log(`Broadcasting binary data from ${fromClientId}, length: ${data.length} bytes`);
+		console.log(
+			`Broadcasting binary data from ${fromClientId}, length: ${data.length} bytes`,
+		);
 
 		try {
-
 			this.#broadcastToAll(data);
 		} catch (error) {
 			console.error("Error broadcasting message:", error);
@@ -121,16 +129,16 @@ export class Room extends DurableObject {
 
 	// Broadcast to all clients except the sender
 	#broadcastToOthers(message: Uint8Array): void {
-    const clientsIdsCopy = new Map(this.clientsById);
+		const clientsIdsCopy = new Map(this.clientsById);
 		for (const [clientId, ws] of clientsIdsCopy) {
-				try {
-					ws.send(message);
-				} catch (error) {
-					console.error(`Error sending message to client ${clientId}:`, error);
-					// Remove client if send fails
-					this.clientsById.delete(clientId);
-					this.clientsBySocket.delete(ws);
-				}
+			try {
+				ws.send(message);
+			} catch (error) {
+				console.error(`Error sending message to client ${clientId}:`, error);
+				// Remove client if send fails
+				this.clientsById.delete(clientId);
+				this.clientsBySocket.delete(ws);
+			}
 		}
 	}
 

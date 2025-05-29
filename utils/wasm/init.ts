@@ -1,4 +1,8 @@
-import wasmInit, { WasmPacket, PacketKind, ReactionKind } from "@/public/wasm/wasmchannel";
+import wasmInit, {
+	WasmPacket,
+	PacketKind,
+	ReactionKind,
+} from "@/public/wasm/wasmchannel";
 
 interface WasmModule {
 	WasmPacket: typeof WasmPacket;

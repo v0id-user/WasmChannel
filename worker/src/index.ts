@@ -11,7 +11,6 @@ import { Room } from "./objects/room";
 import { user } from "./db/schema/auth-schema";
 import { initWasm, WasmPacket } from "@/utils/wasm/init";
 
-
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	MESSAGES: KVNamespace;
@@ -175,8 +174,8 @@ export default {
 		const db = createDb(env.DB);
 
 		// Batch insert with drizzle
-		batch.messages[0].body.kind()
+		batch.messages[0].body.kind();
 	},
-  }
+};
 // you must export the Room class to use it in the Durable Object
 export { Room } from "./objects/room";

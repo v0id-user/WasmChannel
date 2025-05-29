@@ -111,9 +111,20 @@ const outDirs = [
 logHeader(`🦀 WASM Build Pipeline - ${mode.toUpperCase()} Mode`);
 
 console.log(`\n${colors.gray}Pipeline Overview:${colors.reset}`);
-logTimeline(1, "🔧 Compile Rust → WebAssembly", "Building for public & worker", "pending");
+logTimeline(
+	1,
+	"🔧 Compile Rust → WebAssembly",
+	"Building for public & worker",
+	"pending",
+);
 if (mode === "release") {
-	logTimeline(2, "⚡ Optimize WASM Binaries", "Applying optimizations to both outputs", "pending", true);
+	logTimeline(
+		2,
+		"⚡ Optimize WASM Binaries",
+		"Applying optimizations to both outputs",
+		"pending",
+		true,
+	);
 } else {
 	console.log(
 		`${connector.last}${timelineStates.pending} ${colors.dim}Optimization skipped in dev mode${colors.reset}`,
@@ -127,11 +138,11 @@ const startTime = Date.now();
 // Post-build patching function for worker files
 const patchWorkerFiles = async (workerDir: string) => {
 	const wasmChannelJs = path.join(workerDir, "wasmchannel.js");
-	
+
 	try {
 		// Read the current file
 		const currentContent = await Bun.file(wasmChannelJs).text();
-		
+
 		// Check if it needs patching (if it contains __wbindgen_start call)
 		if (currentContent.includes("__wbindgen_start()")) {
 			// Create the patched content
@@ -152,7 +163,7 @@ if (typeof process !== "undefined" && process.release?.name === "node") {
 
 export * from "./wasmchannel_bg.js";
 `;
-			
+
 			// Write the patched content
 			await Bun.write(wasmChannelJs, patchedContent);
 			return true;
@@ -175,13 +186,16 @@ logSubStep(`Source: ${path.basename(rustWasmPath)}`);
 
 try {
 	let totalBuildTime = 0;
-	
+
 	// Build for each output directory
 	for (let i = 0; i < outDirs.length; i++) {
 		const { name, path: outDir } = outDirs[i];
 		const isLast = i === outDirs.length - 1;
-		
-		logSubStep(`Building for ${name}: ${path.relative(process.cwd(), outDir)}`, false);
+
+		logSubStep(
+			`Building for ${name}: ${path.relative(process.cwd(), outDir)}`,
+			false,
+		);
 
 		// Build command arguments for this output - use bundler target for worker, web target for public
 		const target = name === "worker" ? "bundler" : "web";
@@ -195,7 +209,7 @@ try {
 		];
 
 		const buildStartTime = Date.now();
-		
+
 		// Use Bun shell to run wasm-pack
 		const result = await $`wasm-pack ${buildArgs}`
 			.cwd(rustWasmPath)
@@ -204,7 +218,8 @@ try {
 
 		if (result.exitCode !== 0) {
 			const errorMessage =
-				result.stderr.toString() || `Process exited with code ${result.exitCode}`;
+				result.stderr.toString() ||
+				`Process exited with code ${result.exitCode}`;
 			updateTimelineStep(
 				1,
 				"error",
@@ -218,7 +233,7 @@ try {
 
 		const buildTime = ((Date.now() - buildStartTime) / 1000).toFixed(2);
 		totalBuildTime += Date.now() - buildStartTime;
-		
+
 		// Post-build patching for worker target
 		if (name === "worker") {
 			logSubStep(`Patching ${name} files for Cloudflare Workers...`, false);
@@ -229,9 +244,10 @@ try {
 				logSubStep(`- ${name} files already compatible`, false);
 			}
 		}
-		
+
 		// Show individual build completion in substep style
-		const subConnector = (isLast && mode !== "release") ? "  " : `${colors.gray}│${colors.reset} `;
+		const subConnector =
+			isLast && mode !== "release" ? "  " : `${colors.gray}│${colors.reset} `;
 		console.log(
 			`${subConnector}${colors.gray}  ✓${colors.reset} ${colors.green}${name} completed in ${buildTime}s${colors.reset}`,
 		);
@@ -262,10 +278,13 @@ try {
 		for (let i = 0; i < outDirs.length; i++) {
 			const { name, path: outDir } = outDirs[i];
 			const isLast = i === outDirs.length - 1;
-			
+
 			const wasmFile = path.join(outDir, "wasmchannel_bg.wasm");
-			logSubStep(`Optimizing ${name}: ${path.relative(process.cwd(), wasmFile)}`, isLast);
-			
+			logSubStep(
+				`Optimizing ${name}: ${path.relative(process.cwd(), wasmFile)}`,
+				isLast,
+			);
+
 			const optimizeStartTime = Date.now();
 
 			try {
@@ -291,17 +310,24 @@ try {
 				const finalSizeKB = (finalSize / 1024).toFixed(2);
 				const reduction = ((1 - finalSize / initialSize) * 100).toFixed(1);
 
-				const optimizeTime = ((Date.now() - optimizeStartTime) / 1000).toFixed(2);
+				const optimizeTime = ((Date.now() - optimizeStartTime) / 1000).toFixed(
+					2,
+				);
 				totalOptTime += Date.now() - optimizeStartTime;
-				
-				optimizationResults.push({ name, initialSizeKB, finalSizeKB, reduction, optimizeTime });
-				
+
+				optimizationResults.push({
+					name,
+					initialSizeKB,
+					finalSizeKB,
+					reduction,
+					optimizeTime,
+				});
+
 				// Show individual optimization completion
 				const subConnector = isLast ? "  " : `${colors.gray}│${colors.reset} `;
 				console.log(
 					`${subConnector}${colors.gray}  ✓${colors.reset} ${colors.green}${name}: ${initialSizeKB}KB → ${finalSizeKB}KB (${reduction}% reduction)${colors.reset}`,
 				);
-
 			} catch (optError) {
 				const subConnector = isLast ? "  " : `${colors.gray}│${colors.reset} `;
 				console.log(
@@ -313,12 +339,18 @@ try {
 
 		const avgOptTime = (totalOptTime / 1000).toFixed(2);
 		const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-		
+
 		// Create summary of optimizations
 		const successfulOpts = optimizationResults.length;
-		const avgReduction = successfulOpts > 0 
-			? (optimizationResults.reduce((sum, r) => sum + parseFloat(r.reduction), 0) / successfulOpts).toFixed(1)
-			: "0";
+		const avgReduction =
+			successfulOpts > 0
+				? (
+						optimizationResults.reduce(
+							(sum, r) => sum + parseFloat(r.reduction),
+							0,
+						) / successfulOpts
+					).toFixed(1)
+				: "0";
 
 		if (successfulOpts === outDirs.length) {
 			updateTimelineStep(
@@ -337,7 +369,9 @@ try {
 				`${successfulOpts}/${outDirs.length} outputs optimized successfully`,
 				true,
 			);
-			logSuccess(`🎉 Build completed with partial optimization in ${totalTime}s`);
+			logSuccess(
+				`🎉 Build completed with partial optimization in ${totalTime}s`,
+			);
 		} else {
 			updateTimelineStep(
 				2,
