@@ -34,7 +34,7 @@ export class Room extends DurableObject {
 		const [client, server] = Object.values(websocketPair);
 
 		const session = await auth.api.getSession({
-			headers: new Headers(req.headers),
+			headers: req.headers,
 		});
 
 		if (req.headers.get("upgrade") !== "websocket") {

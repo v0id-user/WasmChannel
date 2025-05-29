@@ -24,7 +24,7 @@ export const health = base.handler(async (c) => {
 
 		// Test better auth
 		const session = await auth.api.getSession({
-			headers: new Headers(c.context.req.header()),
+			headers: c.context.req.raw.headers,
 		});
 
 		return {

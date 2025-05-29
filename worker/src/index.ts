@@ -75,7 +75,7 @@ app.use("/rpc/*", async (c, next) => {
 
 	const session = await auth.api
 		.getSession({
-			headers: new Headers(c.req.header()),
+			headers: c.req.raw.headers,
 		})
 		.catch(() => null);
 
@@ -114,7 +114,7 @@ app.get("/", (c) => {
 
 	return c.text(`
 
-        ⠀⠀⠀⠀ ⢀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+             ⢀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡶⠟⠛⠛⠛⠛⠻⢶⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⢀⣾⠋⣠⡶⠟⠛⠛⠷⣦⣄⠈⠻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⢀⣾⠃⠰⠟⢠⡶⠶⠶⣦⣄⠉⠳⣤⡈⢻⣦⠀⠀⠀⠀⠀⠀⠀
