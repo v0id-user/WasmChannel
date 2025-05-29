@@ -65,11 +65,12 @@ export class Room extends DurableObject {
 
 		this.#broadcastMessage(messageData, clientId);
 	}
-
+  
 	webSocketClose(ws: WebSocket) {
 		const clientId = this.clientsBySocket.get(ws);
 		if (!clientId) return;
-		this.removeClient(clientId);
+		this.clientsById.delete(clientId);
+		this.clientsBySocket.delete(ws);
 	}
 
 	// Add a new client
@@ -89,26 +90,6 @@ export class Room extends DurableObject {
 
     // Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);
-	}
-
-	// Remove a client
-	async removeClient(clientId: string): Promise<void> {
-		const ws = this.clientsById.get(clientId);
-		if (ws) {
-			this.clientsById.delete(clientId);
-			this.clientsBySocket.delete(ws);
-
-			console.log(
-				`Client ${clientId} removed. Total clients: ${this.clientsById.size}`,
-			);
-
-			// Notify remaining clients
-			this.#broadcastToOthers({
-				type: "user_left",
-				clientId: clientId,
-				clientCount: this.clientsById.size,
-			});
-		}
 	}
 
 	// Broadcast a message from a specific client to all other clients
@@ -143,21 +124,17 @@ export class Room extends DurableObject {
 	}
 
 	// Broadcast to all clients except the sender
-	#broadcastToOthers(message: any): void {
-		const messageStr = JSON.stringify(message);
-		const clientsIdsCopy = new Map(this.clientsById);
-
+	#broadcastToOthers(message: Uint8Array): void {
+    const clientsIdsCopy = new Map(this.clientsById);
 		for (const [clientId, ws] of clientsIdsCopy) {
-			if (clientId !== message.fromClientId) {
 				try {
-					ws.send(messageStr);
+					ws.send(message);
 				} catch (error) {
 					console.error(`Error sending message to client ${clientId}:`, error);
 					// Remove client if send fails
 					this.clientsById.delete(clientId);
 					this.clientsBySocket.delete(ws);
 				}
-			}
 		}
 	}
 
