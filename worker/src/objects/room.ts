@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
 import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
 import { PacketKind } from "@/utils/wasm/init";
+import { auth } from "@/auth";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -29,21 +30,35 @@ export class Room extends DurableObject {
 	}
 
 	async fetch(req: Request) {
-		console.log(this.env.QUEUE_MESSAGES);
 		const websocketPair = new WebSocketPair();
 		const [client, server] = Object.values(websocketPair);
 
-		// TODO: Extract user id from the request headers
-		let clientId = Math.random().toString(36).substring(7);
+		const session = await auth.api.getSession({
+			headers: new Headers(req.headers),
+		});
+
+		if (req.headers.get("upgrade") !== "websocket") {
+			return new Response(null, {
+				status: 400,
+				statusText: "Bad Request",
+			});
+		}
+
+		if (!session) {
+			return new Response(null, {
+				status: 401,
+				statusText: "Unauthorized",
+			});
+		}
 
 		// Store clientId in the WebSocket for hibernation survival
-		server.serializeAttachment(clientId);
+		server.serializeAttachment(session.user.id);
 		this.ctx.acceptWebSocket(server);
 
-		this.addClient(clientId, server);
+		this.addClient(session.user.id, server);
 
 		console.log(
-			`Client ${clientId} connected. Total clients: ${this.clientsById.size}`,
+			`Client ${session.user.id} connected. Total clients: ${this.clientsById.size}`,
 		);
 
 		return new Response(null, {
@@ -90,10 +105,10 @@ export class Room extends DurableObject {
 			new TextEncoder().encode(clientId),
 		);
 
-    const serializedPacket = serializePacket(packet);
-    this.env.QUEUE_MESSAGES.send(serializedPacket, {
-      contentType: "bytes"
-    });
+		const serializedPacket = serializePacket(packet);
+		this.env.QUEUE_MESSAGES.send(serializedPacket, {
+			contentType: "bytes",
+		});
 
 		// Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);

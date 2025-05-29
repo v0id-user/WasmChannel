@@ -1,12 +1,13 @@
 import { os } from "@orpc/server";
-import type { DrizzleD1Database } from "drizzle-orm/d1";
-import { HonoRequest } from "hono";
 import { auth } from "@/auth";
 import { Room } from "./objects/room";
-
+import { HonoRequest } from "hono";
 export interface AppContext {
-	db: DrizzleD1Database<Record<string, never>> & { $client: D1Database };
+	DB: D1Database;
 	req: HonoRequest;
+	KV: KVNamespace;
+	QUEUE_MESSAGES: Queue<Uint8Array>;
+	ROOM: DurableObjectNamespace<Room>;
 	user: typeof auth.$Infer.Session.user | null;
 	session: typeof auth.$Infer.Session.session | null;
 	room: DurableObjectStub<Room>;

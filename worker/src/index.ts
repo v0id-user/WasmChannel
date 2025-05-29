@@ -12,14 +12,14 @@ import { user } from "./db/schema/auth-schema";
 import { deserializePacket } from "@/oop/packet";
 
 export type Env = Cloudflare.Env & {
-    DB: D1Database;
-    MESSAGES: KVNamespace;
-    QUEUE_MESSAGES: Queue<Uint8Array>;
-    ROOM: DurableObjectNamespace<Room>;
+	DB: D1Database;
+	KV: KVNamespace;
+	QUEUE_MESSAGES: Queue<Uint8Array>;
+	ROOM: DurableObjectNamespace<Room>;
 };
 
 type Context = {
-    room: DurableObjectStub<Room>;
+	room: DurableObjectStub<Room>;
 };
 
 // Hono app
@@ -28,88 +28,91 @@ const app = new Hono<{ Bindings: Env; Variables: Context }>();
 // RPC handler
 const handler = new RPCHandler(router);
 const openAPIGenerator = new OpenAPIGenerator({
-    schemaConverters: [new ZodToJsonSchemaConverter()],
+	schemaConverters: [new ZodToJsonSchemaConverter()],
 });
 const openAPI = openAPIGenerator.generate(router, {
-    info: {
-        title: "WasmChannel API",
-        version: "1.0.0",
-    },
+	info: {
+		title: "WasmChannel API",
+		version: "1.0.0",
+	},
 });
 
 // Enable CORS for auth routes
 app.use(
-    "/api/auth/*",
-    cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        allowHeaders: ["Content-Type", "Authorization"],
-        allowMethods: ["POST", "GET", "OPTIONS"],
-        exposeHeaders: ["Content-Length"],
-        maxAge: 600,
-        credentials: true,
-    }),
+	"/api/auth/*",
+	cors({
+		origin: process.env.FRONTEND_URL || "http://localhost:3000",
+		allowHeaders: ["Content-Type", "Authorization"],
+		allowMethods: ["POST", "GET", "OPTIONS"],
+		exposeHeaders: ["Content-Length"],
+		maxAge: 600,
+		credentials: true,
+	}),
 );
 
 // Handle auth routes
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
-    const db = createDb(c.env.DB);
-    return createAuthWithD1(db).handler(c.req.raw);
+	const db = createDb(c.env.DB);
+	return createAuthWithD1(db).handler(c.req.raw);
 });
 
 // Enable CORS for RPC routes
 app.use(
-    "/rpc/*",
-    cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        allowMethods: ["GET", "POST", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["Content-Length"],
-        credentials: true,
-    }),
+	"/rpc/*",
+	cors({
+		origin: process.env.FRONTEND_URL || "http://localhost:3000",
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		allowHeaders: ["Content-Type", "Authorization"],
+		exposeHeaders: ["Content-Length"],
+		credentials: true,
+	}),
 );
 
 // Handle RPC routes
 app.use("/rpc/*", async (c, next) => {
-    const db = createDb(c.env.DB);
-    console.log("DB created for RPC:", !!db);
+	const db = createDb(c.env.DB);
+	console.log("DB created for RPC:", !!db);
 
-    const session = await auth.api
-        .getSession({
-            headers: new Headers(c.req.header()),
-        })
-        .catch(() => null);
+	const session = await auth.api
+		.getSession({
+			headers: new Headers(c.req.header()),
+		})
+		.catch(() => null);
 
-    const { matched, response } = await handler.handle(c.req.raw, {
-        prefix: "/rpc",
-        context: {
-            db,
-            req: c.req,
-            user: session?.user ?? null,
-            session: session?.session ?? null,
-            room: c.env.ROOM.get(
-                c.env.ROOM.idFromName("room"),
-            ) as DurableObjectStub<Room>,
-        },
-    });
+	const { matched, response } = await handler.handle(c.req.raw, {
+		prefix: "/rpc",
+		context: {
+			DB: c.env.DB,
+			KV: c.env.KV,
+			QUEUE_MESSAGES: c.env.QUEUE_MESSAGES,
+			ROOM: c.env.ROOM,
+			req: c.req,
+			user: session?.user ?? null,
+			session: session?.session ?? null,
+			room: c.env.ROOM.get(
+				c.env.ROOM.idFromName("room"),
+			) as DurableObjectStub<Room>,
+		},
+	});
 
-    if (matched) {
-        return c.newResponse(response.body, response);
-    }
+	if (matched) {
+		return c.newResponse(response.body, response);
+	}
 
-    await next();
+	await next();
 });
 
 app.get("/", (c) => {
-    const db = createDb(c.env.DB);
-    console.log("DB initialized:", !!db);
+	const db = createDb(c.env.DB);
+	console.log("DB initialized:", !!db);
 
-    // Check if it's a websocket connection
-    if (c.req.header("upgrade") === "websocket") {
-        const room = c.env.ROOM.get(c.env.ROOM.idFromName("room"));
-        return room.fetch(c.req.raw);
-    }
+	// Check if it's a websocket connection
+	if (c.req.header("upgrade") === "websocket") {
+		const room = c.env.ROOM.get(c.env.ROOM.idFromName("room"));
+		return room.fetch(c.req.raw);
+	}
 
-    return c.text(`
+	return c.text(`
 
         ⠀⠀⠀⠀ ⢀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡶⠟⠛⠛⠛⠛⠻⢶⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -127,9 +130,9 @@ app.get("/", (c) => {
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠞⢋⣁⣠⣈⠙⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 
-    See it the glorious https://wasm.channel/
+    Experiment at https://wasm.channel/
           
-       Made with ❤️ by @v0id_user
+       Running with ❤️ by @v0id_user
        
        https://x.com/v0id_user
        https://github.com/v0id-user
@@ -138,80 +141,33 @@ app.get("/", (c) => {
         `);
 });
 
-// Test auth endpoint
-app.get("/health", async (c) => {
-    let dbViaFunction: any;
-    let authViaFunction: any;
-    let resultViaFunction: any;
-    let didIGetTheUserViaFunction: boolean;
-
-    try {
-        // Test via function
-        dbViaFunction = createDb(c.env.DB);
-        authViaFunction = createAuthWithD1(dbViaFunction);
-        console.log("Auth initialized via function:", !!authViaFunction);
-        console.log("DB initialized via function:", !!dbViaFunction);
-
-        resultViaFunction = await dbViaFunction.select().from(user).limit(1);
-        console.log("Result via function:", resultViaFunction);
-        didIGetTheUserViaFunction = resultViaFunction.length > 0;
-
-        const didIGetTheUser = didIGetTheUserViaFunction;
-
-        // Test better auth
-        const session = await auth.api.getSession({
-            headers: new Headers(c.req.header()),
-        });
-
-        return c.json({
-            success: true,
-            dbReadyViaFunction: !!dbViaFunction,
-            authReadyViaFunction: !!authViaFunction,
-            didIGetTheUser: !didIGetTheUserViaFunction || didIGetTheUserViaFunction, // That means a call to the db was made
-            isSessionValid: !!session || session === null, // That means a call to the db was made
-        });
-    } catch (error) {
-        console.error("Auth test error:", error);
-        return c.json(
-            {
-                success: false,
-                error: error instanceof Error ? error.message : "Unknown error",
-                dbViaFunction: !!dbViaFunction,
-                authViaFunction: !!authViaFunction,
-                resultViaFunction: !!resultViaFunction,
-            },
-            500,
-        );
-    }
-});
-
 app.get("/openapi.json", (c) => {
-    return c.json(openAPI);
+	return c.json(openAPI);
 });
 
 export default {
-    fetch: app.fetch,
-    async queue(batch: MessageBatch<Uint8Array>, env: Env) {
-        console.log("Hey the queue is working");
-        for (const message of batch.messages) {
-            try {
-                console.log("Message: ", message);
-                console.log("Body: ", message.body);
-                // Don't ask me why I need to wrap it in a Uint8Array, it should be obvious that the body is already a Uint8Array, but no it's not >_>
-                const packet = deserializePacket(new Uint8Array(message.body));
-                console.log("Packet: ", packet);
-                console.log("Packet kind: ", packet.kind());
-            } catch (error) {
-                // Just skip it's an experiment at the end of the day
-                console.error("Error processing message:", error);
-                console.error("Error details:", {
-                    messageId: message.id,
-                    body: message.body,
-                    error: error instanceof Error ? error.message : "Unknown error"
-                });
-            }
-        }
-    },
+	fetch: app.fetch,
+	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
+		console.log("Hey the queue is working");
+		for (const message of batch.messages) {
+			try {
+				console.log("Message: ", message);
+				console.log("Body: ", message.body);
+				// Don't ask me why I need to wrap it in a Uint8Array, it should be obvious that the body is already a Uint8Array, but no it's not >_>
+				const packet = deserializePacket(new Uint8Array(message.body));
+				console.log("Packet: ", packet);
+				console.log("Packet kind: ", packet.kind());
+			} catch (error) {
+				// Just skip it's an experiment at the end of the day
+				console.error("Error processing message:", error);
+				console.error("Error details:", {
+					messageId: message.id,
+					body: message.body,
+					error: error instanceof Error ? error.message : "Unknown error",
+				});
+			}
+		}
+	},
 };
 // you must export the Room class to use it in the Durable Object
 export { Room } from "./objects/room";

@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from "better-auth";
 import { protectedBase } from "~/contexts";
-
-const sendMessageSchema = z.object({
-	message: z.string(),
+const getMessagesSchema = z.object({
+	cursor: z.string().optional(),
+	limit: z.number().optional(),
 });
 
 export const get = protectedBase
@@ -15,30 +15,13 @@ export const get = protectedBase
 		tags: ["auth", "chat", "protected"],
 		successDescription: "Returns all messages from the database",
 	})
-	.handler(async ({ context }) => {
-		const { db, session } = context;
+	.input(getMessagesSchema)
+	.handler(async ({ context, input }) => {
+		const { DB, KV, QUEUE_MESSAGES, ROOM, req, user, session } = context;
 
 		// TODO: Return all messages from the database
+		// First fetch the cache, then use the cursor if needed
 		return {
 			messages: [],
-		};
-	});
-
-export const send = protectedBase
-	.route({
-		path: "/messages",
-		summary: "Send a message",
-		description: "Send a message to the database fallback.",
-		deprecated: false,
-		tags: ["auth", "chat", "protected"],
-		successDescription: "Returns the message that was sent",
-	})
-	.input(sendMessageSchema)
-	.handler(async ({ context, input }) => {
-		const { db, session } = context;
-
-		// TODO: Send a message to the database
-		return {
-			message: "Message sent",
 		};
 	});
