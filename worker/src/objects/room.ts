@@ -1,5 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
+import { PacketKind } from "@/oop/packet";
+import { createPacket, serializePacket } from "@/oop/packet";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -38,9 +40,7 @@ export class Room extends DurableObject {
 		server.serializeAttachment(clientId);
 		this.ctx.acceptWebSocket(server);
 
-		// Store the SERVER WebSocket in maps
-		this.clientsById.set(clientId, server);
-		this.clientsBySocket.set(server, clientId);
+    this.addClient(clientId, server);
 
 		console.log(
 			`Client ${clientId} connected. Total clients: ${this.clientsById.size}`,
@@ -89,12 +89,10 @@ export class Room extends DurableObject {
 			}),
 		);
 
+    const packet = createPacket(PacketKind.Message, null, new TextEncoder().encode(clientId));
+    const serializedPacket = serializePacket(packet);
 		// Notify other clients about new connection
-		this.#broadcastToOthers({
-			type: "user_joined",
-			clientId: clientId,
-			clientCount: this.clientsById.size,
-		});
+		this.#broadcastToOthers(serializedPacket);
 	}
 
 	// Remove a client
