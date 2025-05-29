@@ -1,7 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-import { PacketKind } from "@/oop/packet";
+import { deserializePacket } from "@/oop/packet";
 import { createPacket, serializePacket } from "@/oop/packet";
+import { PacketKind } from "@/utils/wasm/init";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -79,19 +80,14 @@ export class Room extends DurableObject {
 		console.log(
 			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
-
-		// Send welcome message to the new client
-		ws.send(
-			JSON.stringify({
-				type: "connected",
-				clientId: clientId,
-				clientCount: this.clientsById.size,
-			}),
-		);
-
-    const packet = createPacket(PacketKind.Message, null, new TextEncoder().encode(clientId));
+    
+    const packet = createPacket(PacketKind.Joined, null, new TextEncoder().encode(clientId));
     const serializedPacket = serializePacket(packet);
-		// Notify other clients about new connection
+
+    const deserializedPacket = deserializePacket(serializedPacket);
+    console.log(deserializedPacket.kind());
+
+    // Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);
 	}
 

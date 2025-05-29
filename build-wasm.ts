@@ -124,6 +124,46 @@ console.log(`\n${colors.gray}Execution:${colors.reset}`);
 
 const startTime = Date.now();
 
+// Post-build patching function for worker files
+const patchWorkerFiles = async (workerDir: string) => {
+	const wasmChannelJs = path.join(workerDir, "wasmchannel.js");
+	
+	try {
+		// Read the current file
+		const currentContent = await Bun.file(wasmChannelJs).text();
+		
+		// Check if it needs patching (if it contains __wbindgen_start call)
+		if (currentContent.includes("__wbindgen_start()")) {
+			// Create the patched content
+			const patchedContent = `import * as imports from "./wasmchannel_bg.js";
+
+// switch between both syntax for node and for workerd
+import wkmod from "./wasmchannel_bg.wasm";
+import * as nodemod from "./wasmchannel_bg.wasm";
+
+if (typeof process !== "undefined" && process.release?.name === "node") {
+  imports.__wbg_set_wasm(nodemod);
+} else {
+  const instance = new WebAssembly.Instance(wkmod, {
+    "./wasmchannel_bg.js": imports,
+  });
+  imports.__wbg_set_wasm(instance.exports);
+}
+
+export * from "./wasmchannel_bg.js";
+`;
+			
+			// Write the patched content
+			await Bun.write(wasmChannelJs, patchedContent);
+			return true;
+		}
+		return false;
+	} catch (error) {
+		console.error(`Failed to patch ${wasmChannelJs}:`, error);
+		return false;
+	}
+};
+
 // Step 1: Compilation
 updateTimelineStep(
 	1,
@@ -141,7 +181,7 @@ try {
 		const { name, path: outDir } = outDirs[i];
 		const isLast = i === outDirs.length - 1;
 		
-		logSubStep(`Building for ${name}: ${path.relative(process.cwd(), outDir)}`, isLast && mode !== "release");
+		logSubStep(`Building for ${name}: ${path.relative(process.cwd(), outDir)}`, false);
 
 		// Build command arguments for this output - use bundler target for worker, web target for public
 		const target = name === "worker" ? "bundler" : "web";
@@ -178,6 +218,17 @@ try {
 
 		const buildTime = ((Date.now() - buildStartTime) / 1000).toFixed(2);
 		totalBuildTime += Date.now() - buildStartTime;
+		
+		// Post-build patching for worker target
+		if (name === "worker") {
+			logSubStep(`Patching ${name} files for Cloudflare Workers...`, false);
+			const patched = await patchWorkerFiles(outDir);
+			if (patched) {
+				logSubStep(`✓ ${name} files patched successfully`, false);
+			} else {
+				logSubStep(`- ${name} files already compatible`, false);
+			}
+		}
 		
 		// Show individual build completion in substep style
 		const subConnector = (isLast && mode !== "release") ? "  " : `${colors.gray}│${colors.reset} `;

@@ -1,4 +1,4 @@
-import { WasmPacket, PacketKind, ReactionKind } from "@/utils/wasm/init";
+import { WasmPacket, PacketKind, ReactionKind } from "@/wasm/wasmchannel";
 
 export function createPacket(
 	kind: PacketKind,
@@ -15,5 +15,3 @@ export function serializePacket(packet: WasmPacket): Uint8Array {
 export function deserializePacket(bytes: Uint8Array): WasmPacket {
 	return WasmPacket.deserialize(bytes);
 }
-
-export { WasmPacket, PacketKind };
