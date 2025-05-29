@@ -4,6 +4,7 @@ import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
+import * as authSchema from "./src/db/schema/auth-schema";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(
@@ -11,6 +12,7 @@ export const auth = betterAuth({
 		{} as DrizzleD1Database,
 		{
 			provider: "sqlite",
+			schema: authSchema,
 		},
 	),
 	appName: "WasmChannel",
@@ -27,11 +29,9 @@ export const auth = betterAuth({
 
 	// Minimizing the auth options to only allow anonymous access
 	emailAndPassword: {
-		enabled: false,
+		enabled: true,
 		requireEmailVerification: false,
 		autoSignIn: true,
-		minPasswordLength: 69,
-		maxPasswordLength: 69,
 	},
 
 	advanced: {
@@ -50,6 +50,7 @@ export function createAuth(db: DrizzleD1Database) {
 	return betterAuth({
 		database: drizzleAdapter(db, {
 			provider: "sqlite",
+			schema: authSchema,
 		}),
 		appName: "WasmChannel",
 		baseURL: process.env.BETTER_AUTH_URL!,
@@ -66,11 +67,9 @@ export function createAuth(db: DrizzleD1Database) {
 
 		// Minimizing the auth options to only allow anonymous access
 		emailAndPassword: {
-			enabled: false,
+			enabled: true,
 			requireEmailVerification: false,
 			autoSignIn: true,
-			minPasswordLength: 69,
-			maxPasswordLength: 69,
 		},
 		advanced: {
 			crossSubDomainCookies: process.env.FRONTEND_URL

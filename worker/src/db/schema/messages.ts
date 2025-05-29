@@ -2,7 +2,21 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createId } from "@paralleldrive/cuid2";
 import { user } from "./auth-schema";
 import { sql } from "drizzle-orm";
-import { ReactionKind, PacketKind } from "@/wasm/wasmchannel";
+// import { ReactionKind, PacketKind } from "@/wasm/wasmchannel";
+// I must copy them here or drizzle with cry about wasm is unreadable, like bruh... it's an expriment lets not forget that >:(
+export enum PacketKind {
+	Message = 0,
+	Reaction = 1,
+	Joined = 2,
+	Typing = 3,
+}
+export enum ReactionKind {
+	None = 0,
+	Like = 1,
+	Dislike = 2,
+	Heart = 3,
+	Star = 4,
+}
 
 export const messages = sqliteTable("messages", {
 	id: text("id").primaryKey().default(createId()),

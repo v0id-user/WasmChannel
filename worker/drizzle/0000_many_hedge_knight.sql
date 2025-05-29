@@ -47,3 +47,15 @@ CREATE TABLE `verification` (
 	`created_at` integer,
 	`updated_at` integer
 );
+--> statement-breakpoint
+CREATE TABLE `messages` (
+	`id` text PRIMARY KEY DEFAULT 'br3k99ecby7ci1s5wmv4bac1' NOT NULL,
+	`kind` text NOT NULL,
+	`reaction_kind` text,
+	`message` text NOT NULL,
+	`sent_by` text NOT NULL,
+	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`deleted_at` integer,
+	FOREIGN KEY (`sent_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
