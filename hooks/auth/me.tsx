@@ -18,6 +18,7 @@ export function useGetMeAggressively() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const {data: session, isPending: isSessionLoading} = authClient.useSession();
 
     useEffect(() => {
         const fetchMe = async () => {
@@ -25,7 +26,24 @@ export function useGetMeAggressively() {
                 setIsLoading(true);
                 setError(null);
 
-                // First check if we have stored data
+                // Wait for session to be ready
+                if (isSessionLoading) {
+                    return;
+                }
+
+                // If we have a valid session, use it
+                if (session?.user) {
+                    const fingerprint = session.user.email.split("@")[0];
+                    const newMeData = {
+                        fingerprint,
+                        userId: session.user.id,
+                    };
+                    store.setMe(newMeData);
+                    setMeData(newMeData);
+                    return;
+                }
+
+                // Fallback to stored data if available
                 if (store.me) {
                     setMeData({
                         fingerprint: store.me.fingerprint,
@@ -34,12 +52,13 @@ export function useGetMeAggressively() {
                     return;
                 }
 
-                // Get the user browser fingerprint
+                // Get browser fingerprint for new user
                 const fingerprint = await getFingerprint();
+                const email = `${fingerprint}@wasm.channel`;
 
-                // Try sign in first
+                // Try to sign in existing user
                 const signInResponse = await authClient.signIn.email({
-                    email: `${fingerprint}@wasm.channel.com`,
+                    email,
                     password: fingerprint,
                 });
 
@@ -53,9 +72,9 @@ export function useGetMeAggressively() {
                     return;
                 }
 
-                // If sign in fails, try sign up
+                // Create new user if sign in fails
                 const signUpResponse = await authClient.signUp.email({
-                    email: `${fingerprint}@wasm.channel.com`,
+                    email,
                     password: fingerprint,
                     name: fingerprint,
                 });
@@ -70,7 +89,7 @@ export function useGetMeAggressively() {
                     return;
                 }
 
-                // If all attempts fail
+                // Reset state if all attempts fail
                 setMeData({
                     fingerprint: null,
                     userId: null,
@@ -83,7 +102,7 @@ export function useGetMeAggressively() {
         };
 
         fetchMe();
-    }, [store]); // Only re-run if store changes
+    }, [store, isSessionLoading, session]);
 
     return {
         ...meData,
