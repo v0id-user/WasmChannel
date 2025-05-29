@@ -1,6 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-import { deserializePacket } from "@/oop/packet";
 import { createPacket, serializePacket } from "@/oop/packet";
 import { PacketKind } from "@/utils/wasm/init";
 
@@ -65,7 +64,7 @@ export class Room extends DurableObject {
 
 		this.#broadcastMessage(messageData, clientId);
 	}
-  
+
 	webSocketClose(ws: WebSocket) {
 		const clientId = this.clientsBySocket.get(ws);
 		if (!clientId) return;
@@ -84,9 +83,6 @@ export class Room extends DurableObject {
     
     const packet = createPacket(PacketKind.Joined, null, new TextEncoder().encode(clientId));
     const serializedPacket = serializePacket(packet);
-
-    const deserializedPacket = deserializePacket(serializedPacket);
-    console.log(deserializedPacket.kind());
 
     // Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);
