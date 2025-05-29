@@ -89,15 +89,8 @@ export class Room extends DurableObject {
 			null,
 			new TextEncoder().encode(clientId),
 		);
-		const serializedPacket = serializePacket(packet);
 
-    console.log("serializedPacket: ", serializedPacket);
-
-    // TODO: Remove test
-    // Deserialize the packet
-    const deserializedPacket = deserializePacket(serializedPacket);
-    console.log("deserializedPacket: ", deserializedPacket);
-
+    const serializedPacket = serializePacket(packet);
     this.env.QUEUE_MESSAGES.send(serializedPacket, {
       contentType: "bytes"
     });

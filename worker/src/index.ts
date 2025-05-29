@@ -165,6 +165,7 @@ export default {
 			try {
 				console.log("Message: ", message);
 				console.log("Body: ", message.body);
+				// Don't ask me why I need to wrap it in a Uint8Array, it should be obvious that the body is already a Uint8Array, but no it's not >_>
 				const packet = deserializePacket(new Uint8Array(message.body));
 				console.log("Packet: ", packet);
 				console.log("Packet kind: ", packet.kind());
