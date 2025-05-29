@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-import { createPacket, serializePacket } from "@/oop/packet";
+import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
 import { PacketKind } from "@/utils/wasm/init";
 
 export class Room extends DurableObject {
@@ -90,6 +90,17 @@ export class Room extends DurableObject {
 			new TextEncoder().encode(clientId),
 		);
 		const serializedPacket = serializePacket(packet);
+
+    console.log("serializedPacket: ", serializedPacket);
+
+    // TODO: Remove test
+    // Deserialize the packet
+    const deserializedPacket = deserializePacket(serializedPacket);
+    console.log("deserializedPacket: ", deserializedPacket);
+
+    this.env.QUEUE_MESSAGES.send(serializedPacket, {
+      contentType: "bytes"
+    });
 
 		// Notify other clients about new connection
 		this.#broadcastToOthers(serializedPacket);

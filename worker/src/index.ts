@@ -9,12 +9,12 @@ import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { user } from "./db/schema/auth-schema";
-import { initWasm, WasmPacket } from "@/utils/wasm/init";
+import { deserializePacket } from "@/oop/packet";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	MESSAGES: KVNamespace;
-	QUEUE_MESSAGES: Queue<WasmPacket>;
+	QUEUE_MESSAGES: Queue<Uint8Array>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -24,17 +24,6 @@ type Context = {
 
 // Hono app
 const app = new Hono<{ Bindings: Env; Variables: Context }>();
-
-// WASM initialization middleware
-app.use("*", async (c, next) => {
-	try {
-		await initWasm();
-		await next();
-	} catch (error) {
-		console.error("WASM initialization failed:", error);
-		return c.json({ error: "WASM module failed to initialize" }, 500);
-	}
-});
 
 // RPC handler
 const handler = new RPCHandler(router);
@@ -170,11 +159,25 @@ app.get("/openapi.json", (c) => {
 
 export default {
 	fetch: app.fetch,
-	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
-		const db = createDb(env.DB);
-
-		// Batch insert with drizzle
-		batch.messages[0].body.kind();
+	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
+		console.log("Hey the queue is working");
+		for (const message of batch.messages) {
+			try {
+				console.log("Message: ", message);
+				console.log("Body: ", message.body);
+				const packet = deserializePacket(new Uint8Array(message.body));
+				console.log("Packet: ", packet);
+				console.log("Packet kind: ", packet.kind());
+			} catch (error) {
+				// Just skip it's an experiment at the end of the day
+				console.error("Error processing message:", error);
+				console.error("Error details:", {
+					messageId: message.id,
+					body: message.body,
+					error: error instanceof Error ? error.message : "Unknown error"
+				});
+			}
+		}
 	},
 };
 // you must export the Room class to use it in the Durable Object
