@@ -33,7 +33,7 @@ export function useGetMeAggressively() {
 				}
 
 				// If we have a valid session, use it
-				if (session?.user) {
+				if (session?.user && session !== null) {
 					const fingerprint = session.user.email.split("@")[0];
 					const newMeData = {
 						fingerprint,
@@ -106,6 +106,11 @@ export function useGetMeAggressively() {
 
 		fetchMe();
 
+		
+	}, [store, isSessionLoading, session]);
+
+
+	useEffect(() => {
 		return () => {
 			authClient.signOut();
 			setMeData({
@@ -113,7 +118,7 @@ export function useGetMeAggressively() {
 				userId: null,
 			});
 		};
-	}, [store, isSessionLoading, session]);
+	}, []);
 
 	return {
 		...meData,

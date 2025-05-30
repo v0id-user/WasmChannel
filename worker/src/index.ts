@@ -2,13 +2,12 @@ import { Hono } from "hono";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
-import { auth, createAuthWithD1 } from "@/auth";
+import { createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
-import { user } from "./db/schema/auth-schema";
 import { deserializePacket } from "@/oop/packet";
 
 export type Env = Cloudflare.Env & {
@@ -72,7 +71,7 @@ app.use(
 app.use("/rpc/*", async (c, next) => {
 	const db = createDb(c.env.DB);
 	console.log("DB created for RPC:", !!db);
-
+    const auth = createAuthWithD1(db)
 	const session = await auth.api
 		.getSession({
 			headers: c.req.raw.headers,

@@ -1,14 +1,17 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
+import { createPacket, serializePacket } from "@/oop/packet";
 import { PacketKind } from "@/utils/wasm/init";
-import { auth } from "@/auth";
+import { createAuthWithD1 } from "@/auth";
+import { DrizzleD1Database } from "drizzle-orm/d1";
+import { createDb } from "../db";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
 	clientsById = new Map<string, WebSocket>();
 	clientsBySocket = new Map<WebSocket, string>();
 	env: Env;
+	db: DrizzleD1Database = {} as DrizzleD1Database;
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
 		this.env = env;
@@ -32,7 +35,9 @@ export class Room extends DurableObject {
 	async fetch(req: Request) {
 		const websocketPair = new WebSocketPair();
 		const [client, server] = Object.values(websocketPair);
-
+		this.db = createDb(this.env.DB)
+		const auth = createAuthWithD1(this.db)
+		console.log('Headers', req.headers)
 		const session = await auth.api.getSession({
 			headers: req.headers,
 		});
