@@ -111,12 +111,13 @@ export class Room extends DurableObject {
 		);
 
 		const serializedPacket = serializePacket(packet);
-		this.env.QUEUE_MESSAGES.send(serializedPacket, {
-			contentType: "bytes",
-		});
+		// This was just a test
+		// this.env.QUEUE_MESSAGES.send(serializedPacket, {
+		// 	contentType: "bytes",
+		// });
 
 		// Notify other clients about new connection
-		this.#broadcastToOthers(serializedPacket);
+		this.#broadcastToOthers(serializedPacket, clientId);
 	}
 
 	// Broadcast a message from a specific client to all other clients
@@ -129,33 +130,18 @@ export class Room extends DurableObject {
 		);
 
 		try {
-			this.#broadcastToAll(data);
+			this.#broadcastToOthers(data, fromClientId);
 		} catch (error) {
 			console.error("Error broadcasting message:", error);
 		}
 	}
 
-	// Broadcast to all clients
-	#broadcastToAll(message: Uint8Array): void {
-		const clientsIdsCopy = new Map(this.clientsById);
-
-		for (const [clientId, ws] of clientsIdsCopy) {
-			try {
-				ws.send(message);
-			} catch (error) {
-				console.error(`Error sending message to client ${clientId}:`, error);
-				// Remove client if send fails
-				this.clientsById.delete(clientId);
-				this.clientsBySocket.delete(ws);
-			}
-		}
-	}
-
 	// Broadcast to all clients except the sender
-	#broadcastToOthers(message: Uint8Array): void {
+	#broadcastToOthers(message: Uint8Array, senderId: string): void {
 		const clientsIdsCopy = new Map(this.clientsById);
 		for (const [clientId, ws] of clientsIdsCopy) {
 			try {
+				if (clientId === senderId) continue;
 				ws.send(message);
 			} catch (error) {
 				console.error(`Error sending message to client ${clientId}:`, error);
@@ -172,8 +158,8 @@ export class Room extends DurableObject {
 	}
 
 	// Send message to all clients from external source
-	async sendToAll(message: any): Promise<void> {
-		this.#broadcastToAll(message);
+	async sendToAll(message: Uint8Array): Promise<void> {
+		this.#broadcastToOthers(message, "server");
 	}
 
 	// Get list of connected client IDs
