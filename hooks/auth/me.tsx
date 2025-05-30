@@ -105,10 +105,7 @@ export function useGetMeAggressively() {
 		};
 
 		fetchMe();
-
-		
 	}, [store, isSessionLoading, session]);
-
 
 	useEffect(() => {
 		return () => {

@@ -71,7 +71,7 @@ app.use(
 app.use("/rpc/*", async (c, next) => {
 	const db = createDb(c.env.DB);
 	console.log("DB created for RPC:", !!db);
-    const auth = createAuthWithD1(db)
+	const auth = createAuthWithD1(db);
 	const session = await auth.api
 		.getSession({
 			headers: c.req.raw.headers,

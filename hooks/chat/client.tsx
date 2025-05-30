@@ -29,7 +29,9 @@ export function useChatClient() {
 				// Check if it's an unauthorized error and we haven't exceeded retry limit
 				if (event.code === 401 && retryCount.current < maxRetries) {
 					retryCount.current += 1;
-					console.log(`Retrying connection (${retryCount.current}/${maxRetries})...`);
+					console.log(
+						`Retrying connection (${retryCount.current}/${maxRetries})...`,
+					);
 					setTimeout(connectWebSocket, retryDelay);
 				}
 			};
