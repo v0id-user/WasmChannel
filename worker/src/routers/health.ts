@@ -20,8 +20,6 @@ export const health = base.handler(async (c) => {
 		console.log("Result via function:", resultViaFunction);
 		didIGetTheUserViaFunction = resultViaFunction.length > 0;
 
-		const didIGetTheUser = didIGetTheUserViaFunction;
-
 		// Test better auth
 		const session = await auth.api.getSession({
 			headers: c.context.req.raw.headers,

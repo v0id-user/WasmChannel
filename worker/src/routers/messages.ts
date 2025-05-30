@@ -1,4 +1,4 @@
-import { z } from "better-auth";
+import { z } from "zod";
 import { protectedBase } from "~/contexts";
 const getMessagesSchema = z.object({
 	cursor: z.string().optional(),
