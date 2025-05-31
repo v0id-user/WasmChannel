@@ -54,6 +54,9 @@ export class Room extends DurableObject {
 			headers: req.headers,
 		});
 
+		// for testing console out the session
+		console.log("Session", session);
+
 		// Check if the user is authenticated
 		if (!session) {
 			return new Response(null, {
@@ -138,6 +141,10 @@ export class Room extends DurableObject {
 
 	// Broadcast to all clients except the sender
 	#broadcastToOthers(message: Uint8Array, senderId: string): void {
+
+        // TODO: first deserialize the message and check if it is a valid packet
+        // so you can push it to the queue and test validation
+
 		const clientsIdsCopy = new Map(this.clientsById);
 		for (const [clientId, ws] of clientsIdsCopy) {
 			try {

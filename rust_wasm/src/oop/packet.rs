@@ -9,6 +9,7 @@ use std::io;
 #[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Copy, Clone)]
 pub enum PacketKind {
     Message,
+    Delete,
     Reaction,
     Joined,
     Typing,
