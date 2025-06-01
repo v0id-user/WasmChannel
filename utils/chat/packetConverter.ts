@@ -26,33 +26,37 @@ export function packetToMessage(
 			return null;
 		}
 
+		// Get user ID from packet metadata (preferred) or fallback to payload parsing
+		const packetUserId = packet.user_id();
+		const packetMessageId = packet.message_id();
+		
 		// Decode the payload (message content)
 		const payload = packet.payload();
 		const messageText = new TextDecoder().decode(payload);
-
-		// Try to parse as JSON if it's structured data
+		
+		// Try to parse as JSON if it's structured data, otherwise treat as plain text
 		let parsedData: PacketMessage;
 		try {
 			parsedData = JSON.parse(messageText);
 		} catch {
 			// If it's not JSON, treat as plain text message
 			parsedData = {
-				id: Date.now().toString(), // Generate ID if not provided
-				userId: "unknown", // Default user
+				id: packetMessageId || Date.now().toString(),
+				userId: packetUserId || "unknown",
 				text: messageText,
 				timestamp: Date.now(),
 				reactions: [],
 			};
 		}
 
-		// Convert to Message format
+		// Use packet metadata if available, otherwise use parsed data
 		const message: Message = {
-			id: parsedData.id,
-			userId: parsedData.userId,
+			id: packetMessageId || parsedData.id,
+			userId: packetUserId || parsedData.userId,
 			text: parsedData.text,
 			timestamp: new Date(parsedData.timestamp),
 			reactions: parsedData.reactions || [],
-			isOwn: parsedData.userId === currentUserId,
+			isOwn: (packetUserId || parsedData.userId) === currentUserId,
 		};
 
 		return message;
@@ -76,8 +80,65 @@ export function messageToPacket(message: Omit<Message, "isOwn">): WasmPacket {
 
 	const messageText = JSON.stringify(packetData);
 	const payload = new TextEncoder().encode(messageText);
+	
+	// Use the new constructor with message_id and user_id
+	return new WasmPacket(
+		PacketKind.Message,
+		message.id,        // message_id
+		message.userId,    // user_id
+		null,              // reaction_kind (null for regular messages)
+		payload
+	);
+}
 
-	return new WasmPacket(PacketKind.Message, null, null, null, payload);
+/**
+ * Creates a reaction packet for a specific message
+ */
+export function createReactionPacket(
+	messageId: string,
+	userId: string,
+	reactionKind: ReactionKind
+): WasmPacket {
+	// Payload can contain additional reaction data if needed
+	const reactionData = {
+		messageId,
+		userId,
+		timestamp: Date.now(),
+	};
+	
+	const payload = new TextEncoder().encode(JSON.stringify(reactionData));
+	
+	return new WasmPacket(
+		PacketKind.Reaction,
+		messageId,     // message_id (the message being reacted to)
+		userId,        // user_id (who is reacting)
+		reactionKind,  // reaction_kind
+		payload
+	);
+}
+
+/**
+ * Creates a typing indicator packet
+ */
+export function createTypingPacket(
+	userId: string,
+	isTyping: boolean
+): WasmPacket {
+	const typingData = {
+		userId,
+		isTyping,
+		timestamp: Date.now(),
+	};
+	
+	const payload = new TextEncoder().encode(JSON.stringify(typingData));
+	
+	return new WasmPacket(
+		PacketKind.Typing,
+		null,     // message_id (not applicable for typing)
+		userId,   // user_id
+		null,     // reaction_kind (not applicable for typing)
+		payload
+	);
 }
 
 /**
@@ -87,59 +148,105 @@ export function handleIncomingPacket(
 	packet: WasmPacket,
 	currentUserId?: string,
 ): {
-	type: "message" | "reaction" | "typing" | "joined" | "unknown";
+	type: 'message' | 'reaction' | 'typing' | 'joined' | 'online_users' | 'delete' | 'unknown';
 	data: any;
 } {
 	const kind = packet.kind();
-
+	
 	switch (kind) {
 		case PacketKind.Message:
 			return {
-				type: "message",
-				data: packetToMessage(packet, currentUserId),
+				type: 'message',
+				data: packetToMessage(packet, currentUserId)
 			};
-
+			
 		case PacketKind.Reaction:
-			// Handle reaction packets
-			const payload = new TextDecoder().decode(packet.payload());
-			try {
-				const reactionData = JSON.parse(payload);
-				return {
-					type: "reaction",
-					data: {
-						messageId: reactionData.messageId,
-						reactionKind: packet.reaction_kind(),
-						userId: reactionData.userId,
-					},
-				};
-			} catch {
-				return { type: "unknown", data: null };
+			// Handle reaction packets - use metadata from packet
+			const messageId = packet.message_id();
+			const userId = packet.user_id();
+			const reactionKind = packet.reaction_kind();
+			
+			if (!messageId || !userId || !reactionKind) {
+				console.error("Invalid reaction packet: missing required fields");
+				return { type: 'unknown', data: null };
 			}
-
+			
+			return {
+				type: 'reaction',
+				data: {
+					messageId,
+					userId,
+					reactionKind,
+					timestamp: Date.now(),
+				}
+			};
+			
 		case PacketKind.Typing:
 			// Handle typing indicators
-			const typingPayload = new TextDecoder().decode(packet.payload());
+			const typingUserId = packet.user_id();
+			if (!typingUserId) {
+				return { type: 'unknown', data: null };
+			}
+			
+			// Try to get typing state from payload
 			try {
-				const typingData = JSON.parse(typingPayload);
+				const payload = new TextDecoder().decode(packet.payload());
+				const typingData = JSON.parse(payload);
 				return {
-					type: "typing",
+					type: 'typing',
 					data: {
-						userId: typingData.userId,
+						userId: typingUserId,
 						isTyping: typingData.isTyping,
-					},
+					}
 				};
 			} catch {
-				return { type: "unknown", data: null };
+				// Default to typing=true if we can't parse payload
+				return {
+					type: 'typing',
+					data: {
+						userId: typingUserId,
+						isTyping: true,
+					}
+				};
 			}
-
+			
 		case PacketKind.Joined:
 			// Handle user joined
+			const joinedUserId = packet.user_id();
 			return {
-				type: "joined",
-				data: new TextDecoder().decode(packet.payload()),
+				type: 'joined',
+				data: {
+					userId: joinedUserId,
+					payload: new TextDecoder().decode(packet.payload())
+				}
 			};
-
+			
+		case PacketKind.OnlineUsers:
+			// Handle online users list
+			try {
+				const payload = new TextDecoder().decode(packet.payload());
+				const onlineUsersData = JSON.parse(payload);
+				return {
+					type: 'online_users',
+					data: onlineUsersData
+				};
+			} catch {
+				return { type: 'unknown', data: null };
+			}
+			
+		case PacketKind.Delete:
+			// Handle message deletion
+			const deleteMessageId = packet.message_id();
+			const deleteUserId = packet.user_id();
+			return {
+				type: 'delete',
+				data: {
+					messageId: deleteMessageId,
+					userId: deleteUserId,
+				}
+			};
+			
 		default:
-			return { type: "unknown", data: null };
+			return { type: 'unknown', data: null };
 	}
 }

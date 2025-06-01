@@ -1,13 +1,16 @@
 import { useCallback } from "react";
 import { ReactionKind } from "@/public/wasm/wasmchannel";
+import { sendReaction } from "@/oop/chat";
 import type { Message, ReactionCount } from "@/types/chat";
 
 export function useChatReactions(
 	currentUserId: string,
 	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
+	ws?: WebSocket,
 ) {
 	const handleReactionClick = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
+			// Update local state optimistically
 			setMessages((prev) =>
 				prev.map((message) => {
 					if (message.id !== messageId) return message;
@@ -63,8 +66,13 @@ export function useChatReactions(
 					}
 				}),
 			);
+
+			// Send reaction packet to server if WebSocket is available
+			if (ws && ws.readyState === WebSocket.OPEN) {
+				sendReaction(ws, messageId, currentUserId, reactionKind);
+			}
 		},
-		[currentUserId, setMessages],
+		[currentUserId, setMessages, ws],
 	);
 
 	return { handleReactionClick };

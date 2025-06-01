@@ -17,8 +17,9 @@ export function useChat(
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
 
+		const messageId = Date.now().toString();
 		const message: Message = {
-			id: Date.now().toString(),
+			id: messageId,
 			userId: currentUserId,
 			text: newMessage.trim(),
 			timestamp: new Date(),
@@ -62,7 +63,7 @@ export function useChat(
 			);
 		}
 
-		sendMessage(ws!, newMessage);
+		sendMessage(ws!, currentUserId, messageId, newMessage);
 	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
 
 	ws.onmessage = (event) => {

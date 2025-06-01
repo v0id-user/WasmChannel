@@ -62,7 +62,7 @@ export default function Chat() {
 		scrollToBottom();
 	}, [messages, typingUsers, scrollToBottom]);
 
-	const { handleReactionClick } = useChatReactions(me?.userId, setMessages);
+	const { handleReactionClick } = useChatReactions(me?.userId, setMessages, ws);
 
 	const handlePacket = (packet: WasmPacket) => {
 		console.log("Received packet:", packet);
@@ -77,15 +77,69 @@ export default function Chat() {
 				break;
 
 			case "reaction":
-				// Handle reaction updates
+				// Handle reaction updates using message IDs
 				if (result.data) {
 					const { messageId, reactionKind, userId } = result.data;
-					// You can implement reaction handling here
 					console.log("Reaction received:", {
 						messageId,
 						reactionKind,
 						userId,
 					});
+
+					// Update the specific message's reactions
+					setMessages((prev) =>
+						prev.map((message) => {
+							if (message.id !== messageId) return message;
+
+							const existingReaction = message.reactions.find(
+								(r) => r.kind === reactionKind,
+							);
+							const hasUserReacted =
+								existingReaction?.users.includes(userId) || false;
+
+							if (hasUserReacted) {
+								// Remove user's reaction
+								return {
+									...message,
+									reactions: message.reactions
+										.map((r) => {
+											if (r.kind === reactionKind) {
+												const newUsers = r.users.filter((id) => id !== userId);
+												return newUsers.length > 0
+													? { ...r, count: newUsers.length, users: newUsers }
+													: null;
+											}
+											return r;
+										})
+										.filter(Boolean) as typeof message.reactions,
+								};
+							} else {
+								// Add user's reaction
+								if (existingReaction) {
+									return {
+										...message,
+										reactions: message.reactions.map((r) =>
+											r.kind === reactionKind
+												? {
+														...r,
+														count: r.count + 1,
+														users: [...r.users, userId],
+													}
+												: r,
+										),
+									};
+								} else {
+									return {
+										...message,
+										reactions: [
+											...message.reactions,
+											{ kind: reactionKind, count: 1, users: [userId] },
+										],
+									};
+								}
+							}
+						}),
+					);
 				}
 				break;
 
@@ -107,6 +161,23 @@ export default function Chat() {
 			case "joined":
 				// Handle user joined notifications
 				console.log("User joined:", result.data);
+				break;
+
+			case "online_users":
+				// Handle online users list updates
+				console.log("Online users update:", result.data);
+				// You could update the users list here if needed
+				break;
+
+			case "delete":
+				// Handle message deletion
+				if (result.data) {
+					const { messageId, userId } = result.data;
+					console.log("Message deleted:", { messageId, userId });
+
+					// Remove the message from the chat
+					setMessages((prev) => prev.filter((message) => message.id !== messageId));
+				}
 				break;
 
 			default:
