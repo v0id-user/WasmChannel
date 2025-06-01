@@ -25,7 +25,7 @@ export default function RootLayout({
 		<html lang="ar">
 			<body className={`${ibmPlexSansArabic.variable} antialiased`}>
 				<Providers>
-					{/* This is a client side bootstrap component that will setup the store and the wasm modules */}
+					{/* This is a client side bootstrap component that will setup the store, the wasm modules and the chat client */}
 					<ClientBootstrap />
 					{children}
 				</Providers>

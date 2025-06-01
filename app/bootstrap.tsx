@@ -30,7 +30,15 @@ export default function useClientBootstrap() {
 			}
 		}
 		main();
-	}, [fingerprint, userId, isLoading, authError, wasmReady, wasmError]);
+	}, [
+		fingerprint,
+		userId,
+		isLoading,
+		authError,
+		wasmReady,
+		wasmError,
+		setBootstrapped,
+	]);
 
 	return <></>;
 }

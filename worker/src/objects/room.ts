@@ -224,7 +224,7 @@ export class Room extends DurableObject {
 			const cacheDriver = new CacheDriver(this.env.KV);
 
 			// Push to queue and save to cache
-			if (!isServer) {
+			if (!isServer || packet.kind() == PacketKind.Typing) {
 				await Promise.all([
 					this.env.QUEUE_MESSAGES.send({
 						wasmPacket: packet,

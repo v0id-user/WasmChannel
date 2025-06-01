@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ReactionKind } from "@/public/wasm/wasmchannel";
+import { sendMessage } from "@/oop/chat";
+import { useStoreClient } from "@/store/client";
+import { SmilePlus } from "lucide-react";
 
 // Mock data types
 interface User {
@@ -9,13 +13,29 @@ interface User {
 	isOnline: boolean;
 }
 
+interface ReactionCount {
+	kind: ReactionKind;
+	count: number;
+	users: string[]; // user IDs who reacted
+}
+
 interface Message {
 	id: string;
 	userId: string;
 	text: string;
 	timestamp: Date;
+	reactions: ReactionCount[];
 	isOwn: boolean;
 }
+
+// Reaction emoji mapping
+const reactionEmojis: Record<ReactionKind, string> = {
+	[ReactionKind.None]: "",
+	[ReactionKind.Like]: "👍",
+	[ReactionKind.Dislike]: "👎",
+	[ReactionKind.Heart]: "❤️",
+	[ReactionKind.Star]: "⭐",
+};
 
 // Utility function to generate avatar color based on name
 function getAvatarColor(name: string): string {
@@ -62,6 +82,10 @@ const getInitialMessages = (): Message[] => [
 		userId: "2",
 		text: "مرحباً بالجميع! كيف حالكم اليوم؟",
 		timestamp: new Date("2024-01-01T12:00:00Z"),
+		reactions: [
+			{ kind: ReactionKind.Like, count: 2, users: ["1", "4"] },
+			{ kind: ReactionKind.Heart, count: 1, users: ["1"] },
+		],
 		isOwn: false,
 	},
 	{
@@ -69,6 +93,7 @@ const getInitialMessages = (): Message[] => [
 		userId: "1",
 		text: "أهلاً! الحمد لله بخير، وأنت؟",
 		timestamp: new Date("2024-01-01T12:01:00Z"),
+		reactions: [],
 		isOwn: true,
 	},
 	{
@@ -76,6 +101,7 @@ const getInitialMessages = (): Message[] => [
 		userId: "4",
 		text: "مرحباً جميعاً 👋 أتطلع للحديث معكم",
 		timestamp: new Date("2024-01-01T12:02:00Z"),
+		reactions: [{ kind: ReactionKind.Star, count: 1, users: ["2"] }],
 		isOwn: false,
 	},
 	{
@@ -83,6 +109,7 @@ const getInitialMessages = (): Message[] => [
 		userId: "1",
 		text: "أهلاً وسهلاً! نحن سعداء بوجودك معنا",
 		timestamp: new Date("2024-01-01T12:03:00Z"),
+		reactions: [{ kind: ReactionKind.Heart, count: 3, users: ["2", "4", "5"] }],
 		isOwn: true,
 	},
 ];
@@ -101,6 +128,103 @@ function UserAvatar({ user, size = "sm" }: { user: User; size?: "xs" | "sm" }) {
 			{user.isOnline && (
 				<div className="w-2 h-2 bg-green-500 rounded-full absolute -bottom-0 -right-0 border border-white"></div>
 			)}
+		</div>
+	);
+}
+
+function ReactionDisplay({
+	reactions,
+	onReactionClick,
+	messageId,
+	currentUserId,
+}: {
+	reactions: ReactionCount[];
+	onReactionClick: (messageId: string, reaction: ReactionKind) => void;
+	messageId: string;
+	currentUserId: string;
+}) {
+	const [animatingReactions, setAnimatingReactions] = useState<
+		Set<ReactionKind>
+	>(new Set());
+
+	useEffect(() => {
+		// Clear animations after they complete
+		const timer = setTimeout(() => {
+			setAnimatingReactions(new Set());
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [reactions]);
+
+	const handleReactionClick = (reactionKind: ReactionKind) => {
+		setAnimatingReactions((prev) => new Set([...prev, reactionKind]));
+		onReactionClick(messageId, reactionKind);
+	};
+
+	if (reactions.length === 0) return null;
+
+	return (
+		<div className="flex flex-wrap gap-1 mt-2">
+			{reactions.map((reaction) => {
+				const hasUserReacted = reaction.users.includes(currentUserId);
+				const isAnimating = animatingReactions.has(reaction.kind);
+
+				return (
+					<button
+						key={reaction.kind}
+						onClick={() => handleReactionClick(reaction.kind)}
+						className={`
+							inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all duration-200
+							hover:scale-105 active:scale-95
+							${
+								hasUserReacted
+									? "bg-blue-100 text-blue-700 border border-blue-300"
+									: "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200"
+							}
+							${isAnimating ? "animate-bounce scale-110" : ""}
+						`}
+						title={`${reactionEmojis[reaction.kind]} ${reaction.count}`}
+					>
+						<span className={`text-sm ${isAnimating ? "animate-pulse" : ""}`}>
+							{reactionEmojis[reaction.kind]}
+						</span>
+						<span className="font-medium">{reaction.count}</span>
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
+function ReactionPicker({
+	onReactionSelect,
+	messageId,
+	isVisible,
+}: {
+	onReactionSelect: (messageId: string, reaction: ReactionKind) => void;
+	messageId: string;
+	isVisible: boolean;
+}) {
+	if (!isVisible) return null;
+
+	const availableReactions = [
+		ReactionKind.Like,
+		ReactionKind.Heart,
+		ReactionKind.Star,
+		ReactionKind.Dislike,
+	];
+
+	return (
+		<div className="absolute bottom-full mb-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1 z-10 animate-fade-in-up">
+			{availableReactions.map((reaction) => (
+				<button
+					key={reaction}
+					onClick={() => onReactionSelect(messageId, reaction)}
+					className="p-2 hover:bg-gray-100 rounded-md text-lg hover:scale-110 active:scale-95 transform transition-transform"
+					title={reactionEmojis[reaction]}
+				>
+					{reactionEmojis[reaction]}
+				</button>
+			))}
 		</div>
 	);
 }
@@ -165,8 +289,17 @@ function ChatMessage({
 	message,
 	user,
 	showAvatar,
-}: { message: Message; user: User; showAvatar: boolean }) {
+	onReactionClick,
+	currentUserId,
+}: {
+	message: Message;
+	user: User;
+	showAvatar: boolean;
+	onReactionClick: (messageId: string, reaction: ReactionKind) => void;
+	currentUserId: string;
+}) {
 	const [formattedTime, setFormattedTime] = useState<string>("");
+	const [showReactionPicker, setShowReactionPicker] = useState(false);
 
 	useEffect(() => {
 		// Format time on client side to avoid hydration issues
@@ -180,9 +313,10 @@ function ChatMessage({
 
 	return (
 		<div
-			className={`group px-3 py-1 hover:bg-gray-50 ${
+			className={`group px-3 py-1 hover:bg-gray-50 relative ${
 				message.isOwn ? "animate-slide-in-left" : "animate-slide-in-right"
 			}`}
+			onMouseEnter={() => setShowReactionPicker(false)}
 		>
 			{showAvatar ? (
 				<div className="flex gap-3">
@@ -199,9 +333,34 @@ function ChatMessage({
 							<time className="text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
 								{formattedTime}
 							</time>
+							{!message.isOwn && (
+								<button
+									onClick={() => setShowReactionPicker(!showReactionPicker)}
+									className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 transition-all ml-2"
+									title="إضافة تفاعل"
+								>
+									<SmilePlus className="w-4 h-4 text-gray-400 cursor-pointer" />
+								</button>
+							)}
 						</div>
 						<div className="text-sm text-gray-800 leading-relaxed break-words">
 							{message.text}
+						</div>
+						<ReactionDisplay
+							reactions={message.reactions}
+							onReactionClick={message.isOwn ? () => {} : onReactionClick}
+							messageId={message.id}
+							currentUserId={currentUserId}
+						/>
+						<div className="relative">
+							<ReactionPicker
+								onReactionSelect={(messageId, reaction) => {
+									onReactionClick(messageId, reaction);
+									setShowReactionPicker(false);
+								}}
+								messageId={message.id}
+								isVisible={showReactionPicker && !message.isOwn}
+							/>
 						</div>
 					</div>
 				</div>
@@ -212,9 +371,34 @@ function ChatMessage({
 							{formattedTime}
 						</time>
 					</div>
-					<div className="flex-1 min-w-0">
+					<div className="flex-1 min-w-0 relative">
 						<div className="text-sm text-gray-800 leading-relaxed break-words">
 							{message.text}
+						</div>
+						<ReactionDisplay
+							reactions={message.reactions}
+							onReactionClick={message.isOwn ? () => {} : onReactionClick}
+							messageId={message.id}
+							currentUserId={currentUserId}
+						/>
+						{!message.isOwn && (
+							<button
+								onClick={() => setShowReactionPicker(!showReactionPicker)}
+								className="absolute top-0 right-0 text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 transition-all"
+								title="إضافة تفاعل"
+							>
+								😊
+							</button>
+						)}
+						<div className="relative">
+							<ReactionPicker
+								onReactionSelect={(messageId, reaction) => {
+									onReactionClick(messageId, reaction);
+									setShowReactionPicker(false);
+								}}
+								messageId={message.id}
+								isVisible={showReactionPicker && !message.isOwn}
+							/>
 						</div>
 					</div>
 				</div>
@@ -224,12 +408,14 @@ function ChatMessage({
 }
 
 export default function Chat() {
+	const { ws } = useStoreClient();
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
 	const [isClient, setIsClient] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const currentUserId = "1"; // TODO: Extract real user id from the database
 
 	// Initialize on client side only
 	useEffect(() => {
@@ -257,7 +443,69 @@ export default function Chat() {
 		adjustTextareaHeight();
 	}, [newMessage, adjustTextareaHeight]);
 
-	// Simulate typing indicators (client side only)
+	// Handle reaction clicks
+	const handleReactionClick = useCallback(
+		(messageId: string, reactionKind: ReactionKind) => {
+			setMessages((prev) =>
+				prev.map((message) => {
+					if (message.id !== messageId) return message;
+
+					const existingReaction = message.reactions.find(
+						(r) => r.kind === reactionKind,
+					);
+					const hasUserReacted =
+						existingReaction?.users.includes(currentUserId) || false;
+
+					if (hasUserReacted) {
+						// Remove user's reaction
+						return {
+							...message,
+							reactions: message.reactions
+								.map((r) => {
+									if (r.kind === reactionKind) {
+										const newUsers = r.users.filter(
+											(id) => id !== currentUserId,
+										);
+										return newUsers.length > 0
+											? { ...r, count: newUsers.length, users: newUsers }
+											: null;
+									}
+									return r;
+								})
+								.filter(Boolean) as ReactionCount[],
+						};
+					} else {
+						// Add user's reaction
+						if (existingReaction) {
+							return {
+								...message,
+								reactions: message.reactions.map((r) =>
+									r.kind === reactionKind
+										? {
+												...r,
+												count: r.count + 1,
+												users: [...r.users, currentUserId],
+											}
+										: r,
+								),
+							};
+						} else {
+							return {
+								...message,
+								reactions: [
+									...message.reactions,
+									{ kind: reactionKind, count: 1, users: [currentUserId] },
+								],
+							};
+						}
+					}
+				}),
+			);
+		},
+		[currentUserId],
+	);
+
+	// Simulate typing indicators and random reactions (client side only)
 	useEffect(() => {
 		if (!isClient) return;
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
@@ -271,21 +519,86 @@ export default function Chat() {
 
 					setTimeout(() => setTypingUsers([]), 2000 + Math.random() * 3000);
 				}
+
+				// Simulate random reactions
+				if (Math.random() > 0.85) {
+					const randomMessage =
+						messages[Math.floor(Math.random() * messages.length)];
+					if (randomMessage) {
+						const randomUser = users.find(
+							(u) =>
+								u.isOnline &&
+								u.id !== currentUserId &&
+								u.id !== randomMessage.userId,
+						);
+						if (randomUser) {
+							const reactions = [
+								ReactionKind.Like,
+								ReactionKind.Heart,
+								ReactionKind.Star,
+							];
+							const randomReaction =
+								reactions[Math.floor(Math.random() * reactions.length)];
+
+							setMessages((prev) =>
+								prev.map((message) => {
+									if (message.id !== randomMessage.id) return message;
+
+									const existingReaction = message.reactions.find(
+										(r) => r.kind === randomReaction,
+									);
+									const hasUserReacted =
+										existingReaction?.users.includes(randomUser.id) || false;
+
+									if (!hasUserReacted) {
+										if (existingReaction) {
+											return {
+												...message,
+												reactions: message.reactions.map((r) =>
+													r.kind === randomReaction
+														? {
+																...r,
+																count: r.count + 1,
+																users: [...r.users, randomUser.id],
+															}
+														: r,
+												),
+											};
+										} else {
+											return {
+												...message,
+												reactions: [
+													...message.reactions,
+													{
+														kind: randomReaction,
+														count: 1,
+														users: [randomUser.id],
+													},
+												],
+											};
+										}
+									}
+									return message;
+								}),
+							);
+						}
+					}
+				}
 			}, 6000);
 
 			return () => clearInterval(interval);
 		}
-	}, [isClient]);
+	}, [isClient, messages, currentUserId]);
 
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
 
 		const message: Message = {
 			id: Date.now().toString(),
-			// TODO: Extract real user id from the database
-			userId: "1",
+			userId: currentUserId,
 			text: newMessage.trim(),
 			timestamp: new Date(),
+			reactions: [],
 			isOwn: true,
 		};
 		setMessages((prev) => [...prev, message]);
@@ -295,7 +608,9 @@ export default function Chat() {
 			// Simulate response
 			setTimeout(
 				() => {
-					const responders = users.filter((u) => u.isOnline && u.id !== "1");
+					const responders = users.filter(
+						(u) => u.isOnline && u.id !== currentUserId,
+					);
 					if (responders.length > 0) {
 						const responder =
 							responders[Math.floor(Math.random() * responders.length)];
@@ -313,6 +628,7 @@ export default function Chat() {
 							userId: responder.id,
 							text: responses[Math.floor(Math.random() * responses.length)],
 							timestamp: new Date(),
+							reactions: [],
 							isOwn: false,
 						};
 						setMessages((prev) => [...prev, response]);
@@ -321,7 +637,9 @@ export default function Chat() {
 				1000 + Math.random() * 2000,
 			);
 		}
-	}, [newMessage, isClient]);
+
+		sendMessage(ws!, newMessage);
+	}, [newMessage, isClient, currentUserId, ws]);
 
 	const handleKeyPress = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter" && !e.shiftKey) {
@@ -380,6 +698,8 @@ export default function Chat() {
 							message={message}
 							user={user}
 							showAvatar={showAvatar}
+							onReactionClick={handleReactionClick}
+							currentUserId={currentUserId}
 						/>
 					))}
 

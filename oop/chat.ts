@@ -1,4 +1,4 @@
-import { ReactionKind, PacketKind } from "@/worker/wasm/wasmchannel";
+import { ReactionKind, PacketKind } from "@/public/wasm/wasmchannel";
 import { createPacket, serializePacket, WasmPacket } from "./packet";
 
 // Local function serialize and send packet
@@ -26,6 +26,16 @@ export function sendReaction(
 		PacketKind.Reaction,
 		reaction,
 		new TextEncoder().encode(messageId),
+	);
+
+	send(ws, packet);
+}
+
+export function sendTyping(ws: WebSocket) {
+	const packet = createPacket(
+		PacketKind.Typing,
+		null,
+		new TextEncoder().encode(""),
 	);
 
 	send(ws, packet);

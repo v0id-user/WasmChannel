@@ -150,4 +150,57 @@ html[dir="rtl"] ::-webkit-scrollbar-thumb:hover {
 /* Status indicator enhancements */
 .status {
 	border: 2px solid oklch(var(--b1));
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.status-success {
+	background-color: #10b981;
+}
+
+/* Reaction animations */
+@keyframes reactionBounce {
+	0% {
+		transform: scale(1);
+	}
+	25% {
+		transform: scale(1.2);
+	}
+	50% {
+		transform: scale(1.1);
+	}
+	75% {
+		transform: scale(1.15);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes reactionPulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}
+
+/* Reaction picker animation */
+@keyframes reactionPickerSlide {
+	from {
+		opacity: 0;
+		transform: translateY(8px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.reaction-picker {
+	animation: reactionPickerSlide 0.2s ease-out;
 }
