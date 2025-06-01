@@ -137,20 +137,22 @@ export class Room extends DurableObject {
 		// });
 
 		// Notify other clients about new connection
-		this.#broadcastToOthers(serializedPacket, clientId);
+		this.#broadcastToOthers(serializedPacket, clientId, true);
 	}
 
 	// Broadcast to all clients except the sender
 	async #broadcastToOthers(
 		message: Uint8Array,
 		senderId: string,
+		isServer: boolean = false,
 	): Promise<void> {
 		try {
 			const packet = deserializePacket(message);
 			// Clients allowed to send a Reaction or Message
 			if (
 				packet.kind() != PacketKind.Reaction &&
-				packet.kind() != PacketKind.Message
+				packet.kind() != PacketKind.Message &&
+				!isServer
 			) {
 				throw new Error("Invalid packet kind");
 			}
@@ -158,10 +160,15 @@ export class Room extends DurableObject {
 			const cacheDriver = new CacheDriver(this.env.KV);
 
 			// Push to queue and save to cache
-			await Promise.all([
-				this.env.QUEUE_MESSAGES.send({ wasmPacket: packet, sentBy: senderId }),
-				cacheDriver.write([packet], senderId),
-			]);
+			if (!isServer) {
+				await Promise.all([
+					this.env.QUEUE_MESSAGES.send({
+						wasmPacket: packet,
+						sentBy: senderId,
+					}),
+					cacheDriver.write([packet], senderId),
+				]);
+			}
 
 			const clientsIdsCopy = new Map(this.clientsById);
 			for (const [clientId, ws] of clientsIdsCopy) {

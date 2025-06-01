@@ -2,13 +2,14 @@ import { Hono } from "hono";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
-import { createAuthWithD1 } from "@/auth";
+import { auth, createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { WasmPacket } from "@/wasm/wasmchannel";
+import { user } from "./db/schema/schema";
 
 export interface QueueIner {
 	wasmPacket: WasmPacket;
@@ -143,6 +144,54 @@ app.get("/", (c) => {
        https://tree.v0id.me
 
         `);
+});
+
+app.get("/health", async (c) => {
+	const dbViaFunction = createDb(c.env.DB);
+	const authViaFunction = createAuthWithD1(dbViaFunction);
+	let resultViaFunction: any;
+	let didIGetTheUserViaFunction: boolean;
+
+	try {
+		let authViaFunction = createAuthWithD1(dbViaFunction);
+		// Test via function
+		console.log("Auth initialized via function:", !!authViaFunction);
+		console.log("DB initialized via function:", !!dbViaFunction);
+
+		resultViaFunction = await dbViaFunction.select().from(user).limit(1);
+		console.log("Result via function:", resultViaFunction);
+		didIGetTheUserViaFunction = resultViaFunction.length > 0;
+
+		// Test better auth
+		const session = await authViaFunction.api.getSession({
+			headers: c.req.raw.headers,
+		});
+
+		// Test cache
+		const cache = c.env.KV;
+		cache.put("test", "test");
+		const cached = await cache.get("test");
+		console.log("Cached: ", cached);
+
+		return c.json({
+			success: true,
+			dbReadyViaFunction: !!dbViaFunction,
+			authReadyViaFunction: !!authViaFunction,
+			didIGetTheUser: !didIGetTheUserViaFunction || didIGetTheUserViaFunction, // That means a call to the db was made
+			isSessionValid: !!session || session === null, // That means a call to the db was made
+			cached: cached,
+		});
+	} catch (error) {
+		console.error("Auth test error:", error);
+		return c.json({
+			success: false,
+			error: error instanceof Error ? error.message : "Unknown error",
+			dbViaFunction: !!dbViaFunction,
+			authViaFunction: !!authViaFunction,
+			resultViaFunction: !!resultViaFunction,
+			cached: false,
+		});
+	}
 });
 
 app.get("/openapi.json", (c) => {
