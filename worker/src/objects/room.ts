@@ -11,6 +11,11 @@ export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
 	clientsById = new Map<string, WebSocket>();
 	clientsBySocket = new Map<WebSocket, string>();
+	// Rate limiting: track message counts per user
+	private userRateMap = new Map<string, { count: number; resetAt: number }>();
+	private readonly RATE_LIMIT_COUNT = 5; // 5 messages
+	private readonly RATE_LIMIT_WINDOW_MS = 1000; // per 1 second (1000ms)
+
 	env: Env;
 	db: DrizzleD1Database = {} as DrizzleD1Database;
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -93,6 +98,30 @@ export class Room extends DurableObject {
 	}
 
 	async webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
+		const clientId = this.clientsBySocket.get(ws);
+		if (!clientId) return;
+
+		// Rate limiting check
+		if (!this.isAllowed(clientId)) {
+			// Send rate limit error to the client
+			const errorPacket = createPacket(
+				PacketKind.Message, // You might want to create a specific error packet type
+				null,
+				new TextEncoder().encode("Rate limit exceeded: 5 messages per second"),
+			);
+			const serializedError = serializePacket(errorPacket);
+
+			try {
+				ws.send(serializedError);
+			} catch (error) {
+				console.error(
+					`Error sending rate limit message to client ${clientId}:`,
+					error,
+				);
+			}
+			return;
+		}
+
 		const messageData =
 			event instanceof ArrayBuffer
 				? new Uint8Array(event)
@@ -102,10 +131,34 @@ export class Room extends DurableObject {
 			`Message from client ${this.clientsBySocket.get(ws)}: ${messageData}`,
 		);
 
-		const clientId = this.clientsBySocket.get(ws);
-		if (!clientId) return;
-
 		await this.#broadcastToOthers(messageData, clientId);
+	}
+
+	// Rate limiting check method
+	private isAllowed(userId: string): boolean {
+		const now = Date.now();
+		const entry = this.userRateMap.get(userId) ?? {
+			count: 0,
+			resetAt: now + this.RATE_LIMIT_WINDOW_MS,
+		};
+
+		// Reset window if time has passed
+		if (now > entry.resetAt) {
+			entry.count = 1;
+			entry.resetAt = now + this.RATE_LIMIT_WINDOW_MS;
+			this.userRateMap.set(userId, entry);
+			return true;
+		}
+
+		// Check if limit exceeded
+		if (entry.count >= this.RATE_LIMIT_COUNT) {
+			return false;
+		}
+
+		// Increment count
+		entry.count++;
+		this.userRateMap.set(userId, entry);
+		return true;
 	}
 
 	webSocketClose(ws: WebSocket) {
@@ -162,6 +215,7 @@ export class Room extends DurableObject {
 			if (
 				packet.kind() != PacketKind.Reaction &&
 				packet.kind() != PacketKind.Message &&
+				packet.kind() != PacketKind.Typing &&
 				!isServer
 			) {
 				throw new Error("Invalid packet kind");
