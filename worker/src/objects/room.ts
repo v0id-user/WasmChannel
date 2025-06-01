@@ -124,20 +124,30 @@ export class Room extends DurableObject {
 			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
 
-		const packet = createPacket(
+		const packetJoined = createPacket(
 			PacketKind.Joined,
 			null,
 			new TextEncoder().encode(clientId),
 		);
 
-		const serializedPacket = serializePacket(packet);
+		const packetOnlineUsers = createPacket(
+			PacketKind.OnlineUsers,
+			null,
+			new TextEncoder().encode(this.clientsById.size.toString()),
+		);
+
+		const serializedPacketJoined = serializePacket(packetJoined);
+		const serializedPacketOnlineUsers = serializePacket(packetOnlineUsers);
 		// This was just a test
 		// this.env.QUEUE_MESSAGES.send(serializedPacket, {
 		// 	contentType: "bytes",
 		// });
 
 		// Notify other clients about new connection
-		this.#broadcastToOthers(serializedPacket, clientId, true);
+		await Promise.all([
+			this.#broadcastToOthers(serializedPacketJoined, clientId, true),
+			this.#broadcastToClient(serializedPacketOnlineUsers, clientId),
+		]);
 	}
 
 	// Broadcast to all clients except the sender
@@ -186,6 +196,27 @@ export class Room extends DurableObject {
 			console.error("Error deserializing packet:", error);
 			// Just skip
 			return;
+		}
+	}
+
+	// Broadcast to a single client (server use only)
+	async #broadcastToClient(message: Uint8Array, toId: string): Promise<void> {
+		try {
+			const ws = this.clientsById.get(toId);
+			if (!ws) {
+				console.warn(`Client ${toId} not found`);
+				return;
+			}
+
+			ws.send(message);
+		} catch (error) {
+			console.error(`Error sending message to client ${toId}:`, error);
+			// Remove client if send fails
+			const ws = this.clientsById.get(toId);
+			if (ws) {
+				this.clientsById.delete(toId);
+				this.clientsBySocket.delete(ws);
+			}
 		}
 	}
 
