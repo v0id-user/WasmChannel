@@ -5,7 +5,7 @@ export function createPacket(
 	reaction_kind: ReactionKind | null,
 	payload: Uint8Array,
 ): WasmPacket {
-	return new WasmPacket(kind, reaction_kind, payload);
+	return new WasmPacket(kind, null, null, reaction_kind, payload);
 }
 
 export function serializePacket(packet: WasmPacket): Uint8Array {
