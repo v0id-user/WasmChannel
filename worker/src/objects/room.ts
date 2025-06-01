@@ -238,11 +238,12 @@ export class Room extends DurableObject {
 
 			// Push to queue and save to cache
 			if (!isServer || packet.kind() == PacketKind.Typing) {
-				// Set both the message id and user id
-				await Promise.all([
-					this.env.QUEUE_MESSAGES.send(fullPacket),
-					cacheDriver.write([packet], senderId),
-				]);
+				// Uncommented for now, all I need is just broadcast to all clients
+				// // Set both the message id and user id
+				// await Promise.all([
+				// 	this.env.QUEUE_MESSAGES.send(fullPacket),
+				// 	cacheDriver.write([packet], senderId),
+				// ]);
 			}
 
 			const serializedFullPacket = serializePacket(fullPacket);

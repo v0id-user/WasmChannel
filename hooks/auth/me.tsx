@@ -43,16 +43,7 @@ export function useGetMeAggressively() {
 					setMeData(newMeData);
 					return;
 				}
-
-				// Fallback to stored data if available
-				if (store.me) {
-					setMeData({
-						fingerprint: store.me.fingerprint,
-						userId: store.me.userId,
-					});
-					return;
-				}
-
+				
 				// Get browser fingerprint for new user
 				const fingerprint = await getFingerprint();
 				const email = `${fingerprint}@wasm.channel`;

@@ -17,36 +17,16 @@ import { WasmPacket } from "@/oop/packet";
 import { handleIncomingPacket } from "@/utils/chat/packetConverter";
 
 export default function Chat() {
-	const { ws } = useStoreClient();
+	const { ws, me } = useStoreClient();
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
 	const [isClient, setIsClient] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const { me } = useStoreClient();
 
 	// Typing timeout management
 	const { addTypingUser, removeTypingUser, clearAllTimeouts } =
 		useTypingTimeout(setTypingUsers);
-
-	// Cleanup timeouts on unmount
-	useEffect(() => {
-		return () => {
-			clearAllTimeouts();
-		};
-	}, [clearAllTimeouts]);
-
-	if (!me || !ws) {
-		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
-					<div className="h-full flex items-center justify-center">
-						<div className="text-gray-500">جاري التحميل...</div>
-					</div>
-				</div>
-			</div>
-		);
-	}
 
 	// Initialize on client side only
 	useEffect(() => {
@@ -62,16 +42,25 @@ export default function Chat() {
 		scrollToBottom();
 	}, [messages, typingUsers, scrollToBottom]);
 
-	const { handleReactionClick } = useChatReactions(me?.userId, setMessages, ws);
+	// Cleanup timeouts on unmount
+	useEffect(() => {
+		return () => {
+			clearAllTimeouts();
+		};
+	}, [clearAllTimeouts]);
+
+	const { handleReactionClick } = useChatReactions(me?.userId || "", setMessages, ws || undefined);
 
 	const handlePacket = (packet: WasmPacket) => {
-		console.log("Received packet:", packet);
+		console.log("chat.tsx: Received packet:", packet);
 
-		const result = handleIncomingPacket(packet, me?.userId);
+		const result = handleIncomingPacket(packet, me?.userId || "");
+		console.log("chat.tsx: Packet conversion result:", result);
 
 		switch (result.type) {
 			case "message":
 				if (result.data) {
+					console.log("chat.tsx: Adding message with userId:", result.data.userId);
 					setMessages((prev) => [...prev, result.data]);
 				}
 				break;
@@ -185,11 +174,12 @@ export default function Chat() {
 		}
 	};
 
+	// Only call useChat when ws is available, otherwise provide dummy values
 	const { handleSendMessage } = useChat(
 		newMessage,
 		isClient,
-		me?.userId,
-		ws,
+		me?.userId || "",
+		ws!,
 		setMessages,
 		setNewMessage,
 		handlePacket,
@@ -199,21 +189,47 @@ export default function Chat() {
 	useChatSimulation(
 		isClient,
 		messages,
-		me?.userId,
+		me?.userId || "",
 		users,
 		setTypingUsers,
 		setMessages,
 	);
+
+	// Early return after all hooks have been called
+	if (!me || !ws) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
+					<div className="h-full flex items-center justify-center">
+						<div className="text-gray-500">جاري التحميل...</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	// Group messages by user to show avatars only for first message in sequence
 	const groupedMessages = messages.reduce(
 		(acc, message, index) => {
 			const prevMessage = messages[index - 1];
 			const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
+			
+			// Find user or create a fallback user with userId as name
+			const foundUser = users.find((u) => u.id === message.userId);
+			const user = foundUser || {
+				id: message.userId,
+				name: message.userId, // Use userId as name if user not found
+				isOnline: true,
+			};
+			
+			if (!foundUser) {
+				console.log("chat.tsx: Creating fallback user for userId:", message.userId);
+			}
+			
 			acc.push({
 				message,
 				showAvatar,
-				user: users.find((u) => u.id === message.userId)!,
+				user,
 			});
 			return acc;
 		},

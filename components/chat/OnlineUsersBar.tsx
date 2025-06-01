@@ -15,7 +15,15 @@ export function OnlineUsersBar({ users }: OnlineUsersBarProps) {
 					<div className="status status-success animate-ping [animation-duration:3s]"></div>
 					<div className="status status-success"></div>
 				</div>
-				<span className="text-gray-600">{onlineUsers.length} متصل الآن</span>
+				<span className="text-gray-600">
+					{onlineUsers.length === 0
+						? "لا يوجد متصلين"
+						: onlineUsers.length === 1
+						? "متصل واحد"
+						: onlineUsers.length === 2
+						? "متصلين"
+						: `${onlineUsers.length} متصلين`}
+				</span>
 
 				<div className="flex items-center gap-1 mr-2">
 					{onlineUsers.slice(0, 6).map((user) => (

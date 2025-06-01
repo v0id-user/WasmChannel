@@ -1,8 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { sendMessage } from "@/oop/chat";
 import { deserializePacket, WasmPacket } from "@/oop/packet";
-
-import type { Message, User } from "@/types/chat";
+import type { Message } from "@/types/chat";
 import { users } from "@/constants/chat";
 
 export function useChat(
@@ -66,11 +65,26 @@ export function useChat(
 		sendMessage(ws!, currentUserId, messageId, newMessage);
 	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
 
-	ws.onmessage = (event) => {
-		const packet = deserializePacket(event.data);
-		console.log(packet);
-		handlePacket(packet);
-	};
+	useEffect(() => {
+		if (!ws) return;
+		
+		console.log("useChat: Setting up WebSocket message handler");
+		
+		const handleMessage = (event: MessageEvent) => {
+			console.log("useChat: Received packet:", event.data);
+			const packet = deserializePacket(event.data);
+			console.log("useChat: Deserialized packet:", packet);
+			handlePacket(packet);
+		};
+		
+		ws.onmessage = handleMessage;
+		console.log("useChat: WebSocket onmessage handler assigned");
+		
+		return () => {
+			console.log("useChat: Cleaning up WebSocket message handler");
+			ws.onmessage = null;
+		};
+	}, [ws, handlePacket]);
 
 	return { handleSendMessage };
 }
