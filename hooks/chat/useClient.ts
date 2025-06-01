@@ -2,7 +2,7 @@
 import { useStoreClient } from "@/store/client";
 import { useEffect, useRef, useState } from "react";
 
-export function useChatClient() {
+export function useClient() {
 	const { bootstrapped, setWs } = useStoreClient();
 	const client = useRef<WebSocket | null>(null);
 	const [clientReady, setClientReady] = useState<boolean>(false);

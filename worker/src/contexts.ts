@@ -2,13 +2,13 @@ import { os } from "@orpc/server";
 import { auth } from "@/auth";
 import { Room } from "./objects/room";
 import { HonoRequest } from "hono";
-import { QueueIner } from "./index";
+import { WasmPacket } from "@/wasm/wasmchannel";
 
 export interface AppContext {
 	DB: D1Database;
 	req: HonoRequest;
 	KV: KVNamespace;
-	QUEUE_MESSAGES: Queue<QueueIner>;
+	QUEUE_MESSAGES: Queue<WasmPacket>;
 	ROOM: DurableObjectNamespace<Room>;
 	user: typeof auth.$Infer.Session.user | null;
 	session: typeof auth.$Infer.Session.session | null;

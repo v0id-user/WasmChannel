@@ -1,15 +1,18 @@
 import { useCallback } from "react";
 import { sendMessage } from "@/oop/chat";
+import { deserializePacket, WasmPacket } from "@/oop/packet";
+
 import type { Message, User } from "@/types/chat";
 import { users } from "@/constants/chat";
 
-export function useChatMessage(
+export function useChat(
 	newMessage: string,
 	isClient: boolean,
 	currentUserId: string,
-	ws: WebSocket | null,
+	ws: WebSocket,
 	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 	setNewMessage: React.Dispatch<React.SetStateAction<string>>,
+	handlePacket: (packet: WasmPacket) => void,
 ) {
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
@@ -61,6 +64,12 @@ export function useChatMessage(
 
 		sendMessage(ws!, newMessage);
 	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
+
+	ws.onmessage = (event) => {
+		const packet = deserializePacket(event.data);
+		console.log(packet);
+		handlePacket(packet);
+	};
 
 	return { handleSendMessage };
 }

@@ -29,6 +29,8 @@ pub enum ReactionKind {
 #[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Clone)]
 pub struct Packet {
     pub kind: PacketKind,
+    pub message_id: Option<String>,
+    pub user_id: Option<String>,
     pub reaction_kind: Option<ReactionKind>,
     pub payload: Vec<u8>,
     pub serialized: bool,
@@ -43,7 +45,7 @@ pub struct WasmPacket {
 #[wasm_bindgen]
 impl WasmPacket {
     #[wasm_bindgen(constructor)]
-    pub fn new(kind: PacketKind, reaction_kind: Option<ReactionKind>, payload: Uint8Array) -> WasmPacket {
+    pub fn new(kind: PacketKind, message_id: Option<String>, user_id: Option<String>, reaction_kind: Option<ReactionKind>, payload: Uint8Array) -> WasmPacket {
         let mut compressed = Vec::new();
         let mut encoder = lz4_flex::frame::FrameEncoder::new(&mut compressed);
         io::copy(&mut payload.to_vec().as_slice(), &mut encoder).expect("Compression failed");
@@ -51,12 +53,20 @@ impl WasmPacket {
         let payload = compressed;
         let crc = calculate_crc32(&payload);
         WasmPacket {
-            inner: Packet { kind, reaction_kind, payload, crc, serialized: false }
+            inner: Packet { kind, message_id, user_id, reaction_kind, payload, crc, serialized: false }
         }
     }
 
     pub fn serialized(&self) -> bool {
         self.inner.serialized
+    }
+
+    pub fn message_id(&self) -> Option<String> {
+        self.inner.message_id.clone()
+    }
+
+    pub fn user_id(&self) -> Option<String> {
+        self.inner.user_id.clone()
     }
 
     pub fn kind(&self) -> PacketKind {

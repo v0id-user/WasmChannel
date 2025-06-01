@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { router } from "./routers";
 import { cors } from "hono/cors";
 import { createDb } from "./db";
-import { auth, createAuthWithD1 } from "@/auth";
+import { createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
@@ -11,15 +11,10 @@ import { Room } from "./objects/room";
 import { WasmPacket } from "@/wasm/wasmchannel";
 import { user } from "./db/schema/schema";
 
-export interface QueueIner {
-	wasmPacket: WasmPacket;
-	sentBy: string;
-}
-
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	KV: KVNamespace;
-	QUEUE_MESSAGES: Queue<QueueIner>;
+	QUEUE_MESSAGES: Queue<WasmPacket>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -200,16 +195,17 @@ app.get("/openapi.json", (c) => {
 
 export default {
 	fetch: app.fetch,
-	async queue(batch: MessageBatch<QueueIner>, env: Env) {
+	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
 		console.log("Hey the queue is working");
 		for (const message of batch.messages) {
 			try {
 				console.log("Message: ", message);
 				console.log("Body: ", message.body);
-				console.log("Payload: ", message.body.wasmPacket.payload());
-				console.log("Kind: ", message.body.wasmPacket.kind());
-				console.log("Reaction kind: ", message.body.wasmPacket.reaction_kind());
-				console.log("Sent by: ", message.body.sentBy);
+				console.log("Payload: ", message.body.payload());
+				console.log("Kind: ", message.body.kind());
+				console.log("Reaction kind: ", message.body.reaction_kind());
+				console.log("Sent by: ", message.body.user_id());
+				console.log("Message id: ", message.body.message_id());
 			} catch (error) {
 				// Just skip it's an experiment at the end of the day
 				console.error("Error processing message:", error);

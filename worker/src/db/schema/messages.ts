@@ -20,7 +20,7 @@ export enum ReactionKind {
 
 export const messages = sqliteTable("messages", {
 	id: text("id").primaryKey().default(createId()),
-
+	refrenceId: text("refrence_id").notNull(),
 	kind: text("kind", {
 		enum: Object.values(PacketKind) as [string, ...string[]],
 	}).notNull(),

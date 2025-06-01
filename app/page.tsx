@@ -1,12 +1,12 @@
 "use client";
 
 import Chat from "@/components/chat";
-import { useChatClient } from "@/hooks/chat/client";
+import { useClient } from "@/hooks/chat/useClient";
 import { useStoreClient } from "@/store/client";
 
 export default function Home() {
 	const { bootstrapped } = useStoreClient();
-	const { clientReady } = useChatClient();
+	const { clientReady } = useClient();
 
 	if (!bootstrapped || !clientReady) {
 		return (

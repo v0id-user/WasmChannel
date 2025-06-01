@@ -4,14 +4,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useStoreClient } from "@/store/client";
 import type { Message, User } from "@/types/chat";
 import { users, getInitialMessages } from "@/constants/chat";
-import { useChatReactions } from "@/hooks/useChatReactions";
-import { useChatSimulation } from "@/hooks/useChatSimulation";
-import { useChatMessage } from "@/hooks/useChatMessage";
+import { useChatReactions } from "@/hooks/chat/useChatReactions";
+import { useChatSimulation } from "@/hooks/chat/useChatSimulation";
+import { useChat } from "@/hooks/chat/useChat";
+import { useTypingTimeout } from "@/hooks/chat/useTypingTimeout";
 import { OnlineUsersBar } from "./chat/OnlineUsersBar";
 import { TypingIndicator } from "./chat/TypingIndicator";
 import { ChatMessage } from "./chat/ChatMessage";
 import { MessageInput } from "./chat/MessageInput";
 import { ChatFooter } from "./chat/ChatFooter";
+import { WasmPacket } from "@/oop/packet";
+import { handleIncomingPacket } from "@/utils/chat/packetConverter";
 
 export default function Chat() {
 	const { ws } = useStoreClient();
@@ -22,7 +25,18 @@ export default function Chat() {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const { me } = useStoreClient();
 
-	if (!me) {
+	// Typing timeout management
+	const { addTypingUser, removeTypingUser, clearAllTimeouts } =
+		useTypingTimeout(setTypingUsers);
+
+	// Cleanup timeouts on unmount
+	useEffect(() => {
+		return () => {
+			clearAllTimeouts();
+		};
+	}, [clearAllTimeouts]);
+
+	if (!me || !ws) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
@@ -49,13 +63,65 @@ export default function Chat() {
 	}, [messages, typingUsers, scrollToBottom]);
 
 	const { handleReactionClick } = useChatReactions(me?.userId, setMessages);
-	const { handleSendMessage } = useChatMessage(
+
+	const handlePacket = (packet: WasmPacket) => {
+		console.log("Received packet:", packet);
+
+		const result = handleIncomingPacket(packet, me?.userId);
+
+		switch (result.type) {
+			case "message":
+				if (result.data) {
+					setMessages((prev) => [...prev, result.data]);
+				}
+				break;
+
+			case "reaction":
+				// Handle reaction updates
+				if (result.data) {
+					const { messageId, reactionKind, userId } = result.data;
+					// You can implement reaction handling here
+					console.log("Reaction received:", {
+						messageId,
+						reactionKind,
+						userId,
+					});
+				}
+				break;
+
+			case "typing":
+				// Handle typing indicators with timeout
+				if (result.data) {
+					const { userId, isTyping } = result.data;
+					const user = users.find((u) => u.id === userId);
+					if (user) {
+						if (isTyping) {
+							addTypingUser(user); // Automatically sets timeout
+						} else {
+							removeTypingUser(userId); // Manually stop typing
+						}
+					}
+				}
+				break;
+
+			case "joined":
+				// Handle user joined notifications
+				console.log("User joined:", result.data);
+				break;
+
+			default:
+				console.log("Unknown packet type:", result);
+		}
+	};
+
+	const { handleSendMessage } = useChat(
 		newMessage,
 		isClient,
 		me?.userId,
 		ws,
 		setMessages,
 		setNewMessage,
+		handlePacket,
 	);
 
 	// Simulation effects

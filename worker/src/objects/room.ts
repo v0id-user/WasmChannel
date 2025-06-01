@@ -1,11 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
 import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
-import { PacketKind } from "@/utils/wasm/init";
+import { PacketKind, WasmPacket } from "@/utils/wasm/init";
 import { createAuthWithD1 } from "@/auth";
 import { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "../db";
 import { CacheDriver } from "../driver/write";
+import { nanoid } from "nanoid";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -213,32 +214,44 @@ export class Room extends DurableObject {
 			const packet = deserializePacket(message);
 			// Clients allowed to send a Reaction or Message
 			if (
+				// Reaction, Message or Typing
 				packet.kind() != PacketKind.Reaction &&
 				packet.kind() != PacketKind.Message &&
 				packet.kind() != PacketKind.Typing &&
+				// Message id and user id are not set, they are only set by the server
+				!packet.message_id() &&
+				!packet.user_id() &&
+				// It's coming from the client
 				!isServer
 			) {
 				throw new Error("Invalid packet kind");
 			}
 
 			const cacheDriver = new CacheDriver(this.env.KV);
+			const fullPacket = new WasmPacket(
+				packet.kind(),
+				nanoid(),
+				senderId,
+				packet.reaction_kind(),
+				packet.payload(),
+			);
 
 			// Push to queue and save to cache
 			if (!isServer || packet.kind() == PacketKind.Typing) {
+				// Set both the message id and user id
 				await Promise.all([
-					this.env.QUEUE_MESSAGES.send({
-						wasmPacket: packet,
-						sentBy: senderId,
-					}),
+					this.env.QUEUE_MESSAGES.send(fullPacket),
 					cacheDriver.write([packet], senderId),
 				]);
 			}
+
+			const serializedFullPacket = serializePacket(fullPacket);
 
 			const clientsIdsCopy = new Map(this.clientsById);
 			for (const [clientId, ws] of clientsIdsCopy) {
 				try {
 					if (clientId === senderId) continue;
-					ws.send(message);
+					ws.send(serializedFullPacket);
 				} catch (error) {
 					console.error(`Error sending message to client ${clientId}:`, error);
 					// Remove client if send fails

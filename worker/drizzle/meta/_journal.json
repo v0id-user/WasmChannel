@@ -15,6 +15,13 @@
 			"when": 1748558590121,
 			"tag": "0001_wooden_doctor_doom",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1748747664932,
+			"tag": "0002_nappy_bucky",
+			"breakpoints": true
 		}
 	]
 }

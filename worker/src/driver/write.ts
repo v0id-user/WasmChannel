@@ -31,6 +31,9 @@ export class DatabaseDriver extends StorageDriver {
 	async write(packets: WasmPacket[], sentBy: string): Promise<void> {
 		// Convert all packets to database records
 		const insertData: DatabaseMessageInsert[] = packets.map((packet) => {
+			if (!packet.message_id() || !packet.user_id()) {
+				throw new Error("Message id or user id are not set");
+			}
 			const payloadBytes = packet.payload();
 			const message = new TextDecoder().decode(payloadBytes);
 
@@ -38,7 +41,8 @@ export class DatabaseDriver extends StorageDriver {
 				kind: packet.kind().toString(),
 				reactionKind: packet.reaction_kind()?.toString() || null,
 				message,
-				sentBy,
+				refrenceId: packet.message_id()!,
+				sentBy: packet.user_id()!,
 			};
 		});
 
@@ -66,7 +70,13 @@ export class DatabaseDriver extends StorageDriver {
 			// Convert message string to Uint8Array
 			const messageBytes = new TextEncoder().encode(msg.message);
 
-			return new WasmPacket(packetKind, reactionKind, messageBytes);
+			return new WasmPacket(
+				packetKind,
+				msg.refrenceId,
+				msg.sentBy,
+				reactionKind,
+				messageBytes,
+			);
 		});
 	}
 
@@ -143,7 +153,13 @@ export class CacheDriver extends StorageDriver {
 				: null;
 			const messageBytes = new TextEncoder().encode(record.message);
 
-			return new WasmPacket(packetKind, reactionKind, messageBytes);
+			return new WasmPacket(
+				packetKind,
+				record.refrenceId,
+				record.sentBy,
+				reactionKind,
+				messageBytes,
+			);
 		});
 	}
 
