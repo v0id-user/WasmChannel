@@ -69,7 +69,7 @@ export function useChatReactions(
 
 			// Send reaction packet to server if WebSocket is available
 			if (ws && ws.readyState === WebSocket.OPEN) {
-				sendReaction(ws, messageId, currentUserId, reactionKind);
+				sendReaction(ws, messageId, reactionKind);
 			}
 		},
 		[currentUserId, setMessages, ws],

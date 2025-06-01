@@ -212,19 +212,23 @@ export class Room extends DurableObject {
 	): Promise<void> {
 		try {
 			const packet = deserializePacket(message);
-			// Clients allowed to send a Reaction or Message
-			if (
-				// Reaction, Message or Typing
-				packet.kind() != PacketKind.Reaction &&
-				packet.kind() != PacketKind.Message &&
-				packet.kind() != PacketKind.Typing &&
-				// Message id and user id are not set, they are only set by the server
-				!packet.message_id() &&
-				!packet.user_id() &&
-				// It's coming from the client
-				!isServer
-			) {
-				throw new Error("Invalid packet kind");
+			
+			// Validate packets coming from clients
+			if (!isServer) {
+				// Clients can only send Message, Reaction, or Typing packets
+				if (
+					packet.kind() !== PacketKind.Reaction &&
+					packet.kind() !== PacketKind.Message &&
+					packet.kind() !== PacketKind.Typing
+				) {
+					throw new Error("Invalid packet kind: clients can only send Message, Reaction, or Typing packets");
+				}
+				
+				// Clients should not set message_id or user_id (server sets these)
+				// Client can set message_id for Reaction packet
+				if ((packet.message_id() !== undefined && packet.kind() !== PacketKind.Reaction) || packet.user_id() !== undefined) {
+					throw new Error("Invalid packet: clients cannot set message_id or user_id");
+				}
 			}
 
 			const cacheDriver = new CacheDriver(this.env.KV);

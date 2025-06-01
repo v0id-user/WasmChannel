@@ -16,9 +16,8 @@ export function useChat(
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
 
-		const messageId = Date.now().toString();
 		const message: Message = {
-			id: messageId,
+			id: Date.now().toString(),
 			userId: currentUserId,
 			text: newMessage.trim(),
 			timestamp: new Date(),
@@ -61,8 +60,8 @@ export function useChat(
 				1000 + Math.random() * 2000,
 			);
 		}
-
-		sendMessage(ws!, currentUserId, messageId, newMessage);
+		console.log("useChat: Sending message:", newMessage);
+		sendMessage(ws!, newMessage);
 	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
 
 	useEffect(() => {
@@ -70,11 +69,36 @@ export function useChat(
 		
 		console.log("useChat: Setting up WebSocket message handler");
 		
-		const handleMessage = (event: MessageEvent) => {
+		const handleMessage = async (event: MessageEvent) => {
 			console.log("useChat: Received packet:", event.data);
-			const packet = deserializePacket(event.data);
-			console.log("useChat: Deserialized packet:", packet);
-			handlePacket(packet);
+			
+			let uint8Data: Uint8Array;
+			
+			// Handle different data types from WebSocket
+			if (event.data instanceof Blob) {
+				// Convert Blob to Uint8Array
+				const arrayBuffer = await event.data.arrayBuffer();
+				uint8Data = new Uint8Array(arrayBuffer);
+			} else if (event.data instanceof ArrayBuffer) {
+				// Convert ArrayBuffer to Uint8Array
+				uint8Data = new Uint8Array(event.data);
+			} else if (event.data instanceof Uint8Array) {
+				// Already the correct type
+				uint8Data = event.data;
+			} else {
+				console.error("useChat: Unsupported data type:", typeof event.data);
+				return;
+			}
+			
+			console.log("useChat: Converted to Uint8Array:", uint8Data);
+			
+			try {
+				const packet = deserializePacket(uint8Data);
+				console.log("useChat: Deserialized packet:", packet);
+				handlePacket(packet);
+			} catch (error) {
+				console.error("useChat: Failed to deserialize packet:", error);
+			}
 		};
 		
 		ws.onmessage = handleMessage;

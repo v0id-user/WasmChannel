@@ -85,12 +85,11 @@ impl WasmPacket {
     }
 
     pub fn serialize(&self) -> Result<Uint8Array, JsValue> {
-        match bincode::encode_to_vec(&self.inner, bincode::config::standard()) {
-            Ok(bytes) => {
-                let mut inner = self.inner.clone();
-                inner.serialized = true;
-                Ok(Uint8Array::from(&bytes[..]))
-            }
+        let mut serializable_inner = self.inner.clone();
+        serializable_inner.serialized = true;
+        
+        match bincode::encode_to_vec(&serializable_inner, bincode::config::standard()) {
+            Ok(bytes) => Ok(Uint8Array::from(&bytes[..])),
             Err(_) => Err(JsValue::from_str("Serialization failed")),
         }
     }
@@ -104,7 +103,7 @@ impl WasmPacket {
                 inner.serialized = false;
                 Ok(WasmPacket { inner })
             }
-            Err(_) => Err(JsValue::from_str("Deserialization failed")),
+            Err(e) => Err(JsValue::from_str(&format!("Failed to deserialize packet: {}", e))),
         }
     }
 }
