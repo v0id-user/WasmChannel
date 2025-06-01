@@ -218,7 +218,7 @@ export default function Chat() {
 			const foundUser = users.find((u) => u.id === message.userId);
 			const user = foundUser || {
 				id: message.userId,
-				name: message.userId, // Use userId as name if user not found
+				name: message.userId, // Use userId as name
 				isOnline: true,
 			};
 			
