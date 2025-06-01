@@ -157,7 +157,7 @@ export class Room extends DurableObject {
 			// Push to queue and save to cache
 			Promise.all(
 				[this.env.QUEUE_MESSAGES.send(packet),
-				cacheDriver.write(packet)
+				cacheDriver.write([packet], senderId)
 				])
 
 			const clientsIdsCopy = new Map(this.clientsById);
