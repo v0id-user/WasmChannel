@@ -20,7 +20,19 @@ export default function Chat() {
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
 	const [isClient, setIsClient] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const currentUserId = "1"; // TODO: Extract real user id from the database
+	const { me } = useStoreClient();
+
+	if (!me) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
+					<div className="h-full flex items-center justify-center">
+						<div className="text-gray-500">جاري التحميل...</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	// Initialize on client side only
 	useEffect(() => {
@@ -36,25 +48,24 @@ export default function Chat() {
 		scrollToBottom();
 	}, [messages, typingUsers, scrollToBottom]);
 
-	// Custom hooks
-	const { handleReactionClick } = useChatReactions(currentUserId, setMessages);
+	const { handleReactionClick } = useChatReactions(me?.userId, setMessages);
 	const { handleSendMessage } = useChatMessage(
 		newMessage,
 		isClient,
-		currentUserId,
+		me?.userId,
 		ws,
 		setMessages,
-		setNewMessage
+		setNewMessage,
 	);
 
 	// Simulation effects
 	useChatSimulation(
 		isClient,
 		messages,
-		currentUserId,
+		me?.userId,
 		users,
 		setTypingUsers,
-		setMessages
+		setMessages,
 	);
 
 	// Group messages by user to show avatars only for first message in sequence
@@ -108,7 +119,7 @@ export default function Chat() {
 							user={user}
 							showAvatar={showAvatar}
 							onReactionClick={handleReactionClick}
-							currentUserId={currentUserId}
+							currentUserId={me?.userId}
 						/>
 					))}
 

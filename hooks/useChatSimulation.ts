@@ -8,7 +8,7 @@ export function useChatSimulation(
 	currentUserId: string,
 	users: User[],
 	setTypingUsers: React.Dispatch<React.SetStateAction<User[]>>,
-	setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 ) {
 	useEffect(() => {
 		if (!isClient) return;
@@ -93,4 +93,4 @@ export function useChatSimulation(
 			return () => clearInterval(interval);
 		}
 	}, [isClient, messages, currentUserId, users, setTypingUsers, setMessages]);
-} 
+}

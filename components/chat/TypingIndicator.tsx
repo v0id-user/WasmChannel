@@ -26,4 +26,4 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
 			</div>
 		</div>
 	);
-} 
+}

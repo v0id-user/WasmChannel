@@ -66,4 +66,4 @@ export const getInitialMessages = (): Message[] => [
 		reactions: [{ kind: ReactionKind.Heart, count: 3, users: ["2", "4", "5"] }],
 		isOwn: true,
 	},
-]; 
+];

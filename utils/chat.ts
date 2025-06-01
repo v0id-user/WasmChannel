@@ -15,4 +15,4 @@ export function getAvatarColor(name: string): string {
 		return a & a;
 	}, 0);
 	return colors[Math.abs(hash) % colors.length];
-} 
+}

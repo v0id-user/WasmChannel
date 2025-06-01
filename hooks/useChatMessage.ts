@@ -9,7 +9,7 @@ export function useChatMessage(
 	currentUserId: string,
 	ws: WebSocket | null,
 	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
-	setNewMessage: React.Dispatch<React.SetStateAction<string>>
+	setNewMessage: React.Dispatch<React.SetStateAction<string>>,
 ) {
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
@@ -63,4 +63,4 @@ export function useChatMessage(
 	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
 
 	return { handleSendMessage };
-} 
+}

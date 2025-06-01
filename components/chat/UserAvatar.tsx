@@ -22,4 +22,4 @@ export function UserAvatar({ user, size = "sm" }: UserAvatarProps) {
 			)}
 		</div>
 	);
-} 
+}

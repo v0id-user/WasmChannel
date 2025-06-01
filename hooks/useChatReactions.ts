@@ -4,7 +4,7 @@ import type { Message, ReactionCount } from "@/types/chat";
 
 export function useChatReactions(
 	currentUserId: string,
-	setMessages: React.Dispatch<React.SetStateAction<Message[]>>
+	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 ) {
 	const handleReactionClick = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
@@ -68,4 +68,4 @@ export function useChatReactions(
 	);
 
 	return { handleReactionClick };
-} 
+}

@@ -66,4 +66,4 @@ export function ReactionDisplay({
 			})}
 		</div>
 	);
-} 
+}

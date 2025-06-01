@@ -35,4 +35,4 @@ export function OnlineUsersBar({ users }: OnlineUsersBarProps) {
 			</div>
 		</div>
 	);
-} 
+}

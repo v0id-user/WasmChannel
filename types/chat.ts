@@ -19,4 +19,4 @@ export interface Message {
 	timestamp: Date;
 	reactions: ReactionCount[];
 	isOwn: boolean;
-} 
+}

@@ -6,7 +6,11 @@ interface MessageInputProps {
 	onSendMessage: () => void;
 }
 
-export function MessageInput({ newMessage, setNewMessage, onSendMessage }: MessageInputProps) {
+export function MessageInput({
+	newMessage,
+	setNewMessage,
+	onSendMessage,
+}: MessageInputProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	const adjustTextareaHeight = useCallback(() => {
@@ -55,4 +59,4 @@ export function MessageInput({ newMessage, setNewMessage, onSendMessage }: Messa
 			</div>
 		</div>
 	);
-} 
+}
