@@ -10,8 +10,7 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { WasmPacket } from "@/wasm/wasmchannel";
 
-
-export interface QueueIner{
+export interface QueueIner {
 	wasmPacket: WasmPacket;
 	sentBy: string;
 }

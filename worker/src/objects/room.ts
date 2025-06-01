@@ -92,7 +92,7 @@ export class Room extends DurableObject {
 		});
 	}
 
-	webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
+	async webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
 		const messageData =
 			event instanceof ArrayBuffer
 				? new Uint8Array(event)
@@ -105,7 +105,7 @@ export class Room extends DurableObject {
 		const clientId = this.clientsBySocket.get(ws);
 		if (!clientId) return;
 
-		this.#broadcastToOthers(messageData, clientId);
+		await this.#broadcastToOthers(messageData, clientId);
 	}
 
 	webSocketClose(ws: WebSocket) {
@@ -141,24 +141,27 @@ export class Room extends DurableObject {
 	}
 
 	// Broadcast to all clients except the sender
-	#broadcastToOthers(message: Uint8Array, senderId: string): void {
-
-		// TODO: first deserialize the message and check if it is a valid packet
-		// so you can push it to the queue and test validation
+	async #broadcastToOthers(
+		message: Uint8Array,
+		senderId: string,
+	): Promise<void> {
 		try {
 			const packet = deserializePacket(message);
 			// Clients allowed to send a Reaction or Message
-			if (packet.kind() != PacketKind.Reaction && packet.kind() != PacketKind.Message) {
+			if (
+				packet.kind() != PacketKind.Reaction &&
+				packet.kind() != PacketKind.Message
+			) {
 				throw new Error("Invalid packet kind");
 			}
 
 			const cacheDriver = new CacheDriver(this.env.KV);
 
 			// Push to queue and save to cache
-			Promise.all(
-				[this.env.QUEUE_MESSAGES.send({ wasmPacket: packet, sentBy: senderId }),
-				cacheDriver.write([packet], senderId)
-				])
+			await Promise.all([
+				this.env.QUEUE_MESSAGES.send({ wasmPacket: packet, sentBy: senderId }),
+				cacheDriver.write([packet], senderId),
+			]);
 
 			const clientsIdsCopy = new Map(this.clientsById);
 			for (const [clientId, ws] of clientsIdsCopy) {
@@ -175,7 +178,7 @@ export class Room extends DurableObject {
 		} catch (error) {
 			console.error("Error deserializing packet:", error);
 			// Just skip
-			return
+			return;
 		}
 	}
 

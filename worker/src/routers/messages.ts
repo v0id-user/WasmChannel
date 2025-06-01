@@ -19,7 +19,7 @@ export const get = protectedBase
 	})
 	.input(getMessagesSchema)
 	.handler(async ({ context, input }) => {
-		const { DB, KV, } = context;
+		const { DB, KV } = context;
 
 		// Create drivers
 		const cacheDriver = new CacheDriver(KV);
@@ -34,22 +34,25 @@ export const get = protectedBase
 				if (cachedMessages && cachedMessages.length > 0) {
 					return {
 						messages: cachedMessages,
-						source: "cache"
+						source: "cache",
 					};
 				}
 			}
 			// If cache is empty, fallback to database
-			const dbMessages = await dbDriver.getMessages(input.limit || 50, input.cursor);
+			const dbMessages = await dbDriver.getMessages(
+				input.limit || 50,
+				input.cursor,
+			);
 
 			return {
 				messages: dbMessages,
-				source: "database"
+				source: "database",
 			};
 		} catch (error) {
 			console.error("Error fetching messages:", error);
 			return {
 				messages: [],
-				error: "Failed to fetch messages"
+				error: "Failed to fetch messages",
 			};
 		}
 	});
