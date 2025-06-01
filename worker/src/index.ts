@@ -8,13 +8,18 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
-import { deserializePacket } from "@/oop/packet";
 import { WasmPacket } from "@/wasm/wasmchannel";
+
+
+export interface QueueIner{
+	wasmPacket: WasmPacket;
+	sentBy: string;
+}
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	KV: KVNamespace;
-	QUEUE_MESSAGES: Queue<WasmPacket>;
+	QUEUE_MESSAGES: Queue<QueueIner>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -147,15 +152,16 @@ app.get("/openapi.json", (c) => {
 
 export default {
 	fetch: app.fetch,
-	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
+	async queue(batch: MessageBatch<QueueIner>, env: Env) {
 		console.log("Hey the queue is working");
 		for (const message of batch.messages) {
 			try {
 				console.log("Message: ", message);
 				console.log("Body: ", message.body);
-				console.log("Payload: ", message.body.payload());
-				console.log("Kind: ", message.body.kind());
-				console.log("Reaction kind: ", message.body.reaction_kind());
+				console.log("Payload: ", message.body.wasmPacket.payload());
+				console.log("Kind: ", message.body.wasmPacket.kind());
+				console.log("Reaction kind: ", message.body.wasmPacket.reaction_kind());
+				console.log("Sent by: ", message.body.sentBy);
 			} catch (error) {
 				// Just skip it's an experiment at the end of the day
 				console.error("Error processing message:", error);

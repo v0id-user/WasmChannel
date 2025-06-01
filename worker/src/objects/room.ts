@@ -156,7 +156,7 @@ export class Room extends DurableObject {
 
 			// Push to queue and save to cache
 			Promise.all(
-				[this.env.QUEUE_MESSAGES.send(packet),
+				[this.env.QUEUE_MESSAGES.send({ wasmPacket: packet, sentBy: senderId }),
 				cacheDriver.write([packet], senderId)
 				])
 
