@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { protectedBase } from "~/contexts";
+import { DatabaseDriver, CacheDriver } from "~/driver/write";
+
 const getMessagesSchema = z.object({
 	cursor: z.string().optional(),
 	limit: z.number().optional(),
@@ -17,11 +19,37 @@ export const get = protectedBase
 	})
 	.input(getMessagesSchema)
 	.handler(async ({ context, input }) => {
-		const { DB, KV, QUEUE_MESSAGES, ROOM, req, user, session } = context;
+		const { DB, KV, } = context;
 
-		// TODO: Return all messages from the database
-		// First fetch the cache, then use the cursor if needed
-		return {
-			messages: [],
-		};
+		// Create drivers
+		const cacheDriver = new CacheDriver(KV);
+		const dbDriver = new DatabaseDriver(DB);
+
+		try {
+			// if there is a cursor don't return cache
+			if (!input.cursor) {
+				// First try to get messages from cache
+				const cachedMessages = await cacheDriver.getMessages(input.limit || 50);
+
+				if (cachedMessages && cachedMessages.length > 0) {
+					return {
+						messages: cachedMessages,
+						source: "cache"
+					};
+				}
+			}
+			// If cache is empty, fallback to database
+			const dbMessages = await dbDriver.getMessages(input.limit || 50, input.cursor);
+
+			return {
+				messages: dbMessages,
+				source: "database"
+			};
+		} catch (error) {
+			console.error("Error fetching messages:", error);
+			return {
+				messages: [],
+				error: "Failed to fetch messages"
+			};
+		}
 	});

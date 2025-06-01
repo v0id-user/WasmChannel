@@ -9,11 +9,12 @@ import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
 import { deserializePacket } from "@/oop/packet";
+import { WasmPacket } from "@/wasm/wasmchannel";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	KV: KVNamespace;
-	QUEUE_MESSAGES: Queue<Uint8Array>;
+	QUEUE_MESSAGES: Queue<WasmPacket>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -146,16 +147,15 @@ app.get("/openapi.json", (c) => {
 
 export default {
 	fetch: app.fetch,
-	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
+	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
 		console.log("Hey the queue is working");
 		for (const message of batch.messages) {
 			try {
 				console.log("Message: ", message);
 				console.log("Body: ", message.body);
-				// Don't ask me why I need to wrap it in a Uint8Array, it should be obvious that the body is already a Uint8Array, but no it's not >_>
-				const packet = deserializePacket(new Uint8Array(message.body));
-				console.log("Packet: ", packet);
-				console.log("Packet kind: ", packet.kind());
+				console.log("Payload: ", message.body.payload());
+				console.log("Kind: ", message.body.kind());
+				console.log("Reaction kind: ", message.body.reaction_kind());
 			} catch (error) {
 				// Just skip it's an experiment at the end of the day
 				console.error("Error processing message:", error);

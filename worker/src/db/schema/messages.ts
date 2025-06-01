@@ -27,7 +27,7 @@ export const messages = sqliteTable("messages", {
 	reactionKind: text("reaction_kind", {
 		enum: Object.values(ReactionKind) as [string, ...string[]],
 	}),
-	message: text("message").notNull(),
+	message: text("message").notNull(), // A.K.A payload
 	sentBy: text("sent_by")
 		.references(() => user.id, { onDelete: "cascade" })
 		.notNull(),

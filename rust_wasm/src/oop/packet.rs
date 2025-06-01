@@ -62,6 +62,10 @@ impl WasmPacket {
         self.inner.kind
     }
 
+    pub fn reaction_kind(&self) -> Option<ReactionKind> {
+        self.inner.reaction_kind
+    }
+
     pub fn payload(&self) -> Uint8Array {
         let mut decompressed = Vec::new();
         let mut decoder = lz4_flex::frame::FrameDecoder::new(&self.inner.payload[..]);

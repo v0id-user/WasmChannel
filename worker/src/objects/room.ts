@@ -1,10 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
-import { createPacket, serializePacket } from "@/oop/packet";
+import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
 import { PacketKind } from "@/utils/wasm/init";
 import { createAuthWithD1 } from "@/auth";
 import { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "../db";
+import { CacheDriver } from "../driver/write";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -142,20 +143,39 @@ export class Room extends DurableObject {
 	// Broadcast to all clients except the sender
 	#broadcastToOthers(message: Uint8Array, senderId: string): void {
 
-        // TODO: first deserialize the message and check if it is a valid packet
-        // so you can push it to the queue and test validation
-
-		const clientsIdsCopy = new Map(this.clientsById);
-		for (const [clientId, ws] of clientsIdsCopy) {
-			try {
-				if (clientId === senderId) continue;
-				ws.send(message);
-			} catch (error) {
-				console.error(`Error sending message to client ${clientId}:`, error);
-				// Remove client if send fails
-				this.clientsById.delete(clientId);
-				this.clientsBySocket.delete(ws);
+		// TODO: first deserialize the message and check if it is a valid packet
+		// so you can push it to the queue and test validation
+		try {
+			const packet = deserializePacket(message);
+			// Clients allowed to send a Reaction or Message
+			if (packet.kind() != PacketKind.Reaction && packet.kind() != PacketKind.Message) {
+				throw new Error("Invalid packet kind");
 			}
+
+			const cacheDriver = new CacheDriver(this.env.KV);
+
+			// Push to queue and save to cache
+			Promise.all(
+				[this.env.QUEUE_MESSAGES.send(packet),
+				cacheDriver.write(packet)
+				])
+
+			const clientsIdsCopy = new Map(this.clientsById);
+			for (const [clientId, ws] of clientsIdsCopy) {
+				try {
+					if (clientId === senderId) continue;
+					ws.send(message);
+				} catch (error) {
+					console.error(`Error sending message to client ${clientId}:`, error);
+					// Remove client if send fails
+					this.clientsById.delete(clientId);
+					this.clientsBySocket.delete(ws);
+				}
+			}
+		} catch (error) {
+			console.error("Error deserializing packet:", error);
+			// Just skip
+			return
 		}
 	}
 
