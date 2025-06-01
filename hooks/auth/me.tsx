@@ -43,7 +43,7 @@ export function useGetMeAggressively() {
 					setMeData(newMeData);
 					return;
 				}
-				
+
 				// Get browser fingerprint for new user
 				const fingerprint = await getFingerprint();
 				const email = `${fingerprint}@wasm.channel`;

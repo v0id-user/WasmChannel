@@ -19,10 +19,10 @@ export function OnlineUsersBar({ users }: OnlineUsersBarProps) {
 					{onlineUsers.length === 0
 						? "لا يوجد متصلين"
 						: onlineUsers.length === 1
-						? "متصل واحد"
-						: onlineUsers.length === 2
-						? "متصلين"
-						: `${onlineUsers.length} متصلين`}
+							? "متصل واحد"
+							: onlineUsers.length === 2
+								? "متصلين"
+								: `${onlineUsers.length} متصلين`}
 				</span>
 
 				<div className="flex items-center gap-1 mr-2">

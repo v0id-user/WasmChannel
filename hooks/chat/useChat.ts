@@ -66,14 +66,14 @@ export function useChat(
 
 	useEffect(() => {
 		if (!ws) return;
-		
+
 		console.log("useChat: Setting up WebSocket message handler");
-		
+
 		const handleMessage = async (event: MessageEvent) => {
 			console.log("useChat: Received packet:", event.data);
-			
+
 			let uint8Data: Uint8Array;
-			
+
 			// Handle different data types from WebSocket
 			if (event.data instanceof Blob) {
 				// Convert Blob to Uint8Array
@@ -89,9 +89,9 @@ export function useChat(
 				console.error("useChat: Unsupported data type:", typeof event.data);
 				return;
 			}
-			
+
 			console.log("useChat: Converted to Uint8Array:", uint8Data);
-			
+
 			try {
 				const packet = deserializePacket(uint8Data);
 				console.log("useChat: Deserialized packet:", packet);
@@ -100,10 +100,10 @@ export function useChat(
 				console.error("useChat: Failed to deserialize packet:", error);
 			}
 		};
-		
+
 		ws.onmessage = handleMessage;
 		console.log("useChat: WebSocket onmessage handler assigned");
-		
+
 		return () => {
 			console.log("useChat: Cleaning up WebSocket message handler");
 			ws.onmessage = null;

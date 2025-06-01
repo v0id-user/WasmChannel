@@ -49,7 +49,11 @@ export default function Chat() {
 		};
 	}, [clearAllTimeouts]);
 
-	const { handleReactionClick } = useChatReactions(me?.userId || "", setMessages, ws || undefined);
+	const { handleReactionClick } = useChatReactions(
+		me?.userId || "",
+		setMessages,
+		ws || undefined,
+	);
 
 	const handlePacket = (packet: WasmPacket) => {
 		console.log("chat.tsx: Received packet:", packet);
@@ -60,7 +64,10 @@ export default function Chat() {
 		switch (result.type) {
 			case "message":
 				if (result.data) {
-					console.log("chat.tsx: Adding message with userId:", result.data.userId);
+					console.log(
+						"chat.tsx: Adding message with userId:",
+						result.data.userId,
+					);
 					setMessages((prev) => [...prev, result.data]);
 				}
 				break;
@@ -165,7 +172,9 @@ export default function Chat() {
 					console.log("Message deleted:", { messageId, userId });
 
 					// Remove the message from the chat
-					setMessages((prev) => prev.filter((message) => message.id !== messageId));
+					setMessages((prev) =>
+						prev.filter((message) => message.id !== messageId),
+					);
 				}
 				break;
 
@@ -213,7 +222,7 @@ export default function Chat() {
 		(acc, message, index) => {
 			const prevMessage = messages[index - 1];
 			const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
-			
+
 			// Find user or create a fallback user with userId as name
 			const foundUser = users.find((u) => u.id === message.userId);
 			const user = foundUser || {
@@ -221,11 +230,14 @@ export default function Chat() {
 				name: message.userId, // Use userId as name
 				isOnline: true,
 			};
-			
+
 			if (!foundUser) {
-				console.log("chat.tsx: Creating fallback user for userId:", message.userId);
+				console.log(
+					"chat.tsx: Creating fallback user for userId:",
+					message.userId,
+				);
 			}
-			
+
 			acc.push({
 				message,
 				showAvatar,

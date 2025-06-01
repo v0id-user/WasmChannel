@@ -212,7 +212,7 @@ export class Room extends DurableObject {
 	): Promise<void> {
 		try {
 			const packet = deserializePacket(message);
-			
+
 			// Validate packets coming from clients
 			if (!isServer) {
 				// Clients can only send Message, Reaction, or Typing packets
@@ -221,13 +221,21 @@ export class Room extends DurableObject {
 					packet.kind() !== PacketKind.Message &&
 					packet.kind() !== PacketKind.Typing
 				) {
-					throw new Error("Invalid packet kind: clients can only send Message, Reaction, or Typing packets");
+					throw new Error(
+						"Invalid packet kind: clients can only send Message, Reaction, or Typing packets",
+					);
 				}
-				
+
 				// Clients should not set message_id or user_id (server sets these)
 				// Client can set message_id for Reaction packet
-				if ((packet.message_id() !== undefined && packet.kind() !== PacketKind.Reaction) || packet.user_id() !== undefined) {
-					throw new Error("Invalid packet: clients cannot set message_id or user_id");
+				if (
+					(packet.message_id() !== undefined &&
+						packet.kind() !== PacketKind.Reaction) ||
+					packet.user_id() !== undefined
+				) {
+					throw new Error(
+						"Invalid packet: clients cannot set message_id or user_id",
+					);
 				}
 			}
 

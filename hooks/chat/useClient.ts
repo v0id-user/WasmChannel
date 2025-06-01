@@ -36,11 +36,15 @@ export function useClient() {
 			};
 
 			ws.onclose = (event) => {
-				console.log("Disconnected from chat worker", { code: event.code, reason: event.reason });
+				console.log("Disconnected from chat worker", {
+					code: event.code,
+					reason: event.reason,
+				});
 				setClientReady(false);
 
 				// Retry on various error conditions, but not on normal closure
-				const shouldRetry = event.code !== 1000 && // Not normal closure
+				const shouldRetry =
+					event.code !== 1000 && // Not normal closure
 					event.code !== 1001 && // Not going away
 					retryCount.current < maxRetries;
 
