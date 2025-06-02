@@ -1,0 +1,11 @@
+# Tell GitHub Linguist to properly count Rust code
+# Even though most of the project is written in TypeScript (frontend/backend),
+# Rust plays a central role in handling low-level binary protocols, compression, and safety via WebAssembly.
+# This ensures the language breakdown reflects actual system architecture importance — not just file size.
+
+*.rs linguist-detectable=true
+
+# These are still counted hidden files — we’re just clarifying Rust's presence
+*.ts linguist-detectable=false
+*.js linguist-detectable=false
+*.css linguist-detectable=false
