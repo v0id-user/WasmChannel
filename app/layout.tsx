@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
-import ClientBootstrap from "./bootstrap";
 
 const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 	variable: "--font-ibm-plex-sans-arabic",
@@ -26,7 +25,6 @@ export default function RootLayout({
 			<body className={`${ibmPlexSansArabic.variable} antialiased`}>
 				<Providers>
 					{/* This is a client side bootstrap component that will setup the store, the wasm modules and the chat client */}
-					<ClientBootstrap />
 					{children}
 				</Providers>
 			</body>
