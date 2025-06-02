@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "worker",
+	"name": "wasmchannel",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-05-08",
 	"compatibility_flags": [
@@ -28,13 +28,13 @@
 			{
 				"queue": "wasmchannel",
 				"max_batch_size": 10, // 10 messages per batch
-				"max_batch_timeout": 5 // 5 seconds per batch
+                "max_batch_timeout": 5 // 5 seconds per batch
 			}
 		],
 		"producers": [
 			{
 				"queue": "wasmchannel",
-				"binding": "QUEUE_MESSAGES"
+				"binding": "wasmchannel"
 			}
 		]
 	},
