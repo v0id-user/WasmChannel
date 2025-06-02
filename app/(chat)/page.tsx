@@ -3,17 +3,21 @@
 import Chat from "@/components/chat";
 import { useClient } from "@/hooks/chat/useClient";
 import { useStoreClient } from "@/store/client";
+import { useGetMeAggressively } from "@/hooks/auth/me";
 
 export default function Home() {
 	const { bootstrapped, loadingState } = useStoreClient();
 	const { clientReady } = useClient();
+	const { maxRetriesReached, manualRetry, retryCount, maxRetries } = useGetMeAggressively();
 
 	console.log("PAGE: Rendering chat page", {
 		bootstrapped,
 		clientReady,
 		currentStep: loadingState.step,
 		currentMessage: loadingState.message,
-		hasError: !!loadingState.error
+		hasError: !!loadingState.error,
+		maxRetriesReached,
+		retryCount
 	});
 
 	if (!bootstrapped || !clientReady) {
@@ -21,11 +25,23 @@ export default function Home() {
 		return (
 			<div className="flex items-center justify-center min-h-screen bg-gray-50">
 				<div className="flex flex-col items-center space-y-6 p-8">
-					{/* Main spinner */}
-					<div className="relative">
-						<div className="w-12 h-12 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
-						<div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-b-gray-600 rounded-full animate-spin animation-delay-150"></div>
-					</div>
+					{/* Main spinner - hide when max retries reached */}
+					{!maxRetriesReached && (
+						<div className="relative">
+							<div className="w-12 h-12 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+							<div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-b-gray-600 rounded-full animate-spin animation-delay-150"></div>
+						</div>
+					)}
+					
+					{/* Manual retry button when max retries reached */}
+					{maxRetriesReached && (
+						<button
+							onClick={manualRetry}
+							className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+						>
+							إعادة المحاولة
+						</button>
+					)}
 					
 					{/* Status message */}
 					<div className="text-center space-y-2">
@@ -33,9 +49,20 @@ export default function Home() {
 							{loadingState.message}
 						</div>
 						
+						{/* Retry counter when in auth phase */}
+						{loadingState.step.startsWith('auth') && !maxRetriesReached && retryCount > 0 && (
+							<div className="text-sm text-gray-600">
+								المحاولة {retryCount} من {maxRetries}
+							</div>
+						)}
+						
 						{/* Error message if any */}
 						{loadingState.error && (
-							<div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md border border-red-200">
+							<div className={`text-sm px-3 py-2 rounded-md border ${
+								maxRetriesReached 
+									? 'text-orange-700 bg-orange-50 border-orange-200' 
+									: 'text-red-600 bg-red-50 border-red-200'
+							}`}>
 								{loadingState.error}
 							</div>
 						)}
@@ -59,15 +86,20 @@ export default function Home() {
 								(step === 'auth' && ['websocket-connecting', 'websocket-ready', 'complete'].includes(loadingState.step)) ||
 								(step === 'websocket' && loadingState.step === 'complete');
 							
+							const hasError = 
+								(step === 'auth' && maxRetriesReached);
+							
 							return (
 								<div
 									key={step}
 									className={`w-2 h-2 rounded-full transition-all duration-300 ${
-										isCompleted 
-											? 'bg-black' 
-											: isActive 
-												? 'bg-gray-600 animate-pulse' 
-												: 'bg-gray-300'
+										hasError
+											? 'bg-orange-500'
+											: isCompleted 
+												? 'bg-black' 
+												: isActive 
+													? 'bg-gray-600 animate-pulse' 
+													: 'bg-gray-300'
 									}`}
 								/>
 							);

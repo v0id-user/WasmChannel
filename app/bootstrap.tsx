@@ -12,6 +12,7 @@ export default function useClientBootstrap() {
 		userId,
 		isLoading,
 		error: authError,
+		maxRetriesReached,
 	} = useGetMeAggressively();
 	const { isReady: wasmReady, error: wasmError } = useWasmInit();
 
@@ -23,7 +24,8 @@ export default function useClientBootstrap() {
 				isLoading,
 				authError: !!authError,
 				wasmReady,
-				wasmError: !!wasmError
+				wasmError: !!wasmError,
+				maxRetriesReached,
 			});
 
 			if (
@@ -32,7 +34,8 @@ export default function useClientBootstrap() {
 				!isLoading &&
 				!authError &&
 				wasmReady &&
-				!wasmError
+				!wasmError &&
+				!maxRetriesReached
 			) {
 				// Both auth and WASM are ready
 				console.log("BOOTSTRAP: All systems ready! Completing initialization...");
@@ -56,6 +59,7 @@ export default function useClientBootstrap() {
 		wasmError,
 		setBootstrapped,
 		setLoadingState,
+		maxRetriesReached,
 	]);
 
 	return <></>;

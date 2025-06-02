@@ -3,7 +3,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useStoreClient } from "@/store/client";
 import { getFingerprint } from "@thumbmarkjs/thumbmarkjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface MeData {
 	fingerprint: string | null;
@@ -23,22 +23,53 @@ export function useGetMeAggressively() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	const [hasInitialized, setHasInitialized] = useState(false);
+	const [retryCount, setRetryCount] = useState(0);
+	const [maxRetriesReached, setMaxRetriesReached] = useState(false);
+	const isRunning = useRef(false);
+	const maxRetries = 5;
+	
 	const { data: session, isPending: isSessionLoading } =
 		authClient.useSession();
 
+	const manualRetry = () => {
+		console.log("AUTH: Manual retry initiated");
+		setRetryCount(0);
+		setMaxRetriesReached(false);
+		setHasInitialized(false);
+		setError(null);
+		isRunning.current = false;
+	};
+
 	useEffect(() => {
-		// Prevent spamming by only running once
-		if (hasInitialized) return;
+		// Prevent multiple simultaneous runs
+		if (isRunning.current || hasInitialized || maxRetriesReached) {
+			return;
+		}
+
+		// Check retry limit
+		if (retryCount >= maxRetries) {
+			console.log("AUTH: Max retries reached, stopping automatic attempts");
+			setMaxRetriesReached(true);
+			setLoadingState({ 
+				step: "auth-fingerprint", 
+				error: "تم الوصول للحد الأقصى من المحاولات - انقر للمحاولة مرة أخرى" 
+			});
+			return;
+		}
 
 		const fetchMe = async () => {
+			if (isRunning.current) return;
+			isRunning.current = true;
+			
 			try {
-				console.log("AUTH: Starting authentication process...");
+				console.log(`AUTH: Starting authentication process... (attempt ${retryCount + 1}/${maxRetries})`);
 				setIsLoading(true);
 				setError(null);
 
 				// Wait for session to be ready
 				if (isSessionLoading) {
 					console.log("AUTH: Waiting for session to load...");
+					isRunning.current = false;
 					return;
 				}
 
@@ -49,6 +80,7 @@ export function useGetMeAggressively() {
 					setMeData(existingData);
 					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
+					isRunning.current = false;
 					return;
 				}
 
@@ -64,6 +96,7 @@ export function useGetMeAggressively() {
 					setMeData(newMeData);
 					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
+					isRunning.current = false;
 					return;
 				}
 
@@ -101,6 +134,7 @@ export function useGetMeAggressively() {
 					setMeData(newMeData);
 					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
+					isRunning.current = false;
 					return;
 				}
 
@@ -127,13 +161,15 @@ export function useGetMeAggressively() {
 					setMeData(newMeData);
 					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
+					isRunning.current = false;
 					return;
 				}
 
 				console.error("AUTH: All authentication attempts failed");
+				setRetryCount(prev => prev + 1);
 				setLoadingState({ 
 					step: "auth-fingerprint", 
-					error: "فشل في التحقق من الهوية" 
+					error: `فشل في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})` 
 				});
 				
 				// Reset state if all attempts fail
@@ -141,35 +177,37 @@ export function useGetMeAggressively() {
 					fingerprint: null,
 					userId: null,
 				});
-				setHasInitialized(true);
+				isRunning.current = false;
 			} catch (err) {
 				console.error("AUTH: Authentication error:", err);
 				setError(
 					err instanceof Error ? err : new Error("An unknown error occurred"),
 				);
+				setRetryCount(prev => prev + 1);
 				setLoadingState({ 
 					step: "auth-fingerprint", 
-					error: "خطأ في التحقق من الهوية" 
+					error: `خطأ في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})` 
 				});
-				setHasInitialized(true);
+				isRunning.current = false;
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		fetchMe();
-	}, [store, isSessionLoading, session, hasInitialized, setLoadingState]);
+	}, [store, isSessionLoading, session, hasInitialized, setLoadingState, retryCount, maxRetriesReached]);
 
 	// Cleanup effect - only runs on unmount
 	useEffect(() => {
 		return () => {
-			console.log("Cleaning up authentication state");
+			console.log("AUTH: Cleaning up authentication state");
 			authClient.signOut();
 			setMeData({
 				fingerprint: null,
 				userId: null,
 			});
 			setHasInitialized(false);
+			isRunning.current = false;
 		};
 	}, []);
 
@@ -177,5 +215,9 @@ export function useGetMeAggressively() {
 		...meData,
 		isLoading,
 		error,
+		maxRetriesReached,
+		manualRetry,
+		retryCount,
+		maxRetries,
 	};
 }
