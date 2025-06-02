@@ -56,6 +56,19 @@ export default function Chat() {
 		(messageId: string, reactionKind: ReactionKind) => {
 			if (!ws || !me?.userId) return;
 
+			// Check if user has already reacted with this reaction type
+			const message = messages.find(m => m.id === messageId);
+			if (message) {
+				const existingReaction = message.reactions.find(r => r.kind === reactionKind);
+				const hasUserReacted = existingReaction?.users.includes(me.userId) || false;
+				
+				// If user has already reacted, don't send the packet (disable removing reactions)
+				if (hasUserReacted) {
+					console.log("User has already reacted with this reaction type, ignoring click.\nNo ability to remove reactions :P");
+					return;
+				}
+			}
+
 			try {
 				// Create reaction packet
 				const reactionPacket = createPacket(
@@ -73,7 +86,7 @@ export default function Chat() {
 				console.error("Error sending reaction:", error);
 			}
 		},
-		[ws, me?.userId],
+		[ws, me?.userId, messages],
 	);
 
 	const handlePacket = (packet: WasmPacket) => {
@@ -96,7 +109,7 @@ export default function Chat() {
 				break;
 
 			case "reaction":
-				// Handle reaction updates using message IDs
+				// Handle reaction updates using message IDs (only add reactions, never remove)
 				if (result.data) {
 					const { messageId, reactionKind, userId } = result.data;
 					
@@ -113,22 +126,10 @@ export default function Chat() {
 							const hasUserReacted =
 								existingReaction?.users.includes(userId) || false;
 
+							// Only add reactions, never remove them
 							if (hasUserReacted) {
-								// Remove user's reaction
-								return {
-									...message,
-									reactions: message.reactions
-										.map((r) => {
-											if (r.kind === reactionKind) {
-												const newUsers = r.users.filter((id) => id !== userId);
-												return newUsers.length > 0
-													? { ...r, count: newUsers.length, users: newUsers }
-													: null;
-											}
-											return r;
-										})
-										.filter(Boolean) as typeof message.reactions,
-								};
+								// User has already reacted, do nothing (don't remove)
+								return message;
 							} else {
 								// Add user's reaction
 								if (existingReaction) {
