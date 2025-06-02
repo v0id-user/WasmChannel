@@ -2,8 +2,11 @@
 import { useStoreClient } from "@/store/client";
 import { useEffect, useRef, useState } from "react";
 
+// Helper function to add delays
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export function useClient() {
-	const { bootstrapped, setWs } = useStoreClient();
+	const { bootstrapped, setWs, me } = useStoreClient();
 	const client = useRef<WebSocket | null>(null);
 	const [clientReady, setClientReady] = useState<boolean>(false);
 	const retryCount = useRef(0);
@@ -12,9 +15,17 @@ export function useClient() {
 	const retryDelay = 2000; // 2 seconds
 
 	useEffect(() => {
-		if (!bootstrapped) return;
+		if (!bootstrapped) {
+			console.log("useClient: Waiting for bootstrap to complete...");
+			return;
+		}
 
-		const connectWebSocket = () => {
+		if (!me?.userId || !me?.fingerprint) {
+			console.log("useClient: Waiting for authentication credentials...");
+			return;
+		}
+
+		const connectWebSocket = async () => {
 			// Clean up existing connection
 			if (client.current) {
 				client.current.close();
@@ -27,16 +38,24 @@ export function useClient() {
 				retryTimeout.current = null;
 			}
 
+			console.log("useClient: Connecting to WebSocket with credentials:", {
+				userId: me.userId,
+				fingerprint: me.fingerprint.substring(0, 8) + "..."
+			});
+
+			// Add small delay before connecting to prevent rapid attempts
+			await sleep(500);
+
 			const ws = new WebSocket(process.env.NEXT_PUBLIC_WORKER_CHAT!);
 
 			ws.onopen = () => {
-				console.log("Connected to chat worker");
+				console.log("useClient: Connected to chat worker successfully");
 				setClientReady(true);
 				retryCount.current = 0; // Reset retry count on successful connection
 			};
 
 			ws.onclose = (event) => {
-				console.log("Disconnected from chat worker", {
+				console.log("useClient: Disconnected from chat worker", {
 					code: event.code,
 					reason: event.reason,
 				});
@@ -51,7 +70,7 @@ export function useClient() {
 				if (shouldRetry) {
 					retryCount.current += 1;
 					console.log(
-						`Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
+						`useClient: Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
 					);
 					retryTimeout.current = setTimeout(() => {
 						// Check if component is still mounted and we should still retry
@@ -60,12 +79,12 @@ export function useClient() {
 						}
 					}, retryDelay);
 				} else if (retryCount.current >= maxRetries) {
-					console.error("Max retries reached, giving up connection attempts");
+					console.error("useClient: Max retries reached, giving up connection attempts");
 				}
 			};
 
 			ws.onerror = (error) => {
-				console.error("WebSocket error:", error);
+				console.error("useClient: WebSocket error:", error);
 			};
 
 			client.current = ws;
@@ -76,6 +95,7 @@ export function useClient() {
 
 		// Cleanup function
 		return () => {
+			console.log("useClient: Cleaning up WebSocket connection");
 			if (retryTimeout.current) {
 				clearTimeout(retryTimeout.current);
 				retryTimeout.current = null;
@@ -85,7 +105,7 @@ export function useClient() {
 				client.current = null;
 			}
 		};
-	}, [bootstrapped, setWs]);
+	}, [bootstrapped, setWs, me]);
 
 	return {
 		clientReady,

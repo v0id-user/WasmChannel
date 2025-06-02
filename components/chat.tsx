@@ -210,10 +210,11 @@ export default function Chat() {
 		newMessage,
 		isClient,
 		me?.userId || "",
-		ws!,
+		ws,
 		setMessages,
 		setNewMessage,
 		handlePacket,
+		!!(me?.userId && me?.fingerprint), // Pass authentication state
 	);
 
 	// Simulation effects

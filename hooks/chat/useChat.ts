@@ -9,27 +9,36 @@ export function useChat(
 	newMessage: string,
 	isClient: boolean,
 	currentUserId: string,
-	ws: WebSocket,
+	ws: WebSocket | null,
 	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 	setNewMessage: React.Dispatch<React.SetStateAction<string>>,
 	handlePacket: (packet: WasmPacket) => void,
+	isAuthenticated: boolean = false,
 ) {
 	const handleSendMessage = useCallback(() => {
-		if (!newMessage.trim() || !isClient) return;
+		if (!newMessage.trim() || !isClient || !isAuthenticated || !ws) {
+			console.log("useChat: Cannot send message - missing requirements", {
+				hasMessage: !!newMessage.trim(),
+				isClient,
+				isAuthenticated,
+				hasWs: !!ws
+			});
+			return;
+		}
 
-		// Generate a unique message ID that will be consistent across all clients
+		if (ws.readyState !== WebSocket.OPEN) {
+			console.log("useChat: WebSocket not ready, readyState:", ws.readyState);
+			return;
+		}
+
 		const messageId = nanoid();
 
-		// Clear the input immediately
 		setNewMessage("");
 
-		// Send message to server with the generated ID
-		// The server will broadcast it back to all clients (including sender)
 		console.log("useChat: Sending message with ID:", messageId, "content:", newMessage);
-		sendMessage(ws!, newMessage, messageId);
+		sendMessage(ws, newMessage, messageId);
 
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
-			// Simulate response
 			setTimeout(
 				() => {
 					const responders = users.filter(
@@ -48,7 +57,7 @@ export function useChat(
 						];
 
 						const response: Message = {
-							id: nanoid(), // Use consistent ID generation
+							id: nanoid(),
 							userId: responder.id,
 							text: responses[Math.floor(Math.random() * responses.length)],
 							timestamp: new Date(),
@@ -61,10 +70,22 @@ export function useChat(
 				1000 + Math.random() * 2000,
 			);
 		}
-	}, [newMessage, isClient, currentUserId, ws, setNewMessage]);
+	}, [newMessage, isClient, currentUserId, ws, setNewMessage, isAuthenticated]);
 
 	useEffect(() => {
-		if (!ws) return;
+		if (!ws || !isAuthenticated || !currentUserId) {
+			console.log("useChat: Skipping WebSocket setup - not ready", {
+				hasWs: !!ws,
+				isAuthenticated,
+				hasUserId: !!currentUserId
+			});
+			return;
+		}
+
+		if (ws.readyState !== WebSocket.OPEN) {
+			console.log("useChat: WebSocket not open, readyState:", ws.readyState);
+			return;
+		}
 
 		console.log("useChat: Setting up WebSocket message handler");
 
@@ -73,16 +94,12 @@ export function useChat(
 
 			let uint8Data: Uint8Array;
 
-			// Handle different data types from WebSocket
 			if (event.data instanceof Blob) {
-				// Convert Blob to Uint8Array
 				const arrayBuffer = await event.data.arrayBuffer();
 				uint8Data = new Uint8Array(arrayBuffer);
 			} else if (event.data instanceof ArrayBuffer) {
-				// Convert ArrayBuffer to Uint8Array
 				uint8Data = new Uint8Array(event.data);
 			} else if (event.data instanceof Uint8Array) {
-				// Already the correct type
 				uint8Data = event.data;
 			} else {
 				console.error("useChat: Unsupported data type:", typeof event.data);
@@ -105,9 +122,11 @@ export function useChat(
 
 		return () => {
 			console.log("useChat: Cleaning up WebSocket message handler");
-			ws.onmessage = null;
+			if (ws.onmessage === handleMessage) {
+				ws.onmessage = null;
+			}
 		};
-	}, [ws, handlePacket]);
+	}, [ws, handlePacket, isAuthenticated, currentUserId]);
 
 	return { handleSendMessage };
 }
