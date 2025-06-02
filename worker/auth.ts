@@ -39,11 +39,11 @@ export const auth = betterAuth({
 		crossSubDomainCookies: {
 			enabled: true,
 			domains: [
-				"in.wasm.channel",
+				process.env.WS_DOMAIN!,
 			],
 		},
 		defaultCookieAttributes: {
-			domain: ".wasm.channel",
+			domain: process.env.DOMAIN!,
 			secure: true,
 			httpOnly: true,
 			sameSite: "None",
@@ -83,11 +83,11 @@ export function createAuth(db: DrizzleD1Database) {
 			crossSubDomainCookies: {
 				enabled: true,
 				domains: [
-					"in.wasm.channel",
+					process.env.WS_DOMAIN!,
 				],
 			},
 			defaultCookieAttributes: {
-				domain: ".wasm.channel",
+				domain: process.env.DOMAIN!,
 				secure: true,
 				httpOnly: true,
 				sameSite: "None",
