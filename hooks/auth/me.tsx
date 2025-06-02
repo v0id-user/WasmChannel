@@ -13,6 +13,22 @@ interface MeData {
 // Helper function to add delays
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Helper function to clear all auth data
+const clearAllAuthData = () => {
+	console.log("AUTH: Clearing all authentication data...");
+	// Clear localStorage
+	if (typeof window !== 'undefined') {
+		localStorage.clear();
+		sessionStorage.clear();
+	}
+	// Sign out from auth client
+	try {
+		authClient.signOut();
+	} catch (error) {
+		console.log("AUTH: Error during signOut (expected if not signed in):", error);
+	}
+};
+
 export function useGetMeAggressively() {
 	const store = useStoreClient();
 	const { setLoadingState } = store;
@@ -25,8 +41,9 @@ export function useGetMeAggressively() {
 	const [hasInitialized, setHasInitialized] = useState(false);
 	const [retryCount, setRetryCount] = useState(0);
 	const [maxRetriesReached, setMaxRetriesReached] = useState(false);
+	const [showRecoveryButton, setShowRecoveryButton] = useState(false);
 	const isRunning = useRef(false);
-	const maxRetries = 5;
+	const maxRetries = 3; // Reduced from 5 to make it less annoying
 	
 	const { data: session, isPending: isSessionLoading } =
 		authClient.useSession();
@@ -37,22 +54,36 @@ export function useGetMeAggressively() {
 		setMaxRetriesReached(false);
 		setHasInitialized(false);
 		setError(null);
+		setShowRecoveryButton(false);
 		isRunning.current = false;
+	};
+
+	const fullRecovery = () => {
+		console.log("AUTH: Full recovery initiated - clearing all data and refreshing");
+		clearAllAuthData();
+		// Clear store data
+		store.setMe({ fingerprint: "", userId: "" });
+		setMeData({ fingerprint: null, userId: null });
+		// Refresh the page
+		if (typeof window !== 'undefined') {
+			window.location.reload();
+		}
 	};
 
 	useEffect(() => {
 		// Prevent multiple simultaneous runs
-		if (isRunning.current || hasInitialized || maxRetriesReached) {
+		if (isRunning.current || hasInitialized) {
 			return;
 		}
 
 		// Check retry limit
 		if (retryCount >= maxRetries) {
-			console.log("AUTH: Max retries reached, stopping automatic attempts");
+			console.log("AUTH: Max retries reached, showing recovery options");
 			setMaxRetriesReached(true);
+			setShowRecoveryButton(true);
 			setLoadingState({ 
 				step: "auth-fingerprint", 
-				error: "تم الوصول للحد الأقصى من المحاولات - انقر للمحاولة مرة أخرى" 
+				error: "فشل في التحقق من الهوية - جرب إعادة التحميل" 
 			});
 			return;
 		}
@@ -66,7 +97,7 @@ export function useGetMeAggressively() {
 				setIsLoading(true);
 				setError(null);
 
-				// Wait for session to be ready
+				// Wait for session loading to complete
 				if (isSessionLoading) {
 					console.log("AUTH: Waiting for session to load...");
 					isRunning.current = false;
@@ -100,6 +131,13 @@ export function useGetMeAggressively() {
 					return;
 				}
 
+				// If session is explicitly null or invalid, clear any stale data and proceed with fingerprint
+				if (session === null || !session?.user) {
+					console.log("AUTH: Session is null/invalid, clearing stale data and proceeding with fingerprint auth");
+					clearAllAuthData();
+					store.setMe({ fingerprint: "", userId: "" });
+				}
+
 				console.log("AUTH: Starting fingerprint authentication process...");
 				setLoadingState({ step: "auth-fingerprint" });
 				
@@ -116,7 +154,7 @@ export function useGetMeAggressively() {
 				setLoadingState({ step: "auth-signin" });
 				
 				// Add delay before sign in attempt
-				await sleep(1000);
+				await sleep(500);
 
 				// Try to sign in existing user
 				const signInResponse = await authClient.signIn.email({
@@ -142,7 +180,7 @@ export function useGetMeAggressively() {
 				setLoadingState({ step: "auth-signup" });
 				
 				// Add delay before sign up attempt
-				await sleep(1000);
+				await sleep(500);
 
 				// Create new user if sign in fails
 				const signUpResponse = await authClient.signUp.email({
@@ -201,12 +239,6 @@ export function useGetMeAggressively() {
 	useEffect(() => {
 		return () => {
 			console.log("AUTH: Cleaning up authentication state");
-			authClient.signOut();
-			setMeData({
-				fingerprint: null,
-				userId: null,
-			});
-			setHasInitialized(false);
 			isRunning.current = false;
 		};
 	}, []);
@@ -216,7 +248,9 @@ export function useGetMeAggressively() {
 		isLoading,
 		error,
 		maxRetriesReached,
+		showRecoveryButton,
 		manualRetry,
+		fullRecovery,
 		retryCount,
 		maxRetries,
 	};

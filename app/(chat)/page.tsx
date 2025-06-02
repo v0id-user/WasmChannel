@@ -8,7 +8,7 @@ import { useGetMeAggressively } from "@/hooks/auth/me";
 export default function Home() {
 	const { bootstrapped, loadingState } = useStoreClient();
 	const { clientReady } = useClient();
-	const { maxRetriesReached, manualRetry, retryCount, maxRetries } = useGetMeAggressively();
+	const { maxRetriesReached, showRecoveryButton, manualRetry, fullRecovery, retryCount, maxRetries } = useGetMeAggressively();
 
 	console.log("PAGE: Rendering chat page", {
 		bootstrapped,
@@ -17,13 +17,14 @@ export default function Home() {
 		currentMessage: loadingState.message,
 		hasError: !!loadingState.error,
 		maxRetriesReached,
+		showRecoveryButton,
 		retryCount
 	});
 
 	if (!bootstrapped || !clientReady) {
 		console.log("PAGE: Showing loading screen...");
 		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-50">
+			<div className="flex items-center justify-center min-h-screen bg-gray-50" dir="rtl">
 				<div className="flex flex-col items-center space-y-6 p-8">
 					{/* Main spinner - hide when max retries reached */}
 					{!maxRetriesReached && (
@@ -33,14 +34,25 @@ export default function Home() {
 						</div>
 					)}
 					
-					{/* Manual retry button when max retries reached */}
+					{/* Action buttons when max retries reached */}
 					{maxRetriesReached && (
-						<button
-							onClick={manualRetry}
-							className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-						>
-							إعادة المحاولة
-						</button>
+						<div className="flex flex-col items-center space-y-3">
+							<button
+								onClick={manualRetry}
+								className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+							>
+								محاولة مرة أخرى
+							</button>
+							
+							{showRecoveryButton && (
+								<button
+									onClick={fullRecovery}
+									className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+								>
+									مسح البيانات وإعادة التحميل
+								</button>
+							)}
+						</div>
 					)}
 					
 					{/* Status message */}
@@ -58,12 +70,19 @@ export default function Home() {
 						
 						{/* Error message if any */}
 						{loadingState.error && (
-							<div className={`text-sm px-3 py-2 rounded-md border ${
+							<div className={`text-sm px-3 py-2 rounded-md border max-w-md ${
 								maxRetriesReached 
 									? 'text-orange-700 bg-orange-50 border-orange-200' 
 									: 'text-red-600 bg-red-50 border-red-200'
 							}`}>
 								{loadingState.error}
+							</div>
+						)}
+						
+						{/* Help text for recovery */}
+						{maxRetriesReached && showRecoveryButton && (
+							<div className="text-xs text-gray-500 max-w-md text-center mt-4">
+								إذا استمرت المشكلة، يمكنك مسح البيانات المحفوظة وإعادة تحميل الصفحة
 							</div>
 						)}
 						
