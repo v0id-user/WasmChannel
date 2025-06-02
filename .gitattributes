@@ -7,5 +7,6 @@
 
 # These are still counted hidden files — we’re just clarifying Rust's presence
 *.ts linguist-detectable=false
+*.tsx linguist-detectable=false
 *.js linguist-detectable=false
 *.css linguist-detectable=false
