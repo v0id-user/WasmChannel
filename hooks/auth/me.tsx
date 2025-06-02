@@ -15,6 +15,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function useGetMeAggressively() {
 	const store = useStoreClient();
+	const { setLoadingState } = store;
 	const [meData, setMeData] = useState<MeData>({
 		fingerprint: null,
 		userId: null,
@@ -44,6 +45,7 @@ export function useGetMeAggressively() {
 				if (existingData && existingData.fingerprint && existingData.userId) {
 					console.log("Using existing data from store");
 					setMeData(existingData);
+					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
 					return;
 				}
@@ -58,11 +60,13 @@ export function useGetMeAggressively() {
 					};
 					store.setMe(newMeData);
 					setMeData(newMeData);
+					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
 					return;
 				}
 
 				console.log("Starting fingerprint authentication process...");
+				setLoadingState({ step: "auth-fingerprint" });
 				
 				// Add delay before starting fingerprint process
 				await sleep(1000);
@@ -72,6 +76,7 @@ export function useGetMeAggressively() {
 				const email = `${fingerprint}@wasm.channel`;
 
 				console.log("Attempting to sign in existing user...");
+				setLoadingState({ step: "auth-signin" });
 				
 				// Add delay before sign in attempt
 				await sleep(1000);
@@ -90,11 +95,13 @@ export function useGetMeAggressively() {
 					};
 					store.setMe(newMeData);
 					setMeData(newMeData);
+					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
 					return;
 				}
 
 				console.log("Sign in failed, attempting to create new user...");
+				setLoadingState({ step: "auth-signup" });
 				
 				// Add delay before sign up attempt
 				await sleep(1000);
@@ -114,11 +121,16 @@ export function useGetMeAggressively() {
 					};
 					store.setMe(newMeData);
 					setMeData(newMeData);
+					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
 					return;
 				}
 
 				console.log("All authentication attempts failed");
+				setLoadingState({ 
+					step: "auth-fingerprint", 
+					error: "فشل في التحقق من الهوية" 
+				});
 				
 				// Reset state if all attempts fail
 				setMeData({
@@ -131,6 +143,10 @@ export function useGetMeAggressively() {
 				setError(
 					err instanceof Error ? err : new Error("An unknown error occurred"),
 				);
+				setLoadingState({ 
+					step: "auth-fingerprint", 
+					error: "خطأ في التحقق من الهوية" 
+				});
 				setHasInitialized(true);
 			} finally {
 				setIsLoading(false);
@@ -138,7 +154,7 @@ export function useGetMeAggressively() {
 		};
 
 		fetchMe();
-	}, [store, isSessionLoading, session, hasInitialized]);
+	}, [store, isSessionLoading, session, hasInitialized, setLoadingState]);
 
 	// Cleanup effect - only runs on unmount
 	useEffect(() => {

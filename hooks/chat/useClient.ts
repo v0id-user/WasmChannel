@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function useClient() {
-	const { bootstrapped, setWs, me } = useStoreClient();
+	const { bootstrapped, setWs, me, setLoadingState } = useStoreClient();
 	const client = useRef<WebSocket | null>(null);
 	const [clientReady, setClientReady] = useState<boolean>(false);
 	const retryCount = useRef(0);
@@ -43,6 +43,8 @@ export function useClient() {
 				fingerprint: me.fingerprint.substring(0, 8) + "..."
 			});
 
+			setLoadingState({ step: "websocket-connecting" });
+
 			// Add small delay before connecting to prevent rapid attempts
 			await sleep(500);
 
@@ -51,6 +53,7 @@ export function useClient() {
 			ws.onopen = () => {
 				console.log("useClient: Connected to chat worker successfully");
 				setClientReady(true);
+				setLoadingState({ step: "websocket-ready" });
 				retryCount.current = 0; // Reset retry count on successful connection
 			};
 
@@ -72,6 +75,10 @@ export function useClient() {
 					console.log(
 						`useClient: Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
 					);
+					setLoadingState({ 
+						step: "websocket-connecting",
+						message: `إعادة محاولة الاتصال... (${retryCount.current}/${maxRetries})`
+					});
 					retryTimeout.current = setTimeout(() => {
 						// Check if component is still mounted and we should still retry
 						if (retryCount.current <= maxRetries) {
@@ -80,11 +87,19 @@ export function useClient() {
 					}, retryDelay);
 				} else if (retryCount.current >= maxRetries) {
 					console.error("useClient: Max retries reached, giving up connection attempts");
+					setLoadingState({ 
+						step: "websocket-connecting",
+						error: "فشل في الاتصال بالخادم" 
+					});
 				}
 			};
 
 			ws.onerror = (error) => {
 				console.error("useClient: WebSocket error:", error);
+				setLoadingState({ 
+					step: "websocket-connecting",
+					error: "خطأ في الاتصال بالخادم" 
+				});
 			};
 
 			client.current = ws;
@@ -105,7 +120,7 @@ export function useClient() {
 				client.current = null;
 			}
 		};
-	}, [bootstrapped, setWs, me]);
+	}, [bootstrapped, setWs, me, setLoadingState]);
 
 	return {
 		clientReady,

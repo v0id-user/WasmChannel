@@ -11,6 +11,24 @@ interface Me {
 	userId: string;
 }
 
+type LoadingStep = 
+	| "initializing"
+	| "wasm-loading"
+	| "wasm-ready"
+	| "auth-fingerprint"
+	| "auth-signin"
+	| "auth-signup"
+	| "auth-ready"
+	| "websocket-connecting"
+	| "websocket-ready"
+	| "complete";
+
+interface LoadingState {
+	step: LoadingStep;
+	message: string;
+	error?: string;
+}
+
 interface Store {
 	ws: WebSocket | null;
 	setWs: (ws: WebSocket | null) => void;
@@ -18,7 +36,23 @@ interface Store {
 	setMe: (me: Me | null) => void;
 	bootstrapped: boolean;
 	setBootstrapped: (bootstrapped: boolean) => void;
+	loadingState: LoadingState;
+	setLoadingState: (state: Partial<LoadingState>) => void;
 }
+
+// Arabic messages for each step
+const LOADING_MESSAGES: Record<LoadingStep, string> = {
+	"initializing": "بدء تشغيل التطبيق...",
+	"wasm-loading": "تحميل الوحدات المطلوبة...",
+	"wasm-ready": "تم تحميل الوحدات بنجاح",
+	"auth-fingerprint": "إنشاء هوية فريدة...",
+	"auth-signin": "محاولة تسجيل الدخول...",
+	"auth-signup": "إنشاء حساب جديد...",
+	"auth-ready": "تم التحقق من الهوية",
+	"websocket-connecting": "الاتصال بالخادم...",
+	"websocket-ready": "تم الاتصال بنجاح",
+	"complete": "مرحباً بك!"
+};
 
 // Custom storage with compression and base64 encoding
 const compressedStorage = {
@@ -93,13 +127,27 @@ if (typeof window !== "undefined") {
 
 export const useStoreClient = create<Store>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			ws: null,
 			setWs: (ws: WebSocket | null) => set({ ws }),
 			me: null,
 			setMe: (me: Me | null) => set({ me }),
 			bootstrapped: false,
 			setBootstrapped: (bootstrapped: boolean) => set({ bootstrapped }),
+			loadingState: {
+				step: "initializing",
+				message: LOADING_MESSAGES["initializing"]
+			},
+			setLoadingState: (state: Partial<LoadingState>) => {
+				const currentState = get().loadingState;
+				const newStep = state.step || currentState.step;
+				const newState = {
+					...currentState,
+					...state,
+					message: state.message || LOADING_MESSAGES[newStep]
+				};
+				set({ loadingState: newState });
+			},
 		}),
 		{
 			name: "client-store",

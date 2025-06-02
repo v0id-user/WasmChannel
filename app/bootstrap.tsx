@@ -6,7 +6,7 @@ import { useGetMeAggressively } from "@/hooks/auth/me";
 import { useWasmInit } from "@/hooks/wasm";
 
 export default function useClientBootstrap() {
-	const { setBootstrapped } = useStoreClient();
+	const { setBootstrapped, setLoadingState } = useStoreClient();
 	const {
 		fingerprint,
 		userId,
@@ -26,7 +26,11 @@ export default function useClientBootstrap() {
 				!wasmError
 			) {
 				// Both auth and WASM are ready
-				setBootstrapped(true);
+				setLoadingState({ step: "complete" });
+				// Add a small delay to show the completion message
+				setTimeout(() => {
+					setBootstrapped(true);
+				}, 800);
 			}
 		}
 		main();
@@ -38,6 +42,7 @@ export default function useClientBootstrap() {
 		wasmReady,
 		wasmError,
 		setBootstrapped,
+		setLoadingState,
 	]);
 
 	return <></>;
