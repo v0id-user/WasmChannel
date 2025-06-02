@@ -30,6 +30,15 @@ export function packetToMessage(
 		const packetUserId = packet.user_id();
 		const packetMessageId = packet.message_id();
 
+		// Server should ALWAYS provide message_id and user_id
+		if (!packetMessageId || !packetUserId) {
+			console.error("Invalid message packet: missing message_id or user_id", {
+				messageId: packetMessageId,
+				userId: packetUserId
+			});
+			return null;
+		}
+
 		// Decode the payload (message content)
 		const payload = packet.payload();
 		const messageText = new TextDecoder().decode(payload);
@@ -41,22 +50,22 @@ export function packetToMessage(
 		} catch {
 			// If it's not JSON, treat as plain text message
 			parsedData = {
-				id: packetMessageId || Date.now().toString(),
-				userId: packetUserId || "unknown",
+				id: packetMessageId, // Use the server's message ID
+				userId: packetUserId, // Use the server's user ID
 				text: messageText,
 				timestamp: Date.now(),
 				reactions: [],
 			};
 		}
 
-		// Use packet metadata if available, otherwise use parsed data
+		// ALWAYS use packet metadata from server - no fallbacks
 		const message: Message = {
-			id: packetMessageId || parsedData.id,
-			userId: packetUserId || parsedData.userId,
+			id: packetMessageId, // Server's message ID is authoritative
+			userId: packetUserId, // Server's user ID is authoritative
 			text: parsedData.text,
 			timestamp: new Date(parsedData.timestamp),
 			reactions: parsedData.reactions || [],
-			isOwn: (packetUserId || parsedData.userId) === currentUserId,
+			isOwn: packetUserId === currentUserId,
 		};
 
 		return message;

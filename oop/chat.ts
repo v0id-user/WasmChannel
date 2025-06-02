@@ -7,12 +7,12 @@ function send(ws: WebSocket, packet: WasmPacket) {
 	ws.send(serializedPacket);
 }
 
-export function sendMessage(ws: WebSocket, payload: string) {
+export function sendMessage(ws: WebSocket, payload: string, messageId: string) {
 	// Use the new constructor with message_id and user_id
 	const packet = new WasmPacket(
 		PacketKind.Message,
-		null,
-		null,
+		messageId, // Client-provided messageId for consistency
+		null, // user_id will be set by server
 		null,
 		new TextEncoder().encode(payload),
 	);

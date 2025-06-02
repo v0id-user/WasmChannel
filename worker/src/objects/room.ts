@@ -5,7 +5,7 @@ import { PacketKind, WasmPacket } from "@/utils/wasm/init";
 import { createAuthWithD1 } from "@/auth";
 import { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "../db";
-import { CacheDriver } from "../driver/write";
+import { CacheDriver, DatabaseDriver } from "../driver/storage";
 import { nanoid } from "nanoid";
 
 export class Room extends DurableObject {
@@ -226,44 +226,149 @@ export class Room extends DurableObject {
 					);
 				}
 
-				// Clients should not set message_id or user_id (server sets these)
-				// Client can set message_id for Reaction packet
-				if (
-					(packet.message_id() !== undefined &&
-						packet.kind() !== PacketKind.Reaction) ||
-					packet.user_id() !== undefined
-				) {
+				// For regular messages, clients can now set message_id to ensure consistency
+				// For reactions, clients must set message_id (the message being reacted to)
+				// For typing, message_id should be null
+				// Clients should never set user_id (server always sets this)
+				if (packet.user_id() !== undefined) {
 					throw new Error(
-						"Invalid packet: clients cannot set message_id or user_id",
+						"Invalid packet: clients cannot set user_id (server sets this)",
 					);
+				}
+
+				// Validate message_id requirements per packet type
+				if (packet.kind() === PacketKind.Message) {
+					// Regular messages should have client-generated message_id
+					if (!packet.message_id()) {
+						throw new Error("Message packets must have message_id set by client");
+					}
+				} else if (packet.kind() === PacketKind.Reaction) {
+					// Reactions need message_id (either from packet metadata or payload)
+					if (!packet.message_id()) {
+						// Try to get it from payload as before
+						const payloadBytes = packet.payload();
+						const messageIdFromPayload = new TextDecoder().decode(payloadBytes);
+						if (!messageIdFromPayload) {
+							throw new Error("Reaction packets must have message_id");
+						}
+					}
+				} else if (packet.kind() === PacketKind.Typing) {
+					// Typing packets should not have message_id
+					if (packet.message_id()) {
+						throw new Error("Typing packets should not have message_id");
+					}
 				}
 			}
 
 			const cacheDriver = new CacheDriver(this.env.KV);
+			const databaseDriver = new DatabaseDriver(this.env.DB);
+
+			// Handle regular message packets
+			if (packet.kind() === PacketKind.Message && !isServer) {
+				// Use client's message_id to ensure consistency across all clients
+				const messageId = packet.message_id()!; // Already validated above
+				
+				const fullPacket = new WasmPacket(
+					packet.kind(),
+					messageId, // Use client's message ID
+					senderId, // Server sets the user ID
+					packet.reaction_kind(),
+					packet.payload(),
+				);
+
+				// Try to save to database (will be ignored if duplicate reference ID)
+				try {
+					await databaseDriver.write([fullPacket], senderId);
+					// Also save to cache
+					await cacheDriver.write([fullPacket], senderId);
+				} catch (error) {
+					console.error("Error saving message:", error);
+					// Continue with broadcast even if save fails
+				}
+
+				const serializedFullPacket = serializePacket(fullPacket);
+
+				// Broadcast message to ALL clients (including sender for UI consistency)
+				const clientsIdsCopy = new Map(this.clientsById);
+				for (const [clientId, ws] of clientsIdsCopy) {
+					try {
+						ws.send(serializedFullPacket);
+					} catch (error) {
+						console.error(`Error sending message to client ${clientId}:`, error);
+						// Remove client if send fails
+						this.clientsById.delete(clientId);
+						this.clientsBySocket.delete(ws);
+					}
+				}
+
+				return; // Early return for message packets
+			}
+
+			// Handle reaction packets specially (existing logic)
+			if (packet.kind() === PacketKind.Reaction && !isServer) {
+				// For reaction packets, extract messageId from payload if not in metadata
+				let messageId = packet.message_id();
+				if (!messageId) {
+					const payloadBytes = packet.payload();
+					messageId = new TextDecoder().decode(payloadBytes);
+				}
+				const reactionKind = packet.reaction_kind();
+				
+				if (!messageId || reactionKind === null || reactionKind === undefined) {
+					throw new Error("Invalid reaction packet: missing message_id or reaction_kind");
+				}
+
+				// Commented for now, all I need is just broadcast to all clients
+				// const [dbUpdated, cacheUpdated] = await Promise.all([
+				// 	databaseDriver.appendReaction(messageId, reactionKind, senderId),
+				// 	cacheDriver.appendReaction(messageId, reactionKind, senderId),
+				// ]);
+
+				// console.log(`Reaction updated - DB: ${dbUpdated}, Cache: ${cacheUpdated}`);
+
+				// Create updated packet with user ID and proper message ID for broadcasting
+				const fullPacket = new WasmPacket(
+					packet.kind(),
+					messageId, // Set the extracted messageId
+					senderId,
+					reactionKind,
+					new TextEncoder().encode(""), // Empty payload for broadcast
+				);
+
+				const serializedFullPacket = serializePacket(fullPacket);
+
+				// Broadcast reaction to all clients (including sender for UI update)
+				const clientsIdsCopy = new Map(this.clientsById);
+				for (const [clientId, ws] of clientsIdsCopy) {
+					try {
+						ws.send(serializedFullPacket);
+					} catch (error) {
+						console.error(`Error sending reaction to client ${clientId}:`, error);
+						// Remove client if send fails
+						this.clientsById.delete(clientId);
+						this.clientsBySocket.delete(ws);
+					}
+				}
+
+				return; // Early return for reaction packets
+			}
+
+			// Handle other packet types (Typing, etc.)
 			const fullPacket = new WasmPacket(
 				packet.kind(),
-				nanoid(),
+				packet.message_id(), // Use packet's message_id if present
 				senderId,
 				packet.reaction_kind(),
 				packet.payload(),
 			);
 
-			// Push to queue and save to cache
-			if (!isServer || packet.kind() == PacketKind.Typing) {
-				// Uncommented for now, all I need is just broadcast to all clients
-				// // Set both the message id and user id
-				// await Promise.all([
-				// 	this.env.QUEUE_MESSAGES.send(fullPacket),
-				// 	cacheDriver.write([packet], senderId),
-				// ]);
-			}
-
+			// For typing indicators and other non-persistent packets, just broadcast
 			const serializedFullPacket = serializePacket(fullPacket);
 
 			const clientsIdsCopy = new Map(this.clientsById);
 			for (const [clientId, ws] of clientsIdsCopy) {
 				try {
-					if (clientId === senderId) continue;
+					if (clientId === senderId) continue; // Skip sender for typing indicators
 					ws.send(serializedFullPacket);
 				} catch (error) {
 					console.error(`Error sending message to client ${clientId}:`, error);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedBase } from "~/contexts";
-import { DatabaseDriver, CacheDriver } from "~/driver/write";
+import { DatabaseDriver, CacheDriver } from "~/driver/storage";
 
 const getMessagesSchema = z.object({
 	cursor: z.string().optional(),

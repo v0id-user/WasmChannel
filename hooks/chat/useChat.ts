@@ -3,6 +3,7 @@ import { sendMessage } from "@/oop/chat";
 import { deserializePacket, WasmPacket } from "@/oop/packet";
 import type { Message } from "@/types/chat";
 import { users } from "@/constants/chat";
+import { nanoid } from "nanoid";
 
 export function useChat(
 	newMessage: string,
@@ -16,16 +17,16 @@ export function useChat(
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient) return;
 
-		const message: Message = {
-			id: Date.now().toString(),
-			userId: currentUserId,
-			text: newMessage.trim(),
-			timestamp: new Date(),
-			reactions: [],
-			isOwn: true,
-		};
-		setMessages((prev) => [...prev, message]);
+		// Generate a unique message ID that will be consistent across all clients
+		const messageId = nanoid();
+
+		// Clear the input immediately
 		setNewMessage("");
+
+		// Send message to server with the generated ID
+		// The server will broadcast it back to all clients (including sender)
+		console.log("useChat: Sending message with ID:", messageId, "content:", newMessage);
+		sendMessage(ws!, newMessage, messageId);
 
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
 			// Simulate response
@@ -47,7 +48,7 @@ export function useChat(
 						];
 
 						const response: Message = {
-							id: (Date.now() + 1).toString(),
+							id: nanoid(), // Use consistent ID generation
 							userId: responder.id,
 							text: responses[Math.floor(Math.random() * responses.length)],
 							timestamp: new Date(),
@@ -60,9 +61,7 @@ export function useChat(
 				1000 + Math.random() * 2000,
 			);
 		}
-		console.log("useChat: Sending message:", newMessage);
-		sendMessage(ws!, newMessage);
-	}, [newMessage, isClient, currentUserId, ws, setMessages, setNewMessage]);
+	}, [newMessage, isClient, currentUserId, ws, setNewMessage]);
 
 	useEffect(() => {
 		if (!ws) return;

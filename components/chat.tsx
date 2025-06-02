@@ -13,8 +13,9 @@ import { TypingIndicator } from "./chat/TypingIndicator";
 import { ChatMessage } from "./chat/ChatMessage";
 import { MessageInput } from "./chat/MessageInput";
 import { ChatFooter } from "./chat/ChatFooter";
-import { WasmPacket } from "@/oop/packet";
+import { WasmPacket, createPacket, serializePacket } from "@/oop/packet";
 import { handleIncomingPacket } from "@/utils/chat/packetConverter";
+import { PacketKind, ReactionKind } from "@/utils/wasm/init";
 
 export default function Chat() {
 	const { ws, me } = useStoreClient();
@@ -55,6 +56,31 @@ export default function Chat() {
 		ws || undefined,
 	);
 
+	// Custom reaction handler that sends reaction via WebSocket
+	const handleReactionClickWithWS = useCallback(
+		(messageId: string, reactionKind: ReactionKind) => {
+			if (!ws || !me?.userId) return;
+
+			try {
+				// Create reaction packet
+				const reactionPacket = createPacket(
+					PacketKind.Reaction,
+					reactionKind,
+					new TextEncoder().encode(messageId), // Pass messageId as payload
+				);
+
+				// Send via WebSocket
+				const serializedPacket = serializePacket(reactionPacket);
+				ws.send(serializedPacket);
+
+				console.log("Sent reaction packet:", { messageId, reactionKind });
+			} catch (error) {
+				console.error("Error sending reaction:", error);
+			}
+		},
+		[ws, me?.userId],
+	);
+
 	const handlePacket = (packet: WasmPacket) => {
 		console.log("chat.tsx: Received packet:", packet);
 
@@ -65,8 +91,10 @@ export default function Chat() {
 			case "message":
 				if (result.data) {
 					console.log(
-						"chat.tsx: Adding message with userId:",
-						result.data.userId,
+						"Adding message with ID:",
+						result.data.id,
+						"from user:",
+						result.data.userId
 					);
 					setMessages((prev) => [...prev, result.data]);
 				}
@@ -76,16 +104,13 @@ export default function Chat() {
 				// Handle reaction updates using message IDs
 				if (result.data) {
 					const { messageId, reactionKind, userId } = result.data;
-					console.log("Reaction received:", {
-						messageId,
-						reactionKind,
-						userId,
-					});
-
+					
 					// Update the specific message's reactions
-					setMessages((prev) =>
-						prev.map((message) => {
-							if (message.id !== messageId) return message;
+					setMessages((prev) => {
+						const updated = prev.map((message) => {
+							if (message.id !== messageId) {
+								return message;
+							}
 
 							const existingReaction = message.reactions.find(
 								(r) => r.kind === reactionKind,
@@ -134,8 +159,10 @@ export default function Chat() {
 									};
 								}
 							}
-						}),
-					);
+						});
+
+						return updated;
+					});
 				}
 				break;
 
@@ -283,7 +310,7 @@ export default function Chat() {
 							message={message}
 							user={user}
 							showAvatar={showAvatar}
-							onReactionClick={handleReactionClick}
+							onReactionClick={handleReactionClickWithWS}
 							currentUserId={me?.userId}
 						/>
 					))}

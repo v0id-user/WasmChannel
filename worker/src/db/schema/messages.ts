@@ -20,7 +20,7 @@ export enum ReactionKind {
 
 export const messages = sqliteTable("messages", {
 	id: text("id").primaryKey().default(createId()),
-	refrenceId: text("refrence_id").notNull(),
+	refrenceId: text("refrence_id").notNull().unique(),
 	kind: text("kind", {
 		enum: Object.values(PacketKind) as [string, ...string[]],
 	}).notNull(),
@@ -28,6 +28,9 @@ export const messages = sqliteTable("messages", {
 		enum: Object.values(ReactionKind) as [string, ...string[]],
 	}),
 	message: text("message").notNull(), // A.K.A payload
+
+	reactions: text("reactions", { mode: "json" }).$type<ReactionKind[]>().notNull().default(sql`'[]'`),
+
 	sentBy: text("sent_by")
 		.references(() => user.id, { onDelete: "cascade" })
 		.notNull(),
