@@ -107,10 +107,10 @@ export function ChatMessage({
 						{!message.isOwn && (
 							<button
 								onClick={() => setShowReactionPicker(!showReactionPicker)}
-								className="absolute top-0 right-0 text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 transition-all"
+								className="absolute top-0 left-0 text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 transition-all"
 								title="إضافة تفاعل"
 							>
-								😊
+								<SmilePlus className="w-4 h-4 text-gray-400 cursor-pointer" />
 							</button>
 						)}
 						<div className="relative">
