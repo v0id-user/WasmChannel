@@ -50,13 +50,7 @@ export default function Chat() {
 		};
 	}, [clearAllTimeouts]);
 
-	const { handleReactionClick } = useChatReactions(
-		me?.userId || "",
-		setMessages,
-		ws || undefined,
-	);
 
-	// Custom reaction handler that sends reaction via WebSocket
 	const handleReactionClickWithWS = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
 			if (!ws || !me?.userId) return;
