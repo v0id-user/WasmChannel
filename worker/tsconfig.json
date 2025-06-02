@@ -12,6 +12,9 @@
 			"@/*": ["./*"],
 			"~/*": ["./src/*"]
 		},
-		"composite": true
+		"composite": true,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"outDir": "dist"
 	}
 }

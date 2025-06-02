@@ -2,6 +2,7 @@
 	"name": "wasmchannel",
 	"version": "0.1.0",
 	"private": true,
+	"workspaces": ["worker"],
 	"scripts": {
 		"format": "bunx biome format --write",
 		"dev": "next dev",
@@ -10,7 +11,7 @@
 		"build:wasm": "bun build-wasm.ts dev",
 		"build:wasm:dev": "bun build-wasm.ts dev",
 		"build:wasm:release": "bun build-wasm.ts release",
-		"build": "next build",
+		"build:full": "bun build-wasm.ts release && next build",
 		"start": "next start",
 		"lint": "next lint"
 	},
@@ -44,6 +45,7 @@
 		"daisyui": "^5.0.37",
 		"eslint": "^9.27.0",
 		"eslint-config-next": "^15.4.0-canary.51",
+		"ignore-loader": "^0.1.2",
 		"postcss": "^8.5.3",
 		"tailwindcss": "^4.1.7",
 		"typescript": "^5.8.3"

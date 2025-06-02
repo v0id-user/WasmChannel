@@ -1,9 +1,8 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useORPC } from "@/lib/orpc";
+import { orpc } from "@/lib/orpc";
 
 export default function P() {
-	const orpc = useORPC();
 	const { data, isPending, isError, error } = useQuery(
 		orpc.helper.ping.queryOptions({
 			refetchOnWindowFocus: false,

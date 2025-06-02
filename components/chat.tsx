@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useStoreClient } from "@/store/client";
 import type { Message, User } from "@/types/chat";
 import { users, getInitialMessages } from "@/constants/chat";
-import { useChatReactions } from "@/hooks/chat/useChatReactions";
 import { useChatSimulation } from "@/hooks/chat/useChatSimulation";
 import { useChat } from "@/hooks/chat/useChat";
 import { useTypingTimeout } from "@/hooks/chat/useTypingTimeout";
@@ -32,7 +31,9 @@ export default function Chat() {
 	// Initialize on client side only
 	useEffect(() => {
 		setIsClient(true);
+		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
 		setMessages(getInitialMessages());
+		}
 	}, []);
 
 	const scrollToBottom = useCallback(() => {

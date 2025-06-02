@@ -1,12 +1,13 @@
 import { RPCLink } from "@orpc/client/fetch";
-import type { Router, router } from "@/worker/src/routers";
+import type { Router } from "@/types/worker";
 import { createORPCClient } from "@orpc/client";
 import { createContext, use } from "react";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createORPCReactQueryUtils, RouterUtils } from "@orpc/react-query";
-import { RouterClient } from "@orpc/server";
 
-type ORPCReactUtils = RouterUtils<RouterClient<typeof router>>;
+// We can't import the actual router here since it's in the worker
+// The type is sufficient for client-side typing
+type ORPCReactUtils = RouterUtils<Router>;
 
 export const queryClient = new QueryClient({
 	queryCache: new QueryCache({

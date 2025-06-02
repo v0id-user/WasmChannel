@@ -1,7 +1,15 @@
 {
-	"name": "worker",
+	"name": "@wasmchannel/worker",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./*": "./dist/*"
+	},
+	"types": "./dist/src/routers/index.d.ts",
 	"scripts": {
 		"dev": "wrangler dev",
+		"types:build": "tsc -p tsconfig.json --emitDeclarationOnly",
 		"bcg": "bunx @better-auth/cli generate",
 		"bdg": "bunx drizzle-kit generate",
 		"bdm": "bunx drizzle-kit migrate",
