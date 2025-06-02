@@ -1,0 +1,2 @@
+# Tell Linguist to include WebAssembly files
+*.wasm linguist-language=WebAssembly
