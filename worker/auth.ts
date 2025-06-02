@@ -35,12 +35,19 @@ export const auth = betterAuth({
 	},
 
 	advanced: {
-		crossSubDomainCookies: process.env.FRONTEND_URL
-			? {
-					enabled: true,
-					domains: [process.env.FRONTEND_URL],
-				}
-			: undefined,
+		// Hard coded for production NOT GOOD FOR DEV
+		crossSubDomainCookies: {
+			enabled: true,
+			domains: [
+				"in.wasm.channel",
+			],
+		},
+		defaultCookieAttributes: {
+			domain: ".wasm.channel",
+			secure: true,
+			httpOnly: true,
+			sameSite: "None",
+		},
 	},
 	trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
 });
@@ -72,12 +79,19 @@ export function createAuth(db: DrizzleD1Database) {
 			autoSignIn: true,
 		},
 		advanced: {
-			crossSubDomainCookies: process.env.FRONTEND_URL
-				? {
-						enabled: true,
-						domains: [process.env.FRONTEND_URL],
-					}
-				: undefined,
+			// Hard coded for production NOT GOOD FOR DEV
+			crossSubDomainCookies: {
+				enabled: true,
+				domains: [
+					"in.wasm.channel",
+				],
+			},
+			defaultCookieAttributes: {
+				domain: ".wasm.channel",
+				secure: true,
+				httpOnly: true,
+				sameSite: "None",
+			},
 		},
 		trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
 	});
