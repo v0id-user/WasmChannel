@@ -17,6 +17,15 @@ export default function useClientBootstrap() {
 
 	useEffect(() => {
 		async function main() {
+			console.log("BOOTSTRAP: Checking readiness...", {
+				fingerprint: !!fingerprint,
+				userId: !!userId,
+				isLoading,
+				authError: !!authError,
+				wasmReady,
+				wasmError: !!wasmError
+			});
+
 			if (
 				fingerprint &&
 				userId &&
@@ -26,11 +35,15 @@ export default function useClientBootstrap() {
 				!wasmError
 			) {
 				// Both auth and WASM are ready
+				console.log("BOOTSTRAP: All systems ready! Completing initialization...");
 				setLoadingState({ step: "complete" });
 				// Add a small delay to show the completion message
 				setTimeout(() => {
+					console.log("BOOTSTRAP: Bootstrap completed successfully!");
 					setBootstrapped(true);
 				}, 800);
+			} else {
+				console.log("BOOTSTRAP: Still waiting for dependencies...");
 			}
 		}
 		main();

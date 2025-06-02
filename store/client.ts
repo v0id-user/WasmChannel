@@ -146,6 +146,13 @@ export const useStoreClient = create<Store>()(
 					...state,
 					message: state.message || LOADING_MESSAGES[newStep]
 				};
+				
+				// Log the state change
+				console.log(`LOADING STATE: Changed from ${currentState.step} to ${newStep}`, {
+					message: newState.message,
+					error: newState.error
+				});
+				
 				set({ loadingState: newState });
 			},
 		}),

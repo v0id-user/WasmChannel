@@ -32,18 +32,20 @@ export function useGetMeAggressively() {
 
 		const fetchMe = async () => {
 			try {
+				console.log("AUTH: Starting authentication process...");
 				setIsLoading(true);
 				setError(null);
 
 				// Wait for session to be ready
 				if (isSessionLoading) {
+					console.log("AUTH: Waiting for session to load...");
 					return;
 				}
 
 				// First, check if we already have data in the store
 				const existingData = store.me;
 				if (existingData && existingData.fingerprint && existingData.userId) {
-					console.log("Using existing data from store");
+					console.log("AUTH: Using existing credentials from store");
 					setMeData(existingData);
 					setLoadingState({ step: "auth-ready" });
 					setHasInitialized(true);
@@ -52,7 +54,7 @@ export function useGetMeAggressively() {
 
 				// If we have a valid session, use it
 				if (session?.user && session !== null) {
-					console.log("Using existing session");
+					console.log("AUTH: Using existing session");
 					const fingerprint = session.user.email.split("@")[0];
 					const newMeData = {
 						fingerprint,
@@ -65,17 +67,19 @@ export function useGetMeAggressively() {
 					return;
 				}
 
-				console.log("Starting fingerprint authentication process...");
+				console.log("AUTH: Starting fingerprint authentication process...");
 				setLoadingState({ step: "auth-fingerprint" });
 				
 				// Add delay before starting fingerprint process
 				await sleep(1000);
 
 				// Get browser fingerprint for new user
+				console.log("AUTH: Generating browser fingerprint...");
 				const fingerprint = await getFingerprint();
 				const email = `${fingerprint}@wasm.channel`;
+				console.log("AUTH: Fingerprint generated:", fingerprint.substring(0, 8) + "...");
 
-				console.log("Attempting to sign in existing user...");
+				console.log("AUTH: Attempting to sign in existing user...");
 				setLoadingState({ step: "auth-signin" });
 				
 				// Add delay before sign in attempt
@@ -88,7 +92,7 @@ export function useGetMeAggressively() {
 				});
 
 				if (signInResponse.data?.user) {
-					console.log("Successfully signed in existing user");
+					console.log("AUTH: Successfully signed in existing user");
 					const newMeData = {
 						fingerprint,
 						userId: signInResponse.data.user.id,
@@ -100,7 +104,7 @@ export function useGetMeAggressively() {
 					return;
 				}
 
-				console.log("Sign in failed, attempting to create new user...");
+				console.log("AUTH: Sign in failed, attempting to create new user...");
 				setLoadingState({ step: "auth-signup" });
 				
 				// Add delay before sign up attempt
@@ -114,7 +118,7 @@ export function useGetMeAggressively() {
 				});
 
 				if (signUpResponse.data?.user) {
-					console.log("Successfully created new user");
+					console.log("AUTH: Successfully created new user");
 					const newMeData = {
 						fingerprint,
 						userId: signUpResponse.data.user.id,
@@ -126,7 +130,7 @@ export function useGetMeAggressively() {
 					return;
 				}
 
-				console.log("All authentication attempts failed");
+				console.error("AUTH: All authentication attempts failed");
 				setLoadingState({ 
 					step: "auth-fingerprint", 
 					error: "فشل في التحقق من الهوية" 
@@ -139,7 +143,7 @@ export function useGetMeAggressively() {
 				});
 				setHasInitialized(true);
 			} catch (err) {
-				console.error("Authentication error:", err);
+				console.error("AUTH: Authentication error:", err);
 				setError(
 					err instanceof Error ? err : new Error("An unknown error occurred"),
 				);

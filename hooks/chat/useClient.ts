@@ -16,18 +16,19 @@ export function useClient() {
 
 	useEffect(() => {
 		if (!bootstrapped) {
-			console.log("useClient: Waiting for bootstrap to complete...");
+			console.log("WEBSOCKET: Waiting for bootstrap to complete...");
 			return;
 		}
 
 		if (!me?.userId || !me?.fingerprint) {
-			console.log("useClient: Waiting for authentication credentials...");
+			console.log("WEBSOCKET: Waiting for authentication credentials...");
 			return;
 		}
 
 		const connectWebSocket = async () => {
 			// Clean up existing connection
 			if (client.current) {
+				console.log("WEBSOCKET: Cleaning up existing connection...");
 				client.current.close();
 				client.current = null;
 			}
@@ -38,7 +39,7 @@ export function useClient() {
 				retryTimeout.current = null;
 			}
 
-			console.log("useClient: Connecting to WebSocket with credentials:", {
+			console.log("WEBSOCKET: Connecting to WebSocket with credentials:", {
 				userId: me.userId,
 				fingerprint: me.fingerprint.substring(0, 8) + "..."
 			});
@@ -51,14 +52,14 @@ export function useClient() {
 			const ws = new WebSocket(process.env.NEXT_PUBLIC_WORKER_CHAT!);
 
 			ws.onopen = () => {
-				console.log("useClient: Connected to chat worker successfully");
+				console.log("WEBSOCKET: Connected to chat worker successfully");
 				setClientReady(true);
 				setLoadingState({ step: "websocket-ready" });
 				retryCount.current = 0; // Reset retry count on successful connection
 			};
 
 			ws.onclose = (event) => {
-				console.log("useClient: Disconnected from chat worker", {
+				console.log("WEBSOCKET: Disconnected from chat worker", {
 					code: event.code,
 					reason: event.reason,
 				});
@@ -73,7 +74,7 @@ export function useClient() {
 				if (shouldRetry) {
 					retryCount.current += 1;
 					console.log(
-						`useClient: Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
+						`WEBSOCKET: Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
 					);
 					setLoadingState({ 
 						step: "websocket-connecting",
@@ -86,7 +87,7 @@ export function useClient() {
 						}
 					}, retryDelay);
 				} else if (retryCount.current >= maxRetries) {
-					console.error("useClient: Max retries reached, giving up connection attempts");
+					console.error("WEBSOCKET: Max retries reached, giving up connection attempts");
 					setLoadingState({ 
 						step: "websocket-connecting",
 						error: "فشل في الاتصال بالخادم" 
@@ -95,7 +96,7 @@ export function useClient() {
 			};
 
 			ws.onerror = (error) => {
-				console.error("useClient: WebSocket error:", error);
+				console.error("WEBSOCKET: WebSocket error:", error);
 				setLoadingState({ 
 					step: "websocket-connecting",
 					error: "خطأ في الاتصال بالخادم" 
@@ -106,11 +107,12 @@ export function useClient() {
 			setWs(ws);
 		};
 
+		console.log("WEBSOCKET: Starting connection process...");
 		connectWebSocket();
 
 		// Cleanup function
 		return () => {
-			console.log("useClient: Cleaning up WebSocket connection");
+			console.log("WEBSOCKET: Cleaning up WebSocket connection");
 			if (retryTimeout.current) {
 				clearTimeout(retryTimeout.current);
 				retryTimeout.current = null;

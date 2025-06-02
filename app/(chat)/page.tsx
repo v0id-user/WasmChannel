@@ -8,7 +8,16 @@ export default function Home() {
 	const { bootstrapped, loadingState } = useStoreClient();
 	const { clientReady } = useClient();
 
+	console.log("PAGE: Rendering chat page", {
+		bootstrapped,
+		clientReady,
+		currentStep: loadingState.step,
+		currentMessage: loadingState.message,
+		hasError: !!loadingState.error
+	});
+
 	if (!bootstrapped || !clientReady) {
+		console.log("PAGE: Showing loading screen...");
 		return (
 			<div className="flex items-center justify-center min-h-screen bg-gray-50">
 				<div className="flex flex-col items-center space-y-6 p-8">
@@ -69,5 +78,6 @@ export default function Home() {
 		);
 	}
 
+	console.log("PAGE: All ready! Rendering chat component...");
 	return <Chat />;
 }

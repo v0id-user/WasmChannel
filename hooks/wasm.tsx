@@ -8,15 +8,18 @@ export function useWasmInit() {
 	const { setLoadingState } = useStoreClient();
 
 	useEffect(() => {
+		console.log("WASM: Starting initialization...");
 		setLoadingState({ step: "wasm-loading" });
 		
 		initWasm()
 			.then(() => {
+				console.log("WASM: Initialization completed successfully");
 				setIsReady(true);
 				setLoadingState({ step: "wasm-ready" });
 				console.log("WASM initialized");
 			})
 			.catch((err) => {
+				console.error("WASM: Initialization failed:", err);
 				setError("Failed to initialize WASM module");
 				setLoadingState({ 
 					step: "wasm-loading", 
