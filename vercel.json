@@ -1,5 +1,5 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
-    "installCommand": "dnf install -y rust cargo && bun i",
-    "buildCommand": "bun build:full"
-}
+    "installCommand": "dnf install -y rust cargo && curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh && bun i",
+    "buildCommand": "bun run build:full"
+}  
