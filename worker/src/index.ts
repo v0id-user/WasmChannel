@@ -8,8 +8,9 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Room } from "./objects/room";
-import { WasmPacket } from "@/wasm/wasmchannel";
+import { PacketKind, ReactionKind, WasmPacket } from "@/wasm/wasmchannel";
 import { user } from "./db/schema/schema";
+import { createPacket, serializePacket, deserializePacket } from "@/oop";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
@@ -170,6 +171,18 @@ app.get("/health", async (c) => {
 		const cached = await cache.get("test");
 		console.log("Cached: ", cached);
 
+		// Test wasm protocol
+		const packet = createPacket(
+			PacketKind.Message,
+			ReactionKind.Like,
+			new Uint8Array(Buffer.from("test")),
+		);
+
+		const serialized = serializePacket(packet);
+		const deserialized = deserializePacket(serialized);
+
+		console.log("Deserialized: ", deserialized);
+
 		return c.json({
 			success: true,
 			dbReadyViaFunction: !!dbViaFunction,
@@ -177,6 +190,7 @@ app.get("/health", async (c) => {
 			didIGetTheUser: !didIGetTheUserViaFunction || didIGetTheUserViaFunction, // That means a call to the db was made
 			isSessionValid: !!session || session === null, // That means a call to the db was made
 			cached: cached,
+			rusty_rust: deserialized.kind() === PacketKind.Message,
 		});
 	} catch (error) {
 		console.error("Auth test error:", error);
@@ -187,6 +201,7 @@ app.get("/health", async (c) => {
 			authViaFunction: !!authViaFunction,
 			resultViaFunction: !!resultViaFunction,
 			cached: false,
+			rusty_rust: false,
 		});
 	}
 });
