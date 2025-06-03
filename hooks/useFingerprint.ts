@@ -40,8 +40,19 @@ export function useFingerprint() {
   const fingerprintStartedRef = useRef(false);
   
   useEffect(() => {
+    console.log("FINGERPRINT: useEffect triggered", {
+      step: state.step,
+      fingerprintStarted: fingerprintStartedRef.current,
+      existingFingerprint: state.fingerprint
+    });
+    
     // Only run after WASM is ready and we haven't started fingerprinting yet
     if (state.step !== "wasm-ready" || fingerprintStartedRef.current || state.fingerprint) {
+      console.log("FINGERPRINT: Skipping due to conditions", {
+        stepNotWasmReady: state.step !== "wasm-ready",
+        alreadyStarted: fingerprintStartedRef.current,
+        alreadyHasFingerprint: !!state.fingerprint
+      });
       return;
     }
     
