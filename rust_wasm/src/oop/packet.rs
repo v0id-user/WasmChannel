@@ -26,6 +26,21 @@ pub enum ReactionKind {
     Star,
 }
 
+/*
+* I just wanna say, that I love Rust man. First? You hate the syntax, the demanding borrow checker, all that.
+* Then when it hits you with why all of that you know it's for the best.
+*
+* When you deal with:
+* struct {
+*   int length; // Fatel mistake
+*   char* payload;
+* }
+* in C trying to make your own protocol for fun then it turns into a nightmare, you know why rust is tougher and stricter.
+*
+* I love you rust.
+* 
+* - #V0ID :)
+*/
 #[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Clone)]
 pub struct Packet {
     pub kind: PacketKind,
