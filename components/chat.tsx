@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
 import { useRoomStore } from "@/store/room";
-import { useSocket } from "@/hooks/useSocket";
+// import { useSocket } from "@/hooks/useSocket"; // Removed: Socket initialization handled by SocketGate provider
 import type { Message, User } from "@/types/chat";
 import { users, getInitialMessages } from "@/constants/chat";
 import { useChatSimulation } from "@/hooks/chat/useChatSimulation";
@@ -21,7 +21,7 @@ import { PacketKind, ReactionKind } from "@/utils/wasm/init";
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
-	useSocket(); // Initialize socket connection
+	// useSocket(); // Initialize socket connection - REMOVED: Already handled by SocketGate provider
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);

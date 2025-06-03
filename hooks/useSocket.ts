@@ -121,7 +121,7 @@ export function useSocket() {
 			connectionStartedRef.current = false;
 			retryCountRef.current = 0;
 		};
-	}, [isReady, state.userId, state.fingerprint, socket, setSocket, setConnectionStatus]);
+	}, [isReady, state.userId, state.fingerprint, setSocket, setConnectionStatus]);
 
 	return socket;
 }
