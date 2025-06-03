@@ -235,6 +235,10 @@ export default function Chat() {
 
 	// Early return after all hooks have been called - must have valid userId
 	if (!bootState.userId || !ws || !isClient) {
+		console.log("chat.tsx: Waiting...");
+		console.log("Client state:", isClient);
+		console.log("WebSocket state:", ws);
+		console.log("User ID:", bootState.userId);
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
