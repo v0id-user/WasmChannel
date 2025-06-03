@@ -149,9 +149,9 @@ export const BootProvider = ({ children }: { children: React.ReactNode }) => {
 	 * 2. The dispatch function
 	 * 
 	 * The dispatch function is used to dispatch actions to the reducer which will update the state.
-	 * So it's kinda of a signal? or at least a dispatcher hook? But a reducer? nahh.. that doesn't 
+	 * So it's kinda of a signal? or at least a dispatcher hook? But a reducer? nahh.. that doesn't
 	 * sound legit to me man, I mean first fighting the cookies await behavior, then fighting this
-	 * nameing convention like bruh...
+	 * naming convention like bruh...
 	 * 
 	 * Note:
 	 * Me(#v0id) WILL NEVER lean to this BS, but this is Cursor code so blame the AI not me please I wanted
