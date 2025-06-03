@@ -3,9 +3,18 @@
 import { useEffect, useRef } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
 import { useRoomStore } from "@/store/room";
+import { create } from 'zustand';
 
-// Global flag to prevent duplicate connections
-let globalConnectionStarted = false;
+// Super unhinged global flag to prevent duplicate connections :-O
+type SocketFlags = {
+  connectionStarted: boolean;
+  setConnectionStarted: (started: boolean) => void;
+};
+
+export const useSocketFlags = create<SocketFlags>((set) => ({
+  connectionStarted: false,
+  setConnectionStarted: (started) => set({ connectionStarted: started }),
+}));
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -15,6 +24,7 @@ export function useSocket() {
 	const connectionStartedRef = useRef(false);
 	const retryCountRef = useRef(0);
 	const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const { connectionStarted, setConnectionStarted } = useSocketFlags();
 
 	useEffect(() => {
 		// If socket already exists, we're good
@@ -23,13 +33,13 @@ export function useSocket() {
 		}
 
 		// Only connect when fully ready and not already connecting
-		if (!isReady || globalConnectionStarted || connectionStartedRef.current) {
+		if (!isReady || connectionStarted || connectionStartedRef.current) {
 			return;
 		}
 
 		console.log("WEBSOCKET: Starting connection...");
 		connectionStartedRef.current = true;
-		globalConnectionStarted = true;
+		setConnectionStarted(true);
 		setConnectionStatus('connecting');
 
 		const connectWebSocket = async (attempt: number = 1) => {
@@ -65,7 +75,7 @@ export function useSocket() {
 						}, 1000);
 					} else {
 						console.log("WEBSOCKET: Max retry attempts reached, giving up");
-						globalConnectionStarted = false;
+						setConnectionStarted(false);
 						connectionStartedRef.current = false;
 						retryCountRef.current = 0;
 					}
@@ -93,7 +103,7 @@ export function useSocket() {
 					}, 1000);
 				} else {
 					console.log("WEBSOCKET: Max retry attempts reached, giving up");
-					globalConnectionStarted = false;
+					setConnectionStarted(false);
 					connectionStartedRef.current = false;
 					retryCountRef.current = 0;
 				}
@@ -117,7 +127,7 @@ export function useSocket() {
 			}
 			setSocket(null);
 			setConnectionStatus('disconnected');
-			globalConnectionStarted = false;
+			setConnectionStarted(false);
 			connectionStartedRef.current = false;
 			retryCountRef.current = 0;
 		};
