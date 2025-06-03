@@ -150,6 +150,14 @@ export const BootProvider = ({ children }: { children: React.ReactNode }) => {
 	 * 
 	 * The dispatch function is used to dispatch actions to the reducer which will update the state
 	 * 
+	 * Note:
+	 * Me(#v0id) WILL NEVER lean to this BS, but this is Cursor code so blame the AI not me please I wanted
+	 * simple zustand like state management, but Cursor is a bit dumb so I have to deal with this BS :/
+	 * 
+	 * and no I'm not willing to spend 1 hour refactoring this, so I'm just gonna leave it
+	 * 
+	 * tech debt is real boi
+	 * 
 	 */
 	const [state, dispatch] = useReducer(bootReducer, {
 		step: "initializing",
