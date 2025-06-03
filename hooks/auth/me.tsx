@@ -11,7 +11,7 @@ interface MeData {
 }
 
 // Helper function to add delays
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // // Helper function to clear all auth data
 // const clearAllAuthData = () => {
@@ -44,7 +44,7 @@ export function useGetMeAggressively() {
 	const [showRecoveryButton, setShowRecoveryButton] = useState(false);
 	const isRunning = useRef(false);
 	const maxRetries = 3; // Reduced from 5 to make it less annoying
-	
+
 	const { data: session, isPending: isSessionLoading } =
 		authClient.useSession();
 
@@ -59,9 +59,11 @@ export function useGetMeAggressively() {
 	};
 
 	const fullRecovery = () => {
-		console.log("AUTH: Full recovery initiated - clearing localStorage and refreshing");
+		console.log(
+			"AUTH: Full recovery initiated - clearing localStorage and refreshing",
+		);
 		// Only clear localStorage/sessionStorage, don't force signout
-		if (typeof window !== 'undefined') {
+		if (typeof window !== "undefined") {
 			localStorage.clear();
 			sessionStorage.clear();
 			window.location.reload();
@@ -79,9 +81,9 @@ export function useGetMeAggressively() {
 			console.log("AUTH: Max retries reached, showing recovery options");
 			setMaxRetriesReached(true);
 			setShowRecoveryButton(true);
-			setLoadingState({ 
-				step: "auth-fingerprint", 
-				error: "فشل في التحقق من الهوية - جرب إعادة التحميل" 
+			setLoadingState({
+				step: "auth-fingerprint",
+				error: "فشل في التحقق من الهوية - جرب إعادة التحميل",
 			});
 			return;
 		}
@@ -89,9 +91,11 @@ export function useGetMeAggressively() {
 		const fetchMe = async () => {
 			if (isRunning.current) return;
 			isRunning.current = true;
-			
+
 			try {
-				console.log(`AUTH: Starting authentication process... (attempt ${retryCount + 1}/${maxRetries})`);
+				console.log(
+					`AUTH: Starting authentication process... (attempt ${retryCount + 1}/${maxRetries})`,
+				);
 				setIsLoading(true);
 				setError(null);
 
@@ -131,12 +135,14 @@ export function useGetMeAggressively() {
 
 				// If session is null, just proceed with fingerprint auth (don't clear anything)
 				if (session === null || !session?.user) {
-					console.log("AUTH: No valid session found, proceeding with fingerprint authentication");
+					console.log(
+						"AUTH: No valid session found, proceeding with fingerprint authentication",
+					);
 				}
 
 				console.log("AUTH: Starting fingerprint authentication process...");
 				setLoadingState({ step: "auth-fingerprint" });
-				
+
 				// Add delay before starting fingerprint process
 				await sleep(1000);
 
@@ -144,11 +150,14 @@ export function useGetMeAggressively() {
 				console.log("AUTH: Generating browser fingerprint...");
 				const fingerprint = await getFingerprint();
 				const email = `${fingerprint}@wasm.channel`;
-				console.log("AUTH: Fingerprint generated:", fingerprint.substring(0, 8) + "...");
+				console.log(
+					"AUTH: Fingerprint generated:",
+					fingerprint.substring(0, 8) + "...",
+				);
 
 				console.log("AUTH: Attempting to sign in existing user...");
 				setLoadingState({ step: "auth-signin" });
-				
+
 				// Add delay before sign in attempt
 				await sleep(500);
 
@@ -174,7 +183,7 @@ export function useGetMeAggressively() {
 
 				console.log("AUTH: Sign in failed, attempting to create new user...");
 				setLoadingState({ step: "auth-signup" });
-				
+
 				// Add delay before sign up attempt
 				await sleep(500);
 
@@ -200,12 +209,12 @@ export function useGetMeAggressively() {
 				}
 
 				console.error("AUTH: All authentication attempts failed");
-				setRetryCount(prev => prev + 1);
-				setLoadingState({ 
-					step: "auth-fingerprint", 
-					error: `فشل في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})` 
+				setRetryCount((prev) => prev + 1);
+				setLoadingState({
+					step: "auth-fingerprint",
+					error: `فشل في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})`,
 				});
-				
+
 				// Reset state if all attempts fail
 				setMeData({
 					fingerprint: null,
@@ -217,10 +226,10 @@ export function useGetMeAggressively() {
 				setError(
 					err instanceof Error ? err : new Error("An unknown error occurred"),
 				);
-				setRetryCount(prev => prev + 1);
-				setLoadingState({ 
-					step: "auth-fingerprint", 
-					error: `خطأ في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})` 
+				setRetryCount((prev) => prev + 1);
+				setLoadingState({
+					step: "auth-fingerprint",
+					error: `خطأ في التحقق من الهوية (محاولة ${retryCount + 1}/${maxRetries})`,
 				});
 				isRunning.current = false;
 			} finally {
@@ -229,7 +238,15 @@ export function useGetMeAggressively() {
 		};
 
 		fetchMe();
-	}, [store, isSessionLoading, session, hasInitialized, setLoadingState, retryCount, maxRetriesReached]);
+	}, [
+		store,
+		isSessionLoading,
+		session,
+		hasInitialized,
+		setLoadingState,
+		retryCount,
+		maxRetriesReached,
+	]);
 
 	// Cleanup effect - only runs on unmount (no signout)
 	useEffect(() => {

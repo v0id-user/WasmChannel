@@ -249,7 +249,8 @@ try {
 		if (mode === "release") {
 			const gitignorePath = path.join(outDir, ".gitignore");
 			try {
-				await Bun.file(gitignorePath).exists() && await $`rm ${gitignorePath}`.nothrow();
+				(await Bun.file(gitignorePath).exists()) &&
+					(await $`rm ${gitignorePath}`.nothrow());
 				logSubStep(`✓ Removed .gitignore from ${name}`, false);
 			} catch (error) {
 				// Ignore errors if file doesn't exist or can't be removed

@@ -30,14 +30,14 @@ export function ReactionDisplay({
 
 	const handleReactionClick = (reactionKind: ReactionKind) => {
 		// Check if user has already reacted with this reaction type
-		const reaction = reactions.find(r => r.kind === reactionKind);
+		const reaction = reactions.find((r) => r.kind === reactionKind);
 		const hasUserReacted = reaction?.users.includes(currentUserId) || false;
-		
+
 		// If user has already reacted, don't do anything (no animation, no handler call)
 		if (hasUserReacted) {
 			return;
 		}
-		
+
 		// Only trigger animation and handler if user hasn't reacted yet
 		setAnimatingReactions((prev) => new Set([...prev, reactionKind]));
 		onReactionClick(messageId, reactionKind);
@@ -57,9 +57,10 @@ export function ReactionDisplay({
 						onClick={() => handleReactionClick(reaction.kind)}
 						className={`
 							inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all duration-200
-							${hasUserReacted 
-								? "bg-blue-100 text-blue-700 border border-blue-300 cursor-default" 
-								: "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:scale-105 active:scale-95 cursor-pointer"
+							${
+								hasUserReacted
+									? "bg-blue-100 text-blue-700 border border-blue-300 cursor-default"
+									: "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:scale-105 active:scale-95 cursor-pointer"
 							}
 							${isAnimating ? "animate-bounce scale-110" : ""}
 						`}

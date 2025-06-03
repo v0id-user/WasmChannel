@@ -29,7 +29,10 @@ export const messages = sqliteTable("messages", {
 	}),
 	message: text("message").notNull(), // A.K.A payload
 
-	reactions: text("reactions", { mode: "json" }).$type<ReactionKind[]>().notNull().default(sql`'[]'`),
+	reactions: text("reactions", { mode: "json" })
+		.$type<ReactionKind[]>()
+		.notNull()
+		.default(sql`'[]'`),
 
 	sentBy: text("sent_by")
 		.references(() => user.id, { onDelete: "cascade" })

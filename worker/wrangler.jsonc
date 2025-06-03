@@ -28,7 +28,7 @@
 			{
 				"queue": "wasmchannel",
 				"max_batch_size": 10, // 10 messages per batch
-                "max_batch_timeout": 5 // 5 seconds per batch
+				"max_batch_timeout": 5 // 5 seconds per batch
 			}
 		],
 		"producers": [

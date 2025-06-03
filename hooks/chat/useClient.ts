@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 // Helper function to add delays
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useClient() {
 	const { bootstrapped, setWs, me, setLoadingState } = useStoreClient();
@@ -16,7 +16,8 @@ export function useClient() {
 	const retryDelay = 2000; // 2 seconds
 
 	// Get the actual session to verify authentication
-	const { data: session, isPending: isSessionLoading } = authClient.useSession();
+	const { data: session, isPending: isSessionLoading } =
+		authClient.useSession();
 
 	useEffect(() => {
 		// First check: Bootstrap must be complete
@@ -39,13 +40,17 @@ export function useClient() {
 
 		// Fourth check: Must have credentials in store (from successful auth)
 		if (!me?.userId || !me?.fingerprint) {
-			console.log("WEBSOCKET: Waiting for authentication credentials to be stored...");
+			console.log(
+				"WEBSOCKET: Waiting for authentication credentials to be stored...",
+			);
 			return;
 		}
 
 		// Fifth check: Session user ID must match store user ID (consistency check)
 		if (session.user.id !== me.userId) {
-			console.log("WEBSOCKET: Session/store user ID mismatch - waiting for sync");
+			console.log(
+				"WEBSOCKET: Session/store user ID mismatch - waiting for sync",
+			);
 			return;
 		}
 
@@ -63,11 +68,14 @@ export function useClient() {
 				retryTimeout.current = null;
 			}
 
-			console.log("WEBSOCKET: All authentication checks passed - connecting with verified credentials:", {
-				sessionUserId: session.user.id,
-				storeUserId: me.userId,
-				fingerprint: me.fingerprint.substring(0, 8) + "..."
-			});
+			console.log(
+				"WEBSOCKET: All authentication checks passed - connecting with verified credentials:",
+				{
+					sessionUserId: session.user.id,
+					storeUserId: me.userId,
+					fingerprint: me.fingerprint.substring(0, 8) + "...",
+				},
+			);
 
 			setLoadingState({ step: "websocket-connecting" });
 
@@ -101,9 +109,9 @@ export function useClient() {
 					console.log(
 						`WEBSOCKET: Retrying connection (${retryCount.current}/${maxRetries}) in ${retryDelay}ms...`,
 					);
-					setLoadingState({ 
+					setLoadingState({
 						step: "websocket-connecting",
-						message: `إعادة محاولة الاتصال... (${retryCount.current}/${maxRetries})`
+						message: `إعادة محاولة الاتصال... (${retryCount.current}/${maxRetries})`,
 					});
 					retryTimeout.current = setTimeout(() => {
 						// Check if component is still mounted and we should still retry
@@ -112,19 +120,21 @@ export function useClient() {
 						}
 					}, retryDelay);
 				} else if (retryCount.current >= maxRetries) {
-					console.error("WEBSOCKET: Max retries reached, giving up connection attempts");
-					setLoadingState({ 
+					console.error(
+						"WEBSOCKET: Max retries reached, giving up connection attempts",
+					);
+					setLoadingState({
 						step: "websocket-connecting",
-						error: "فشل في الاتصال بالخادم" 
+						error: "فشل في الاتصال بالخادم",
 					});
 				}
 			};
 
 			ws.onerror = (error) => {
 				console.error("WEBSOCKET: WebSocket error:", error);
-				setLoadingState({ 
+				setLoadingState({
 					step: "websocket-connecting",
-					error: "خطأ في الاتصال بالخادم" 
+					error: "خطأ في الاتصال بالخادم",
 				});
 			};
 
@@ -132,7 +142,9 @@ export function useClient() {
 			setWs(ws);
 		};
 
-		console.log("WEBSOCKET: Starting connection process with authenticated user...");
+		console.log(
+			"WEBSOCKET: Starting connection process with authenticated user...",
+		);
 		connectWebSocket();
 
 		// Cleanup function

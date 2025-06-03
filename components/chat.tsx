@@ -34,7 +34,7 @@ export default function Chat() {
 	useEffect(() => {
 		setIsClient(true);
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
-		setMessages(getInitialMessages());
+			setMessages(getInitialMessages());
 		}
 	}, []);
 
@@ -53,20 +53,24 @@ export default function Chat() {
 		};
 	}, [clearAllTimeouts]);
 
-
 	const handleReactionClickWithWS = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
 			if (!ws || !bootState.userId) return;
 
 			// Check if user has already reacted with this reaction type
-			const message = messages.find(m => m.id === messageId);
+			const message = messages.find((m) => m.id === messageId);
 			if (message) {
-				const existingReaction = message.reactions.find(r => r.kind === reactionKind);
-				const hasUserReacted = existingReaction?.users.includes(bootState.userId) || false;
-				
+				const existingReaction = message.reactions.find(
+					(r) => r.kind === reactionKind,
+				);
+				const hasUserReacted =
+					existingReaction?.users.includes(bootState.userId) || false;
+
 				// If user has already reacted, don't send the packet (disable removing reactions)
 				if (hasUserReacted) {
-					console.log("User has already reacted with this reaction type, ignoring click.\nNo ability to remove reactions :P");
+					console.log(
+						"User has already reacted with this reaction type, ignoring click.\nNo ability to remove reactions :P",
+					);
 					return;
 				}
 			}
@@ -104,7 +108,7 @@ export default function Chat() {
 						"Adding message with ID:",
 						result.data.id,
 						"from user:",
-						result.data.userId
+						result.data.userId,
 					);
 					setMessages((prev) => [...prev, result.data]);
 				}
@@ -114,7 +118,7 @@ export default function Chat() {
 				// Handle reaction updates using message IDs (only add reactions, never remove)
 				if (result.data) {
 					const { messageId, reactionKind, userId } = result.data;
-					
+
 					// Update the specific message's reactions
 					setMessages((prev) => {
 						const updated = prev.map((message) => {
@@ -230,7 +234,7 @@ export default function Chat() {
 	);
 
 	// Early return after all hooks have been called - must have valid userId
-	if (!bootState.userId || !ws) {
+	if (!bootState.userId || !ws || !isClient) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
@@ -275,18 +279,6 @@ export default function Chat() {
 		},
 		[] as Array<{ message: Message; showAvatar: boolean; user: User }>,
 	);
-
-	if (!isClient) {
-		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
-					<div className="h-full flex items-center justify-center">
-						<div className="text-gray-500">جاري التحميل...</div>
-					</div>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div

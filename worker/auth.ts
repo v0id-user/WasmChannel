@@ -38,9 +38,7 @@ export const auth = betterAuth({
 		// Hard coded for production NOT GOOD FOR DEV
 		crossSubDomainCookies: {
 			enabled: true,
-			domains: [
-				process.env.WS_DOMAIN!,
-			],
+			domains: [process.env.WS_DOMAIN!],
 		},
 		defaultCookieAttributes: {
 			domain: process.env.DOMAIN!,
@@ -82,9 +80,7 @@ export function createAuth(db: DrizzleD1Database) {
 			// Hard coded for production NOT GOOD FOR DEV
 			crossSubDomainCookies: {
 				enabled: true,
-				domains: [
-					process.env.WS_DOMAIN!,
-				],
+				domains: [process.env.WS_DOMAIN!],
 			},
 			defaultCookieAttributes: {
 				domain: process.env.DOMAIN!,

@@ -11,7 +11,7 @@ interface Me {
 	userId: string;
 }
 
-type LoadingStep = 
+type LoadingStep =
 	| "initializing"
 	| "wasm-loading"
 	| "wasm-ready"
@@ -42,7 +42,7 @@ interface Store {
 
 // Arabic messages for each step
 const LOADING_MESSAGES: Record<LoadingStep, string> = {
-	"initializing": "بدء تشغيل التطبيق...",
+	initializing: "بدء تشغيل التطبيق...",
 	"wasm-loading": "تحميل الوحدات المطلوبة...",
 	"wasm-ready": "تم تحميل الوحدات بنجاح",
 	"auth-fingerprint": "إنشاء هوية فريدة...",
@@ -51,7 +51,7 @@ const LOADING_MESSAGES: Record<LoadingStep, string> = {
 	"auth-ready": "تم التحقق من الهوية",
 	"websocket-connecting": "الاتصال بالخادم...",
 	"websocket-ready": "تم الاتصال بنجاح",
-	"complete": "مرحباً بك!"
+	complete: "مرحباً بك!",
 };
 
 // Custom storage with compression and base64 encoding
@@ -136,7 +136,7 @@ export const useStoreClient = create<Store>()(
 			setBootstrapped: (bootstrapped: boolean) => set({ bootstrapped }),
 			loadingState: {
 				step: "initializing",
-				message: LOADING_MESSAGES["initializing"]
+				message: LOADING_MESSAGES["initializing"],
 			},
 			setLoadingState: (state: Partial<LoadingState>) => {
 				const currentState = get().loadingState;
@@ -144,15 +144,18 @@ export const useStoreClient = create<Store>()(
 				const newState = {
 					...currentState,
 					...state,
-					message: state.message || LOADING_MESSAGES[newStep]
+					message: state.message || LOADING_MESSAGES[newStep],
 				};
-				
+
 				// Log the state change
-				console.log(`LOADING STATE: Changed from ${currentState.step} to ${newStep}`, {
-					message: newState.message,
-					error: newState.error
-				});
-				
+				console.log(
+					`LOADING STATE: Changed from ${currentState.step} to ${newStep}`,
+					{
+						message: newState.message,
+						error: newState.error,
+					},
+				);
+
 				set({ loadingState: newState });
 			},
 		}),

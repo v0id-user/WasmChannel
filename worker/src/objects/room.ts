@@ -240,7 +240,9 @@ export class Room extends DurableObject {
 				if (packet.kind() === PacketKind.Message) {
 					// Regular messages should have client-generated message_id
 					if (!packet.message_id()) {
-						throw new Error("Message packets must have message_id set by client");
+						throw new Error(
+							"Message packets must have message_id set by client",
+						);
 					}
 				} else if (packet.kind() === PacketKind.Reaction) {
 					// Reactions need message_id (either from packet metadata or payload)
@@ -267,7 +269,7 @@ export class Room extends DurableObject {
 			if (packet.kind() === PacketKind.Message && !isServer) {
 				// Use client's message_id to ensure consistency across all clients
 				const messageId = packet.message_id()!; // Already validated above
-				
+
 				const fullPacket = new WasmPacket(
 					packet.kind(),
 					messageId, // Use client's message ID
@@ -294,7 +296,10 @@ export class Room extends DurableObject {
 					try {
 						ws.send(serializedFullPacket);
 					} catch (error) {
-						console.error(`Error sending message to client ${clientId}:`, error);
+						console.error(
+							`Error sending message to client ${clientId}:`,
+							error,
+						);
 						// Remove client if send fails
 						this.clientsById.delete(clientId);
 						this.clientsBySocket.delete(ws);
@@ -313,9 +318,11 @@ export class Room extends DurableObject {
 					messageId = new TextDecoder().decode(payloadBytes);
 				}
 				const reactionKind = packet.reaction_kind();
-				
+
 				if (!messageId || reactionKind === null || reactionKind === undefined) {
-					throw new Error("Invalid reaction packet: missing message_id or reaction_kind");
+					throw new Error(
+						"Invalid reaction packet: missing message_id or reaction_kind",
+					);
 				}
 
 				// Commented for now, all I need is just broadcast to all clients
@@ -343,7 +350,10 @@ export class Room extends DurableObject {
 					try {
 						ws.send(serializedFullPacket);
 					} catch (error) {
-						console.error(`Error sending reaction to client ${clientId}:`, error);
+						console.error(
+							`Error sending reaction to client ${clientId}:`,
+							error,
+						);
 						// Remove client if send fails
 						this.clientsById.delete(clientId);
 						this.clientsBySocket.delete(ws);

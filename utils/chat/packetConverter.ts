@@ -34,7 +34,7 @@ export function packetToMessage(
 		if (!packetMessageId || !packetUserId) {
 			console.error("Invalid message packet: missing message_id or user_id", {
 				messageId: packetMessageId,
-				userId: packetUserId
+				userId: packetUserId,
 			});
 			return null;
 		}

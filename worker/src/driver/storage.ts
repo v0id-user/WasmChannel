@@ -25,7 +25,11 @@ abstract class StorageDriver {
 
 	abstract write(packets: WasmPacket[], sentBy: string): Promise<void>;
 	abstract read(): Promise<WasmPacket[]>;
-	abstract appendReaction(messageId: string, reactionKind: ReactionKind, userId: string): Promise<boolean>;
+	abstract appendReaction(
+		messageId: string,
+		reactionKind: ReactionKind,
+		userId: string,
+	): Promise<boolean>;
 }
 
 export class DatabaseDriver extends StorageDriver {
@@ -61,10 +65,14 @@ export class DatabaseDriver extends StorageDriver {
 				console.log(`Successfully inserted ${insertData.length} messages`);
 			} catch (error: any) {
 				// Check if it's a unique constraint violation (duplicate reference ID)
-				if (error?.message?.includes('UNIQUE constraint failed') || 
-					error?.message?.includes('refrenceId') ||
-					error?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-					console.log('Duplicate message reference ID detected, ignoring insert');
+				if (
+					error?.message?.includes("UNIQUE constraint failed") ||
+					error?.message?.includes("refrenceId") ||
+					error?.code === "SQLITE_CONSTRAINT_UNIQUE"
+				) {
+					console.log(
+						"Duplicate message reference ID detected, ignoring insert",
+					);
 					// Silently ignore duplicate messages to prevent impersonation
 					return;
 				}
@@ -102,13 +110,19 @@ export class DatabaseDriver extends StorageDriver {
 		});
 	}
 
-	async appendReaction(messageId: string, reactionKind: ReactionKind, userId: string): Promise<boolean> {
+	async appendReaction(
+		messageId: string,
+		reactionKind: ReactionKind,
+		userId: string,
+	): Promise<boolean> {
 		try {
 			// Find the message
 			const existingMessage = await this.db
 				.select()
 				.from(messages)
-				.where(and(eq(messages.refrenceId, messageId), isNull(messages.deletedAt)))
+				.where(
+					and(eq(messages.refrenceId, messageId), isNull(messages.deletedAt)),
+				)
 				.limit(1);
 
 			if (existingMessage.length === 0) {
@@ -120,13 +134,17 @@ export class DatabaseDriver extends StorageDriver {
 
 			// Parse existing reactions
 			try {
-				reactions = message.reactions ? JSON.parse(message.reactions as any) : [];
+				reactions = message.reactions
+					? JSON.parse(message.reactions as any)
+					: [];
 			} catch {
 				reactions = [];
 			}
 
 			// Find existing reaction of this kind
-			const existingReactionIndex = reactions.findIndex(r => r.kind === reactionKind);
+			const existingReactionIndex = reactions.findIndex(
+				(r) => r.kind === reactionKind,
+			);
 			let updated = false;
 
 			if (existingReactionIndex >= 0) {
@@ -137,7 +155,7 @@ export class DatabaseDriver extends StorageDriver {
 					// Remove user's reaction
 					existingReaction.users.splice(userIndex, 1);
 					existingReaction.count = existingReaction.users.length;
-					
+
 					// Remove reaction if no users left
 					if (existingReaction.count === 0) {
 						reactions.splice(existingReactionIndex, 1);
@@ -153,7 +171,7 @@ export class DatabaseDriver extends StorageDriver {
 				reactions.push({
 					kind: reactionKind,
 					count: 1,
-					users: [userId]
+					users: [userId],
 				});
 				updated = true;
 			}
@@ -162,9 +180,9 @@ export class DatabaseDriver extends StorageDriver {
 				// Update the message in database
 				await this.db
 					.update(messages)
-					.set({ 
+					.set({
 						reactions: JSON.stringify(reactions) as any,
-						updatedAt: new Date()
+						updatedAt: new Date(),
 					})
 					.where(eq(messages.refrenceId, messageId));
 			}
@@ -261,9 +279,13 @@ export class CacheDriver extends StorageDriver {
 		});
 	}
 
-	async appendReaction(messageId: string, reactionKind: ReactionKind, userId: string): Promise<boolean> {
+	async appendReaction(
+		messageId: string,
+		reactionKind: ReactionKind,
+		userId: string,
+	): Promise<boolean> {
 		const kv = this.driver as KVNamespace;
-		
+
 		try {
 			// Get current messages from cache
 			const cachedRecords = await this.getCachedRecords();
@@ -272,7 +294,9 @@ export class CacheDriver extends StorageDriver {
 			}
 
 			// Find the message
-			const messageIndex = cachedRecords.findIndex(record => record.refrenceId === messageId);
+			const messageIndex = cachedRecords.findIndex(
+				(record) => record.refrenceId === messageId,
+			);
 			if (messageIndex === -1) {
 				return false; // Message not found in cache
 			}
@@ -282,13 +306,17 @@ export class CacheDriver extends StorageDriver {
 
 			// Parse existing reactions
 			try {
-				reactions = message.reactions ? JSON.parse(message.reactions as any) : [];
+				reactions = message.reactions
+					? JSON.parse(message.reactions as any)
+					: [];
 			} catch {
 				reactions = [];
 			}
 
 			// Find existing reaction of this kind
-			const existingReactionIndex = reactions.findIndex(r => r.kind === reactionKind);
+			const existingReactionIndex = reactions.findIndex(
+				(r) => r.kind === reactionKind,
+			);
 			let updated = false;
 
 			if (existingReactionIndex >= 0) {
@@ -299,7 +327,7 @@ export class CacheDriver extends StorageDriver {
 					// Remove user's reaction
 					existingReaction.users.splice(userIndex, 1);
 					existingReaction.count = existingReaction.users.length;
-					
+
 					// Remove reaction if no users left
 					if (existingReaction.count === 0) {
 						reactions.splice(existingReactionIndex, 1);
@@ -315,15 +343,17 @@ export class CacheDriver extends StorageDriver {
 				reactions.push({
 					kind: reactionKind,
 					count: 1,
-					users: [userId]
+					users: [userId],
 				});
 				updated = true;
 			}
 
 			if (updated) {
 				// Update the message in cache
-				cachedRecords[messageIndex].reactions = JSON.stringify(reactions) as any;
-				
+				cachedRecords[messageIndex].reactions = JSON.stringify(
+					reactions,
+				) as any;
+
 				// Store back to KV
 				await kv.put(CacheDriver.CACHE_KEY, JSON.stringify(cachedRecords));
 			}
@@ -352,7 +382,9 @@ export class CacheDriver extends StorageDriver {
 	}
 
 	private async getCachedRecords(): Promise<Array<
-		Omit<DatabaseMessage, "id" | "createdAt" | "updatedAt" | "deletedAt"> & { reactions: string }
+		Omit<DatabaseMessage, "id" | "createdAt" | "updatedAt" | "deletedAt"> & {
+			reactions: string;
+		}
 	> | null> {
 		const kv = this.driver as KVNamespace;
 		const cached = await kv.get(CacheDriver.CACHE_KEY);

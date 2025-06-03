@@ -16,10 +16,12 @@ export function useChat(
 	handlePacket: (packet: WasmPacket) => void,
 ) {
 	// Get the actual session to verify authentication
-	const { data: session, isPending: isSessionLoading } = authClient.useSession();
-	
+	const { data: session, isPending: isSessionLoading } =
+		authClient.useSession();
+
 	// Check if user is actually authenticated (not just having store data)
-	const isAuthenticated = !isSessionLoading && !!session?.user && session.user.id === currentUserId;
+	const isAuthenticated =
+		!isSessionLoading && !!session?.user && session.user.id === currentUserId;
 
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient || !isAuthenticated || !ws) {
@@ -30,7 +32,7 @@ export function useChat(
 				hasWs: !!ws,
 				sessionLoading: isSessionLoading,
 				hasSession: !!session?.user,
-				userIdMatch: session?.user?.id === currentUserId
+				userIdMatch: session?.user?.id === currentUserId,
 			});
 			return;
 		}
@@ -48,7 +50,7 @@ export function useChat(
 			messageId,
 			sessionUserId: session?.user?.id,
 			currentUserId,
-			content: newMessage.substring(0, 50) + "..."
+			content: newMessage.substring(0, 50) + "...",
 		});
 		sendMessage(ws, newMessage, messageId);
 
@@ -84,7 +86,16 @@ export function useChat(
 				1000 + Math.random() * 2000,
 			);
 		}
-	}, [newMessage, isClient, currentUserId, ws, setNewMessage, isAuthenticated, session, isSessionLoading]);
+	}, [
+		newMessage,
+		isClient,
+		currentUserId,
+		ws,
+		setNewMessage,
+		isAuthenticated,
+		session,
+		isSessionLoading,
+	]);
 
 	useEffect(() => {
 		// Must have all required dependencies
@@ -94,7 +105,7 @@ export function useChat(
 				isAuthenticated,
 				hasUserId: !!currentUserId,
 				sessionLoading: isSessionLoading,
-				hasSession: !!session?.user
+				hasSession: !!session?.user,
 			});
 			return;
 		}
@@ -103,7 +114,7 @@ export function useChat(
 		if (!session?.user || session.user.id !== currentUserId) {
 			console.log("useChat: Session/user ID mismatch - skipping setup", {
 				sessionUserId: session?.user?.id,
-				currentUserId
+				currentUserId,
 			});
 			return;
 		}
@@ -113,10 +124,13 @@ export function useChat(
 			return;
 		}
 
-		console.log("useChat: Setting up WebSocket message handler for authenticated user:", {
-			sessionUserId: session.user.id,
-			currentUserId
-		});
+		console.log(
+			"useChat: Setting up WebSocket message handler for authenticated user:",
+			{
+				sessionUserId: session.user.id,
+				currentUserId,
+			},
+		);
 
 		const handleMessage = async (event: MessageEvent) => {
 			console.log("useChat: Received packet:", event.data);
@@ -155,7 +169,14 @@ export function useChat(
 				ws.onmessage = null;
 			}
 		};
-	}, [ws, handlePacket, isAuthenticated, currentUserId, session, isSessionLoading]);
+	}, [
+		ws,
+		handlePacket,
+		isAuthenticated,
+		currentUserId,
+		session,
+		isSessionLoading,
+	]);
 
 	return { handleSendMessage };
 }

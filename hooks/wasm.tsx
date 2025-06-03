@@ -10,7 +10,7 @@ export function useWasmInit() {
 	useEffect(() => {
 		console.log("WASM: Starting initialization...");
 		setLoadingState({ step: "wasm-loading" });
-		
+
 		initWasm()
 			.then(() => {
 				console.log("WASM: Initialization completed successfully");
@@ -21,9 +21,9 @@ export function useWasmInit() {
 			.catch((err) => {
 				console.error("WASM: Initialization failed:", err);
 				setError("Failed to initialize WASM module");
-				setLoadingState({ 
-					step: "wasm-loading", 
-					error: "فشل في تحميل الوحدات المطلوبة" 
+				setLoadingState({
+					step: "wasm-loading",
+					error: "فشل في تحميل الوحدات المطلوبة",
 				});
 				console.error("WASM initialization error:", err);
 			});
