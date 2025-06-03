@@ -13,21 +13,21 @@ interface MeData {
 // Helper function to add delays
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Helper function to clear all auth data
-const clearAllAuthData = () => {
-	console.log("AUTH: Clearing all authentication data...");
-	// Clear localStorage
-	if (typeof window !== 'undefined') {
-		localStorage.clear();
-		sessionStorage.clear();
-	}
-	// Sign out from auth client
-	try {
-		authClient.signOut();
-	} catch (error) {
-		console.log("AUTH: Error during signOut (expected if not signed in):", error);
-	}
-};
+// // Helper function to clear all auth data
+// const clearAllAuthData = () => {
+// 	console.log("AUTH: Clearing all authentication data...");
+// 	// Clear localStorage
+// 	if (typeof window !== 'undefined') {
+// 		localStorage.clear();
+// 		sessionStorage.clear();
+// 	}
+// 	// Sign out from auth client
+// 	try {
+// 		authClient.signOut();
+// 	} catch (error) {
+// 		console.log("AUTH: Error during signOut (expected if not signed in):", error);
+// 	}
+// };
 
 export function useGetMeAggressively() {
 	const store = useStoreClient();
@@ -59,13 +59,11 @@ export function useGetMeAggressively() {
 	};
 
 	const fullRecovery = () => {
-		console.log("AUTH: Full recovery initiated - clearing all data and refreshing");
-		clearAllAuthData();
-		// Clear store data
-		store.setMe({ fingerprint: "", userId: "" });
-		setMeData({ fingerprint: null, userId: null });
-		// Refresh the page
+		console.log("AUTH: Full recovery initiated - clearing localStorage and refreshing");
+		// Only clear localStorage/sessionStorage, don't force signout
 		if (typeof window !== 'undefined') {
+			localStorage.clear();
+			sessionStorage.clear();
 			window.location.reload();
 		}
 	};
@@ -131,11 +129,9 @@ export function useGetMeAggressively() {
 					return;
 				}
 
-				// If session is explicitly null or invalid, clear any stale data and proceed with fingerprint
+				// If session is null, just proceed with fingerprint auth (don't clear anything)
 				if (session === null || !session?.user) {
-					console.log("AUTH: Session is null/invalid, clearing stale data and proceeding with fingerprint auth");
-					clearAllAuthData();
-					store.setMe({ fingerprint: "", userId: "" });
+					console.log("AUTH: No valid session found, proceeding with fingerprint authentication");
 				}
 
 				console.log("AUTH: Starting fingerprint authentication process...");
@@ -235,7 +231,7 @@ export function useGetMeAggressively() {
 		fetchMe();
 	}, [store, isSessionLoading, session, hasInitialized, setLoadingState, retryCount, maxRetriesReached]);
 
-	// Cleanup effect - only runs on unmount
+	// Cleanup effect - only runs on unmount (no signout)
 	useEffect(() => {
 		return () => {
 			console.log("AUTH: Cleaning up authentication state");
