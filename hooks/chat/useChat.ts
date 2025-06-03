@@ -55,7 +55,7 @@ export function useChat(
 
 		console.log("useChat: Sending message with user:", {
 			messageId,
-			sessionUserId: session?.user?.id || "guest",
+			sessionUserId: session?.user?.id || currentUserId,
 			currentUserId,
 			isGuest: !session?.user,
 			content: newMessage.substring(0, 50) + "...",
@@ -135,7 +135,7 @@ export function useChat(
 		console.log(
 			"useChat: Setting up WebSocket message handler for user:",
 			{
-				sessionUserId: session?.user?.id || "guest",
+				sessionUserId: session?.user?.id || currentUserId,
 				currentUserId,
 				isGuest: !session?.user,
 			},

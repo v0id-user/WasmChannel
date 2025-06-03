@@ -105,12 +105,21 @@ export default function Chat() {
 			case "message":
 				if (result.data) {
 					console.log(
-						"Adding message with ID:",
-						result.data.id,
-						"from user:",
-						result.data.userId,
+						"chat.tsx: Adding message to UI state:",
+						{
+							id: result.data.id,
+							userId: result.data.userId,
+							text: result.data.text,
+							currentMessagesCount: messages.length,
+						}
 					);
-					setMessages((prev) => [...prev, result.data]);
+					setMessages((prev) => {
+						const newMessages = [...prev, result.data];
+						console.log("🔥 chat.tsx: Messages state updated, new count:", newMessages.length);
+						return newMessages;
+					});
+				} else {
+					console.log("❌ chat.tsx: Received message packet but result.data is null");
 				}
 				break;
 
