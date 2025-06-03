@@ -1,25 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
+import { useRoomStore } from "@/store/room";
 
-// Global singleton to prevent duplicate connections
-let globalSocket: WebSocket | null = null;
+// Global flag to prevent duplicate connections
 let globalConnectionStarted = false;
 
 export function useSocket() {
 	const { isReady, state } = useBoot();
-	const [socket, setSocket] = useState<WebSocket | null>(globalSocket);
+	const { socket, setSocket, setConnectionStatus } = useRoomStore();
 	const connectionStartedRef = useRef(false);
 
 	useEffect(() => {
-		// If global socket exists, use it
-		if (globalSocket) {
-			setSocket(globalSocket);
+		// If socket already exists, we're good
+		if (socket) {
 			return;
 		}
 
-		// Only connect when fully ready and not already connected globally
+		// Only connect when fully ready and not already connecting
 		if (!isReady || globalConnectionStarted || connectionStartedRef.current) {
 			return;
 		}
@@ -27,6 +26,7 @@ export function useSocket() {
 		console.log("WEBSOCKET: Starting connection...");
 		connectionStartedRef.current = true;
 		globalConnectionStarted = true;
+		setConnectionStatus('connecting');
 
 		const connectWebSocket = () => {
 			try {
@@ -37,29 +37,30 @@ export function useSocket() {
 
 				ws.onopen = () => {
 					console.log("WEBSOCKET: Connected successfully");
-					globalSocket = ws;
 					setSocket(ws);
+					setConnectionStatus('connected');
 				};
 
 				ws.onclose = (event) => {
 					console.log("WEBSOCKET: Connection closed", event);
-					globalSocket = null;
-					globalConnectionStarted = false;
 					setSocket(null);
+					setConnectionStatus('disconnected');
+					globalConnectionStarted = false;
 					connectionStartedRef.current = false; // Allow reconnection
 				};
 
 				ws.onerror = (error) => {
 					console.error("WEBSOCKET: Connection error", error);
-					globalSocket = null;
-					globalConnectionStarted = false;
 					setSocket(null);
+					setConnectionStatus('error');
+					globalConnectionStarted = false;
 					connectionStartedRef.current = false; // Allow retry
 				};
 
 				// DO NOT handle onmessage here - that's the responsibility of chat components
 			} catch (error) {
 				console.error("WEBSOCKET: Failed to create connection", error);
+				setConnectionStatus('error');
 				globalConnectionStarted = false;
 				connectionStartedRef.current = false; // Allow retry
 			}
@@ -69,23 +70,17 @@ export function useSocket() {
 
 		// Cleanup function
 		return () => {
-			if (globalSocket && globalSocket.readyState === WebSocket.OPEN) {
+			const currentSocket = useRoomStore.getState().socket;
+			if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
 				console.log("WEBSOCKET: Cleaning up connection");
-				globalSocket.close();
+				currentSocket.close();
 			}
-			globalSocket = null;
-			globalConnectionStarted = false;
 			setSocket(null);
+			setConnectionStatus('disconnected');
+			globalConnectionStarted = false;
 			connectionStartedRef.current = false;
 		};
-	}, [isReady, state.userId, state.fingerprint]);
-
-	// Listen for global socket changes
-	useEffect(() => {
-		if (globalSocket && socket !== globalSocket) {
-			setSocket(globalSocket);
-		}
-	}, [socket]);
+	}, [isReady, state.userId, state.fingerprint, socket, setSocket, setConnectionStatus]);
 
 	return socket;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
+import { useRoomStore } from "@/store/room";
 import { useSocket } from "@/hooks/useSocket";
 import type { Message, User } from "@/types/chat";
 import { users, getInitialMessages } from "@/constants/chat";
@@ -19,7 +20,8 @@ import { PacketKind, ReactionKind } from "@/utils/wasm/init";
 
 export default function Chat() {
 	const { state: bootState } = useBoot();
-	const ws = useSocket();
+	const { socket: ws } = useRoomStore();
+	useSocket(); // Initialize socket connection
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
