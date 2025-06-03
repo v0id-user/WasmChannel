@@ -4,6 +4,11 @@ import Chat from "@/components/chat";
 import { useBoot } from "@/components/providers/BootProvider";
 import BannerMessage from "@/components/BannerMessage";
 export default function ChatPage() {
+	/*
+	* Use the useBoot hook to get a.k.a. consume the current state
+	* 
+	* The state is updated by the dispatch function from other components
+	*/
 	const { isReady, hasError, state } = useBoot();
 
 	console.log("PAGE: Rendering chat page", {

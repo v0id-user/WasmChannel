@@ -49,6 +49,10 @@ const BootDispatchContext = createContext<React.Dispatch<BootAction> | null>(
 	null,
 );
 
+/*
+* Update the current state based on the action
+*
+*/
 function bootReducer(state: BootState, action: BootAction): BootState {
 	console.log(`BOOT: ${action.type}`, action);
 
@@ -139,6 +143,14 @@ function bootReducer(state: BootState, action: BootAction): BootState {
 }
 
 export const BootProvider = ({ children }: { children: React.ReactNode }) => {
+	/**
+	 * The name useReducer is a bit misleading(I hate react), it's not a hook, it's a function that returns a tuple of two elements:
+	 * 1. The current state
+	 * 2. The dispatch function
+	 * 
+	 * The dispatch function is used to dispatch actions to the reducer which will update the state
+	 * 
+	 */
 	const [state, dispatch] = useReducer(bootReducer, {
 		step: "initializing",
 		message: STEP_MESSAGES["initializing"],
