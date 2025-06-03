@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useStoreClient } from "@/store/client";
+import { useBoot } from "@/components/providers/BootProvider";
+import { useSocket } from "@/hooks/useSocket";
 import type { Message, User } from "@/types/chat";
 import { users, getInitialMessages } from "@/constants/chat";
 import { useChatSimulation } from "@/hooks/chat/useChatSimulation";
@@ -17,7 +18,8 @@ import { handleIncomingPacket } from "@/utils/chat/packetConverter";
 import { PacketKind, ReactionKind } from "@/utils/wasm/init";
 
 export default function Chat() {
-	const { ws, me } = useStoreClient();
+	const { state: bootState } = useBoot();
+	const ws = useSocket();
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
@@ -54,13 +56,13 @@ export default function Chat() {
 
 	const handleReactionClickWithWS = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
-			if (!ws || !me?.userId) return;
+			if (!ws || !bootState.userId) return;
 
 			// Check if user has already reacted with this reaction type
 			const message = messages.find(m => m.id === messageId);
 			if (message) {
 				const existingReaction = message.reactions.find(r => r.kind === reactionKind);
-				const hasUserReacted = existingReaction?.users.includes(me.userId) || false;
+				const hasUserReacted = existingReaction?.users.includes(bootState.userId) || false;
 				
 				// If user has already reacted, don't send the packet (disable removing reactions)
 				if (hasUserReacted) {
@@ -86,13 +88,13 @@ export default function Chat() {
 				console.error("Error sending reaction:", error);
 			}
 		},
-		[ws, me?.userId, messages],
+		[ws, bootState.userId, messages],
 	);
 
 	const handlePacket = (packet: WasmPacket) => {
 		console.log("chat.tsx: Received packet:", packet);
 
-		const result = handleIncomingPacket(packet, me?.userId || "");
+		const result = handleIncomingPacket(packet, bootState.userId || "");
 		console.log("chat.tsx: Packet conversion result:", result);
 
 		switch (result.type) {
@@ -210,7 +212,7 @@ export default function Chat() {
 	const { handleSendMessage } = useChat(
 		newMessage,
 		isClient,
-		me?.userId || "",
+		bootState.userId || "",
 		ws,
 		setMessages,
 		setNewMessage,
@@ -221,14 +223,14 @@ export default function Chat() {
 	useChatSimulation(
 		isClient,
 		messages,
-		me?.userId || "",
+		bootState.userId || "",
 		users,
 		setTypingUsers,
 		setMessages,
 	);
 
-	// Early return after all hooks have been called
-	if (!me || !ws) {
+	// Early return after all hooks have been called - must have valid userId
+	if (!bootState.userId || !ws) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
@@ -239,6 +241,9 @@ export default function Chat() {
 			</div>
 		);
 	}
+
+	// At this point, bootState.userId is guaranteed to be a valid string
+	const currentUserId = bootState.userId;
 
 	// Group messages by user to show avatars only for first message in sequence
 	const groupedMessages = messages.reduce(
@@ -307,7 +312,7 @@ export default function Chat() {
 							user={user}
 							showAvatar={showAvatar}
 							onReactionClick={handleReactionClickWithWS}
-							currentUserId={me?.userId}
+							currentUserId={currentUserId}
 						/>
 					))}
 

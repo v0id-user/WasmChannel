@@ -19,7 +19,7 @@ export function useSocket() {
     
     const connectWebSocket = () => {
       try {
-        const wsUrl = `${process.env.NEXT_PUBLIC_WORKER_CHAT || 'wss://localhost:3001'}/`;
+        const wsUrl = `${process.env.NEXT_PUBLIC_WORKER_CHAT  || 'wss://localhost:3001'}/ws?uid=${state.userId}&fp=${state.fingerprint}`;
         console.log("WEBSOCKET: Connecting to:", wsUrl);
         
         const ws = new WebSocket(wsUrl);
@@ -32,25 +32,20 @@ export function useSocket() {
         ws.onclose = (event) => {
           console.log("WEBSOCKET: Connection closed", event);
           socketRef.current = null;
+          connectionStartedRef.current = false; // Allow reconnection
         };
         
         ws.onerror = (error) => {
           console.error("WEBSOCKET: Connection error", error);
           socketRef.current = null;
+          connectionStartedRef.current = false; // Allow retry
         };
         
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log("WEBSOCKET: Received message", data);
-            // Handle incoming messages here
-          } catch (error) {
-            console.error("WEBSOCKET: Failed to parse message", error);
-          }
-        };
+        // DO NOT handle onmessage here - that's the responsibility of chat components
         
       } catch (error) {
         console.error("WEBSOCKET: Failed to create connection", error);
+        connectionStartedRef.current = false; // Allow retry
       }
     };
     
@@ -63,6 +58,7 @@ export function useSocket() {
         socketRef.current.close();
         socketRef.current = null;
       }
+      connectionStartedRef.current = false;
     };
   }, [isReady, state.userId, state.fingerprint]);
   
