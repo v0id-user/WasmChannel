@@ -5,7 +5,7 @@ import { useBoot } from "@/components/providers/BootProvider";
 import { getFingerprint } from "@thumbmarkjs/thumbmarkjs";
 import { nanoid } from "nanoid";
 // Browser fingerprinting function
-function generateFingerprint(): Promise<string> {
+async function generateFingerprint(): Promise<string> {
   // Check if fingerprint exists in local storage
   const storedFingerprint = localStorage.getItem("fp_pls_no_touch_dookie_🥺");
   
@@ -15,7 +15,7 @@ function generateFingerprint(): Promise<string> {
   }
 
   // Generate new fingerprint if none exists
-  const basefingerPrint = getFingerprint();
+  const basefingerPrint = await getFingerprint();
   const uniqueId = nanoid();
   const newFingerprint = `${basefingerPrint}-${uniqueId}`;
   
