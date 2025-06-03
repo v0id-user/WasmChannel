@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 // Browser fingerprinting function
 function generateFingerprint(): Promise<string> {
   // Check if fingerprint exists in local storage
-  const storedFingerprint = localStorage.getItem("fingerprint");
+  const storedFingerprint = localStorage.getItem("fp_pls_no_touch_dookie_🥺");
   
   // If fingerprint exists, return it
   if (storedFingerprint) {
@@ -20,7 +20,7 @@ function generateFingerprint(): Promise<string> {
   const newFingerprint = `${basefingerPrint}-${uniqueId}`;
   
   // Store new fingerprint in local storage
-  localStorage.setItem("fingerprint", newFingerprint);
+  localStorage.setItem("fp_pls_no_touch_dookie_🥺", newFingerprint);
   
   return Promise.resolve(newFingerprint);
 }
