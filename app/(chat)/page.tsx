@@ -2,7 +2,7 @@
 
 import Chat from "@/components/chat";
 import { useBoot } from "@/components/providers/BootProvider";
-
+import BannerMessage from "@/components/BannerMessage";
 export default function ChatPage() {
 	const { isReady, hasError, state } = useBoot();
 
@@ -105,5 +105,10 @@ export default function ChatPage() {
 	}
 
 	console.log("PAGE: All ready! Rendering chat component...");
-	return <Chat />;
+	return (
+		<>
+			<BannerMessage />
+			<Chat />
+		</>
+	);
 }

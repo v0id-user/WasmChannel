@@ -48,7 +48,7 @@ export function useSocket() {
 				console.log(
 					`WEBSOCKET: Connecting to: ${wsUrl} (attempt ${attempt}/5)`,
 				);
-				// Hard sleep to prevent duplicate connections
+				// Hard sleep to prevent duplicate connections | I know not the best way but it works :P
 				await sleep(3000);
 				const ws = new WebSocket(wsUrl);
 
