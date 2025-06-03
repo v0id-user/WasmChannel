@@ -19,9 +19,15 @@ export function useChat(
 	const { data: session, isPending: isSessionLoading } =
 		authClient.useSession();
 
-	// Check if user is actually authenticated (not just having store data)
-	const isAuthenticated =
-		!isSessionLoading && !!session?.user && session.user.id === currentUserId;
+	// Check if user is authenticated:
+	// 1. If we have a session, verify it matches currentUserId
+	// 2. If no session, allow guest access with just currentUserId (from fingerprinting)
+	const isAuthenticated = !isSessionLoading && (
+		// Case 1: Has valid session that matches current user
+		(!!session?.user && session.user.id === currentUserId) ||
+		// Case 2: No session but has valid userId (guest/fingerprint user)
+		(!session?.user && !!currentUserId)
+	);
 
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient || !isAuthenticated || !ws) {
@@ -33,6 +39,7 @@ export function useChat(
 				sessionLoading: isSessionLoading,
 				hasSession: !!session?.user,
 				userIdMatch: session?.user?.id === currentUserId,
+				hasCurrentUserId: !!currentUserId,
 			});
 			return;
 		}
@@ -46,10 +53,11 @@ export function useChat(
 
 		setNewMessage("");
 
-		console.log("useChat: Sending message with authenticated user:", {
+		console.log("useChat: Sending message with user:", {
 			messageId,
-			sessionUserId: session?.user?.id,
+			sessionUserId: session?.user?.id || "guest",
 			currentUserId,
+			isGuest: !session?.user,
 			content: newMessage.substring(0, 50) + "...",
 		});
 		sendMessage(ws, newMessage, messageId);
@@ -110,8 +118,8 @@ export function useChat(
 			return;
 		}
 
-		// Must have valid session that matches current user
-		if (!session?.user || session.user.id !== currentUserId) {
+		// If we have a session, verify it matches (for authenticated users)
+		if (session?.user && session.user.id !== currentUserId) {
 			console.log("useChat: Session/user ID mismatch - skipping setup", {
 				sessionUserId: session?.user?.id,
 				currentUserId,
@@ -125,10 +133,11 @@ export function useChat(
 		}
 
 		console.log(
-			"useChat: Setting up WebSocket message handler for authenticated user:",
+			"useChat: Setting up WebSocket message handler for user:",
 			{
-				sessionUserId: session.user.id,
+				sessionUserId: session?.user?.id || "guest",
 				currentUserId,
+				isGuest: !session?.user,
 			},
 		);
 
