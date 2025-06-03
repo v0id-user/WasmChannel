@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
 
 export function useSocket() {
 	const { isReady, state } = useBoot();
-	const socketRef = useRef<WebSocket | null>(null);
+	const [socket, setSocket] = useState<WebSocket | null>(null);
 	const connectionStartedRef = useRef(false);
+	const socketRef = useRef<WebSocket | null>(null);
 
 	useEffect(() => {
 		// Only connect when fully ready and not already connected
@@ -27,17 +28,20 @@ export function useSocket() {
 				ws.onopen = () => {
 					console.log("WEBSOCKET: Connected successfully");
 					socketRef.current = ws;
+					setSocket(ws);
 				};
 
 				ws.onclose = (event) => {
 					console.log("WEBSOCKET: Connection closed", event);
 					socketRef.current = null;
+					setSocket(null);
 					connectionStartedRef.current = false; // Allow reconnection
 				};
 
 				ws.onerror = (error) => {
 					console.error("WEBSOCKET: Connection error", error);
 					socketRef.current = null;
+					setSocket(null);
 					connectionStartedRef.current = false; // Allow retry
 				};
 
@@ -57,9 +61,10 @@ export function useSocket() {
 				socketRef.current.close();
 				socketRef.current = null;
 			}
+			setSocket(null);
 			connectionStartedRef.current = false;
 		};
 	}, [isReady, state.userId, state.fingerprint]);
 
-	return socketRef.current;
+	return socket;
 }
