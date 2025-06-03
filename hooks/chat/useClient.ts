@@ -1,6 +1,7 @@
 "use client";
 import { useStoreClient } from "@/store/client";
 import { useEffect, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 // Helper function to add delays
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -14,14 +15,37 @@ export function useClient() {
 	const maxRetries = 5;
 	const retryDelay = 2000; // 2 seconds
 
+	// Get the actual session to verify authentication
+	const { data: session, isPending: isSessionLoading } = authClient.useSession();
+
 	useEffect(() => {
+		// First check: Bootstrap must be complete
 		if (!bootstrapped) {
 			console.log("WEBSOCKET: Waiting for bootstrap to complete...");
 			return;
 		}
 
+		// Second check: Session must be loaded (not pending)
+		if (isSessionLoading) {
+			console.log("WEBSOCKET: Waiting for session to load...");
+			return;
+		}
+
+		// Third check: Must have valid session (user is actually authenticated)
+		if (!session?.user) {
+			console.log("WEBSOCKET: No valid session found - user not authenticated");
+			return;
+		}
+
+		// Fourth check: Must have credentials in store (from successful auth)
 		if (!me?.userId || !me?.fingerprint) {
-			console.log("WEBSOCKET: Waiting for authentication credentials...");
+			console.log("WEBSOCKET: Waiting for authentication credentials to be stored...");
+			return;
+		}
+
+		// Fifth check: Session user ID must match store user ID (consistency check)
+		if (session.user.id !== me.userId) {
+			console.log("WEBSOCKET: Session/store user ID mismatch - waiting for sync");
 			return;
 		}
 
@@ -39,8 +63,9 @@ export function useClient() {
 				retryTimeout.current = null;
 			}
 
-			console.log("WEBSOCKET: Connecting to WebSocket with credentials:", {
-				userId: me.userId,
+			console.log("WEBSOCKET: All authentication checks passed - connecting with verified credentials:", {
+				sessionUserId: session.user.id,
+				storeUserId: me.userId,
 				fingerprint: me.fingerprint.substring(0, 8) + "..."
 			});
 
@@ -107,7 +132,7 @@ export function useClient() {
 			setWs(ws);
 		};
 
-		console.log("WEBSOCKET: Starting connection process...");
+		console.log("WEBSOCKET: Starting connection process with authenticated user...");
 		connectWebSocket();
 
 		// Cleanup function
@@ -122,7 +147,7 @@ export function useClient() {
 				client.current = null;
 			}
 		};
-	}, [bootstrapped, setWs, me, setLoadingState]);
+	}, [bootstrapped, setWs, me, setLoadingState, session, isSessionLoading]);
 
 	return {
 		clientReady,

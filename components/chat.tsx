@@ -215,7 +215,6 @@ export default function Chat() {
 		setMessages,
 		setNewMessage,
 		handlePacket,
-		!!(me?.userId && me?.fingerprint), // Pass authentication state
 	);
 
 	// Simulation effects

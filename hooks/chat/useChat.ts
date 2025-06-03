@@ -4,6 +4,7 @@ import { deserializePacket, WasmPacket } from "@/oop/packet";
 import type { Message } from "@/types/chat";
 import { users } from "@/constants/chat";
 import { nanoid } from "nanoid";
+import { authClient } from "@/lib/auth-client";
 
 export function useChat(
 	newMessage: string,
@@ -13,15 +14,23 @@ export function useChat(
 	setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
 	setNewMessage: React.Dispatch<React.SetStateAction<string>>,
 	handlePacket: (packet: WasmPacket) => void,
-	isAuthenticated: boolean = false,
 ) {
+	// Get the actual session to verify authentication
+	const { data: session, isPending: isSessionLoading } = authClient.useSession();
+	
+	// Check if user is actually authenticated (not just having store data)
+	const isAuthenticated = !isSessionLoading && !!session?.user && session.user.id === currentUserId;
+
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient || !isAuthenticated || !ws) {
 			console.log("useChat: Cannot send message - missing requirements", {
 				hasMessage: !!newMessage.trim(),
 				isClient,
 				isAuthenticated,
-				hasWs: !!ws
+				hasWs: !!ws,
+				sessionLoading: isSessionLoading,
+				hasSession: !!session?.user,
+				userIdMatch: session?.user?.id === currentUserId
 			});
 			return;
 		}
@@ -35,7 +44,12 @@ export function useChat(
 
 		setNewMessage("");
 
-		console.log("useChat: Sending message with ID:", messageId, "content:", newMessage);
+		console.log("useChat: Sending message with authenticated user:", {
+			messageId,
+			sessionUserId: session?.user?.id,
+			currentUserId,
+			content: newMessage.substring(0, 50) + "..."
+		});
 		sendMessage(ws, newMessage, messageId);
 
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
@@ -70,14 +84,26 @@ export function useChat(
 				1000 + Math.random() * 2000,
 			);
 		}
-	}, [newMessage, isClient, currentUserId, ws, setNewMessage, isAuthenticated]);
+	}, [newMessage, isClient, currentUserId, ws, setNewMessage, isAuthenticated, session, isSessionLoading]);
 
 	useEffect(() => {
+		// Must have all required dependencies
 		if (!ws || !isAuthenticated || !currentUserId) {
 			console.log("useChat: Skipping WebSocket setup - not ready", {
 				hasWs: !!ws,
 				isAuthenticated,
-				hasUserId: !!currentUserId
+				hasUserId: !!currentUserId,
+				sessionLoading: isSessionLoading,
+				hasSession: !!session?.user
+			});
+			return;
+		}
+
+		// Must have valid session that matches current user
+		if (!session?.user || session.user.id !== currentUserId) {
+			console.log("useChat: Session/user ID mismatch - skipping setup", {
+				sessionUserId: session?.user?.id,
+				currentUserId
 			});
 			return;
 		}
@@ -87,7 +113,10 @@ export function useChat(
 			return;
 		}
 
-		console.log("useChat: Setting up WebSocket message handler");
+		console.log("useChat: Setting up WebSocket message handler for authenticated user:", {
+			sessionUserId: session.user.id,
+			currentUserId
+		});
 
 		const handleMessage = async (event: MessageEvent) => {
 			console.log("useChat: Received packet:", event.data);
@@ -126,7 +155,7 @@ export function useChat(
 				ws.onmessage = null;
 			}
 		};
-	}, [ws, handlePacket, isAuthenticated, currentUserId]);
+	}, [ws, handlePacket, isAuthenticated, currentUserId, session, isSessionLoading]);
 
 	return { handleSendMessage };
 }
