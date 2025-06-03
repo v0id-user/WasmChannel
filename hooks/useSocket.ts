@@ -7,6 +7,8 @@ import { useRoomStore } from "@/store/room";
 // Global flag to prevent duplicate connections
 let globalConnectionStarted = false;
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function useSocket() {
 	const { isReady, state } = useBoot();
 	const { socket, setSocket, setConnectionStatus } = useRoomStore();
@@ -30,11 +32,12 @@ export function useSocket() {
 		globalConnectionStarted = true;
 		setConnectionStatus('connecting');
 
-		const connectWebSocket = (attempt: number = 1) => {
+		const connectWebSocket = async (attempt: number = 1) => {
 			try {
 				const wsUrl = `${process.env.NEXT_PUBLIC_WORKER_CHAT}`;
 				console.log(`WEBSOCKET: Connecting to: ${wsUrl} (attempt ${attempt}/5)`);
-
+        // Hard sleep to prevent duplicate connections
+        await sleep(3000);
 				const ws = new WebSocket(wsUrl);
 
 				ws.onopen = () => {
