@@ -144,11 +144,14 @@ function bootReducer(state: BootState, action: BootAction): BootState {
 
 export const BootProvider = ({ children }: { children: React.ReactNode }) => {
 	/**
-	 * The name useReducer is a bit misleading(I hate react), it's not a hook, it's a function that returns a tuple of two elements:
+	 * The name useReducer is a bit misleading(I hate react), it's a hook and it's a function that returns a tuple of two elements:
 	 * 1. The current state
 	 * 2. The dispatch function
 	 * 
-	 * The dispatch function is used to dispatch actions to the reducer which will update the state
+	 * The dispatch function is used to dispatch actions to the reducer which will update the state.
+	 * So it's kinda of a signal? or at least a dispatcher hook? But a reducer? nahh.. that doesn't 
+	 * sound legit to me man, I mean first fighting the cookies await behavior, then fighting this
+	 * nameing convention like bruh...
 	 * 
 	 * Note:
 	 * Me(#v0id) WILL NEVER lean to this BS, but this is Cursor code so blame the AI not me please I wanted
