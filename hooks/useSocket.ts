@@ -19,7 +19,7 @@ export function useSocket() {
     
     const connectWebSocket = () => {
       try {
-        const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL || 'wss://localhost:3001'}/ws?uid=${state.userId}&fp=${state.fingerprint}`;
+        const wsUrl = `${process.env.NEXT_PUBLIC_WORKER_CHAT || 'wss://localhost:3001'}/`;
         console.log("WEBSOCKET: Connecting to:", wsUrl);
         
         const ws = new WebSocket(wsUrl);
