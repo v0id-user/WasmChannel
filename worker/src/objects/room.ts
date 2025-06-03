@@ -167,6 +167,20 @@ export class Room extends DurableObject {
 		if (!clientId) return;
 		this.clientsById.delete(clientId);
 		this.clientsBySocket.delete(ws);
+
+		this.#broadcastToOthers(this.#onlineUsersPacket(), clientId, true);
+	}
+
+	#onlineUsersPacket() {
+		const packetOnlineUsers = createPacket(
+			PacketKind.OnlineUsers,
+			null,
+			new TextEncoder().encode(this.clientsById.size.toString()),
+		);
+
+		const serializedPacketOnlineUsers = serializePacket(packetOnlineUsers);
+
+		return serializedPacketOnlineUsers;
 	}
 
 	// Add a new client
@@ -178,20 +192,15 @@ export class Room extends DurableObject {
 			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
 
-		const packetJoined = createPacket(
-			PacketKind.Joined,
-			null,
-			new TextEncoder().encode(clientId),
-		);
+		// const packetJoined = createPacket(
+		// 	PacketKind.Joined,
+		// 	null,
+		// 	new TextEncoder().encode(clientId),
+		// );
+	
+		// const serializedPacketJoined = serializePacket(packetJoined);
 
-		const packetOnlineUsers = createPacket(
-			PacketKind.OnlineUsers,
-			null,
-			new TextEncoder().encode(this.clientsById.size.toString()),
-		);
-
-		const serializedPacketJoined = serializePacket(packetJoined);
-		const serializedPacketOnlineUsers = serializePacket(packetOnlineUsers);
+		const serializedPacketOnlineUsers = this.#onlineUsersPacket();
 		// This was just a test
 		// this.env.QUEUE_MESSAGES.send(serializedPacket, {
 		// 	contentType: "bytes",
@@ -199,7 +208,7 @@ export class Room extends DurableObject {
 
 		// Notify other clients about new connection
 		await Promise.all([
-			this.#broadcastToOthers(serializedPacketJoined, clientId, true),
+			this.#broadcastToOthers(serializedPacketOnlineUsers, clientId, true),
 			this.#broadcastToClient(serializedPacketOnlineUsers, clientId),
 		]);
 	}
