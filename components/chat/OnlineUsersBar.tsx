@@ -1,6 +1,3 @@
-import type { User } from "@/types/chat";
-import { UserAvatar } from "./UserAvatar";
-
 interface OnlineUsersBarProps {
 	onlineUsersCount: number;
 }
