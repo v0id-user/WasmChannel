@@ -25,6 +25,7 @@ export default function Chat() {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [newMessage, setNewMessage] = useState("");
 	const [typingUsers, setTypingUsers] = useState<User[]>([]);
+	const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
 	const [isClient, setIsClient] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,8 @@ export default function Chat() {
 	// Initialize on client side only
 	useEffect(() => {
 		setIsClient(true);
+		// Initialize with static users for fallback
+		setOnlineUsers(users);
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
 			setMessages(getInitialMessages());
 		}
@@ -183,7 +186,7 @@ export default function Chat() {
 				// Handle typing indicators with timeout
 				if (result.data) {
 					const { userId, isTyping } = result.data;
-					const user = users.find((u) => u.id === userId);
+					const user = onlineUsers.find((u) => u.id === userId);
 					if (user) {
 						if (isTyping) {
 							addTypingUser(user); // Automatically sets timeout
@@ -202,7 +205,10 @@ export default function Chat() {
 			case "online_users":
 				// Handle online users list updates
 				console.log("Online users update:", result.data);
-				// You could update the users list here if needed
+				if (result.data && Array.isArray(result.data)) {
+					console.log("Updating online users state with:", result.data);
+					setOnlineUsers(result.data);
+				}
 				break;
 
 			case "delete":
@@ -239,7 +245,7 @@ export default function Chat() {
 		isClient,
 		messages,
 		bootState.userId || "",
-		users,
+		onlineUsers,
 		setTypingUsers,
 		setMessages,
 	);
@@ -271,7 +277,7 @@ export default function Chat() {
 			const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
 
 			// Find user or create a fallback user with userId as name
-			const foundUser = users.find((u) => u.id === message.userId);
+			const foundUser = onlineUsers.find((u) => u.id === message.userId);
 			const user = foundUser || {
 				id: message.userId,
 				name: message.userId, // Use userId as name
@@ -308,7 +314,7 @@ export default function Chat() {
 				</div>
 
 				{/* Online Users Bar */}
-				<OnlineUsersBar users={users} />
+				<OnlineUsersBar users={onlineUsers} />
 
 				{/* Messages Area */}
 				<div className="flex-1 overflow-y-auto">
