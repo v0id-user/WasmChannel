@@ -197,7 +197,7 @@ export class Room extends DurableObject {
 		// 	null,
 		// 	new TextEncoder().encode(clientId),
 		// );
-	
+
 		// const serializedPacketJoined = serializePacket(packetJoined);
 
 		const serializedPacketOnlineUsers = this.#onlineUsersPacket();

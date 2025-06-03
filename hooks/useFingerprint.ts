@@ -6,23 +6,23 @@ import { getFingerprint } from "@thumbmarkjs/thumbmarkjs";
 import { nanoid } from "nanoid";
 // Browser fingerprinting function
 async function generateFingerprint(): Promise<string> {
-  // Check if fingerprint exists in local storage
-  const storedFingerprint = localStorage.getItem("fp_pls_no_touch_dookie_🥺");
-  
-  // If fingerprint exists, return it
-  if (storedFingerprint) {
-    return Promise.resolve(storedFingerprint);
-  }
+	// Check if fingerprint exists in local storage
+	const storedFingerprint = localStorage.getItem("fp_pls_no_touch_dookie_🥺");
 
-  // Generate new fingerprint if none exists
-  const basefingerPrint = await getFingerprint();
-  const uniqueId = nanoid();
-  const newFingerprint = `${basefingerPrint}-${uniqueId}`;
-  
-  // Store new fingerprint in local storage
-  localStorage.setItem("fp_pls_no_touch_dookie_🥺", newFingerprint);
-  
-  return Promise.resolve(newFingerprint);
+	// If fingerprint exists, return it
+	if (storedFingerprint) {
+		return Promise.resolve(storedFingerprint);
+	}
+
+	// Generate new fingerprint if none exists
+	const basefingerPrint = await getFingerprint();
+	const uniqueId = nanoid();
+	const newFingerprint = `${basefingerPrint}-${uniqueId}`;
+
+	// Store new fingerprint in local storage
+	localStorage.setItem("fp_pls_no_touch_dookie_🥺", newFingerprint);
+
+	return Promise.resolve(newFingerprint);
 }
 
 export function useFingerprint() {

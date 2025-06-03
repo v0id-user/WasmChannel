@@ -22,12 +22,12 @@ export function useChat(
 	// Check if user is authenticated:
 	// 1. If we have a session, verify it matches currentUserId
 	// 2. If no session, allow guest access with just currentUserId (from fingerprinting)
-	const isAuthenticated = !isSessionLoading && (
+	const isAuthenticated =
+		!isSessionLoading &&
 		// Case 1: Has valid session that matches current user
-		(!!session?.user && session.user.id === currentUserId) ||
-		// Case 2: No session but has valid userId (guest/fingerprint user)
-		(!session?.user && !!currentUserId)
-	);
+		((!!session?.user && session.user.id === currentUserId) ||
+			// Case 2: No session but has valid userId (guest/fingerprint user)
+			(!session?.user && !!currentUserId));
 
 	const handleSendMessage = useCallback(() => {
 		if (!newMessage.trim() || !isClient || !isAuthenticated || !ws) {
@@ -132,14 +132,11 @@ export function useChat(
 			return;
 		}
 
-		console.log(
-			"useChat: Setting up WebSocket message handler for user:",
-			{
-				sessionUserId: session?.user?.id || currentUserId,
-				currentUserId,
-				isGuest: !session?.user,
-			},
-		);
+		console.log("useChat: Setting up WebSocket message handler for user:", {
+			sessionUserId: session?.user?.id || currentUserId,
+			currentUserId,
+			isGuest: !session?.user,
+		});
 
 		const handleMessage = async (event: MessageEvent) => {
 			console.log("useChat: Received packet:", event.data);

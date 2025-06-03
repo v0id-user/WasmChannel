@@ -3,17 +3,17 @@
 import { useEffect, useRef } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
 import { useRoomStore } from "@/store/room";
-import { create } from 'zustand';
+import { create } from "zustand";
 
 // Super unhinged global flag to prevent duplicate connections :-O
 type SocketFlags = {
-  connectionStarted: boolean;
-  setConnectionStarted: (started: boolean) => void;
+	connectionStarted: boolean;
+	setConnectionStarted: (started: boolean) => void;
 };
 
 export const useSocketFlags = create<SocketFlags>((set) => ({
-  connectionStarted: false,
-  setConnectionStarted: (started) => set({ connectionStarted: started }),
+	connectionStarted: false,
+	setConnectionStarted: (started) => set({ connectionStarted: started }),
 }));
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,20 +40,22 @@ export function useSocket() {
 		console.log("WEBSOCKET: Starting connection...");
 		connectionStartedRef.current = true;
 		setConnectionStarted(true);
-		setConnectionStatus('connecting');
+		setConnectionStatus("connecting");
 
 		const connectWebSocket = async (attempt: number = 1) => {
 			try {
 				const wsUrl = `${process.env.NEXT_PUBLIC_WORKER_CHAT}`;
-				console.log(`WEBSOCKET: Connecting to: ${wsUrl} (attempt ${attempt}/5)`);
-        // Hard sleep to prevent duplicate connections
-        await sleep(3000);
+				console.log(
+					`WEBSOCKET: Connecting to: ${wsUrl} (attempt ${attempt}/5)`,
+				);
+				// Hard sleep to prevent duplicate connections
+				await sleep(3000);
 				const ws = new WebSocket(wsUrl);
 
 				ws.onopen = () => {
 					console.log("WEBSOCKET: Connected successfully");
 					setSocket(ws);
-					setConnectionStatus('connected');
+					setConnectionStatus("connected");
 					retryCountRef.current = 0; // Reset retry count on successful connection
 					if (retryTimeoutRef.current) {
 						clearTimeout(retryTimeoutRef.current);
@@ -64,12 +66,14 @@ export function useSocket() {
 				ws.onclose = (event) => {
 					console.log("WEBSOCKET: Connection closed", event);
 					setSocket(null);
-					setConnectionStatus('disconnected');
-					
+					setConnectionStatus("disconnected");
+
 					// Retry logic
 					if (retryCountRef.current < 5) {
 						retryCountRef.current++;
-						console.log(`WEBSOCKET: Retrying in 1 second (attempt ${retryCountRef.current}/5)`);
+						console.log(
+							`WEBSOCKET: Retrying in 1 second (attempt ${retryCountRef.current}/5)`,
+						);
 						retryTimeoutRef.current = setTimeout(() => {
 							connectWebSocket(retryCountRef.current);
 						}, 1000);
@@ -84,20 +88,22 @@ export function useSocket() {
 				ws.onerror = (error) => {
 					console.error("WEBSOCKET: Connection error", error);
 					setSocket(null);
-					setConnectionStatus('error');
-					
+					setConnectionStatus("error");
+
 					// The onclose event will handle retries, so we don't retry here
 				};
 
 				// DO NOT handle onmessage here - that's the responsibility of chat components
 			} catch (error) {
 				console.error("WEBSOCKET: Failed to create connection", error);
-				setConnectionStatus('error');
-				
+				setConnectionStatus("error");
+
 				// Retry logic for connection creation errors
 				if (retryCountRef.current < 5) {
 					retryCountRef.current++;
-					console.log(`WEBSOCKET: Retrying in 1 second (attempt ${retryCountRef.current}/5)`);
+					console.log(
+						`WEBSOCKET: Retrying in 1 second (attempt ${retryCountRef.current}/5)`,
+					);
 					retryTimeoutRef.current = setTimeout(() => {
 						connectWebSocket(retryCountRef.current);
 					}, 1000);
@@ -119,19 +125,25 @@ export function useSocket() {
 				clearTimeout(retryTimeoutRef.current);
 				retryTimeoutRef.current = null;
 			}
-			
+
 			const currentSocket = useRoomStore.getState().socket;
 			if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
 				console.log("WEBSOCKET: Cleaning up connection");
 				currentSocket.close();
 			}
 			setSocket(null);
-			setConnectionStatus('disconnected');
+			setConnectionStatus("disconnected");
 			setConnectionStarted(false);
 			connectionStartedRef.current = false;
 			retryCountRef.current = 0;
 		};
-	}, [isReady, state.userId, state.fingerprint, setSocket, setConnectionStatus]);
+	}, [
+		isReady,
+		state.userId,
+		state.fingerprint,
+		setSocket,
+		setConnectionStatus,
+	]);
 
 	return socket;
 }

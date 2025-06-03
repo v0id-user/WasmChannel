@@ -37,7 +37,7 @@ export default function Chat() {
 	useEffect(() => {
 		setIsClient(true);
 		// Initialize with static users count for fallback
-		setOnlineUsersCount(users.filter(u => u.isOnline).length);
+		setOnlineUsersCount(users.filter((u) => u.isOnline).length);
 		if (process.env.NEXT_PUBLIC_DEBUG === "yes") {
 			setMessages(getInitialMessages());
 		}
@@ -109,22 +109,24 @@ export default function Chat() {
 		switch (result.type) {
 			case "message":
 				if (result.data) {
-					console.log(
-						"chat.tsx: Adding message to UI state:",
-						{
-							id: result.data.id,
-							userId: result.data.userId,
-							text: result.data.text,
-							currentMessagesCount: messages.length,
-						}
-					);
+					console.log("chat.tsx: Adding message to UI state:", {
+						id: result.data.id,
+						userId: result.data.userId,
+						text: result.data.text,
+						currentMessagesCount: messages.length,
+					});
 					setMessages((prev) => {
 						const newMessages = [...prev, result.data];
-						console.log("🔥 chat.tsx: Messages state updated, new count:", newMessages.length);
+						console.log(
+							"🔥 chat.tsx: Messages state updated, new count:",
+							newMessages.length,
+						);
 						return newMessages;
 					});
 				} else {
-					console.log("❌ chat.tsx: Received message packet but result.data is null");
+					console.log(
+						"❌ chat.tsx: Received message packet but result.data is null",
+					);
 				}
 				break;
 
@@ -205,10 +207,10 @@ export default function Chat() {
 			case "online_users":
 				// Handle online users list updates
 				console.log("Online users update:", result.data);
-				if (result.data && typeof result.data === 'number') {
+				if (result.data && typeof result.data === "number") {
 					const onlineCount = result.data;
 					console.log("Updating online users count to:", onlineCount);
-					
+
 					setOnlineUsersCount(onlineCount);
 				}
 				break;
