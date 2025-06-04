@@ -1,14 +1,17 @@
 {
-	"name": "wasmchannel",
-	"type": "module",
-	"version": "0.1.0",
-	"files": [
-		"wasmchannel_bg.wasm",
-		"wasmchannel.js",
-		"wasmchannel_bg.js",
-		"wasmchannel.d.ts"
-	],
-	"main": "wasmchannel.js",
-	"types": "wasmchannel.d.ts",
-	"sideEffects": ["./wasmchannel.js", "./snippets/*"]
+  "name": "wasmchannel",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "wasmchannel_bg.wasm",
+    "wasmchannel.js",
+    "wasmchannel_bg.js",
+    "wasmchannel.d.ts"
+  ],
+  "main": "wasmchannel.js",
+  "types": "wasmchannel.d.ts",
+  "sideEffects": [
+    "./wasmchannel.js",
+    "./snippets/*"
+  ]
 }

@@ -1,12 +1,11 @@
 use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
-use js_sys::Uint8Array;
 use bincode;
+use js_sys::Uint8Array;
 use crate::hash::calculate_crc32;
 use std::io;
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Copy, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Copy, Clone)]
 pub enum PacketKind {
     Message,
     OnlineUsers,
@@ -17,7 +16,7 @@ pub enum PacketKind {
 }
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Copy, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Copy, Clone)]
 pub enum ReactionKind {
     None,
     Like,
@@ -41,7 +40,7 @@ pub enum ReactionKind {
 * 
 * - #V0ID :)
 */
-#[derive(Serialize, Deserialize, bincode::Encode, bincode::Decode, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Clone)]
 pub struct Packet {
     pub kind: PacketKind,
     pub message_id: Option<String>,
