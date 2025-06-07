@@ -164,7 +164,7 @@ app.get("/health", async (c) => {
 			headers: c.req.raw.headers,
 		});
 
-		// Test cache
+		// Test cache, this might not work because of the "eventually consistent" problem, but it's a test in an experimental project :P
 		const cache = c.env.KV;
 		cache.put("test", "test");
 		const cached = await cache.get("test");

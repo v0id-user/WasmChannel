@@ -4,9 +4,8 @@ import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
 import { PacketKind, WasmPacket } from "@/utils/wasm/init";
 import { createAuthWithD1 } from "@/auth";
 import { DrizzleD1Database } from "drizzle-orm/d1";
-import { createDb } from "../db";
-import { CacheDriver, DatabaseDriver } from "../driver/storage";
-import { nanoid } from "nanoid";
+import { createDb } from "~/db";
+import { CacheDriver } from "~/driver/storage";
 
 export class Room extends DurableObject {
 	// Store active WebSocket clients with bidirectional lookups
@@ -192,19 +191,7 @@ export class Room extends DurableObject {
 			`Client ${clientId} added. Total clients: ${this.clientsById.size}`,
 		);
 
-		// const packetJoined = createPacket(
-		// 	PacketKind.Joined,
-		// 	null,
-		// 	new TextEncoder().encode(clientId),
-		// );
-
-		// const serializedPacketJoined = serializePacket(packetJoined);
-
 		const serializedPacketOnlineUsers = this.#onlineUsersPacket();
-		// This was just a test
-		// this.env.QUEUE_MESSAGES.send(serializedPacket, {
-		// 	contentType: "bytes",
-		// });
 
 		// Notify other clients about new connection
 		await Promise.all([
@@ -235,7 +222,7 @@ export class Room extends DurableObject {
 					);
 				}
 
-				// For regular messages, clients can now set message_id to ensure consistency
+				// For regular messages, clients can set message_id to ensure consistency
 				// For reactions, clients must set message_id (the message being reacted to)
 				// For typing, message_id should be null
 				// Clients should never set user_id (server always sets this)
@@ -271,9 +258,6 @@ export class Room extends DurableObject {
 				}
 			}
 
-			const cacheDriver = new CacheDriver(this.env.KV);
-			const databaseDriver = new DatabaseDriver(this.env.DB);
-
 			// Handle regular message packets
 			if (packet.kind() === PacketKind.Message && !isServer) {
 				// Use client's message_id to ensure consistency across all clients
@@ -287,17 +271,9 @@ export class Room extends DurableObject {
 					packet.payload(),
 				);
 
-				// Try to save to database (will be ignored if duplicate reference ID)
-				try {
-					await databaseDriver.write([fullPacket], senderId);
-					// Also save to cache
-					await cacheDriver.write([fullPacket], senderId);
-				} catch (error) {
-					console.error("Error saving message:", error);
-					// Continue with broadcast even if save fails
-				}
-
 				const serializedFullPacket = serializePacket(fullPacket);
+
+				// TODO: Update the database(Send to queue) and cache with the message
 
 				// Broadcast message to ALL clients (including sender for UI consistency)
 				const clientsIdsCopy = new Map(this.clientsById);
@@ -334,11 +310,7 @@ export class Room extends DurableObject {
 					);
 				}
 
-				// Commented for now, all I need is just broadcast to all clients
-				// const [dbUpdated, cacheUpdated] = await Promise.all([
-				// 	databaseDriver.appendReaction(messageId, reactionKind, senderId),
-				// 	cacheDriver.appendReaction(messageId, reactionKind, senderId),
-				// ]);
+				// TODO: Update the database(Send to queue) and cache with the reaction
 
 				// console.log(`Reaction updated - DB: ${dbUpdated}, Cache: ${cacheUpdated}`);
 

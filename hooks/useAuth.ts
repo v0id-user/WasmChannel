@@ -7,6 +7,7 @@ import { useBoot } from "@/components/providers/BootProvider";
 export function useAuth() {
 	const { state, dispatch } = useBoot();
 	const authStartedRef = useRef(false);
+	const { data: session, isPending } = authClient.useSession();
 
 	useEffect(() => {
 		// Only run when fingerprinting is complete and we haven't started auth yet
@@ -14,7 +15,8 @@ export function useAuth() {
 			state.step !== "signing-in" ||
 			authStartedRef.current ||
 			state.authReady ||
-			!state.fingerprint
+			!state.fingerprint ||
+			isPending
 		) {
 			return;
 		}
@@ -24,6 +26,13 @@ export function useAuth() {
 
 		const authenticateUser = async () => {
 			try {
+				if (session !== null) {
+					dispatch({
+						type: "AUTH_READY",
+						payload: { userId: session.user.id },
+					});
+					return;
+				}
 				const fingerprint = state.fingerprint!;
 				const email = `${fingerprint}@wasm.channel`;
 
@@ -74,5 +83,5 @@ export function useAuth() {
 		};
 
 		authenticateUser();
-	}, [state.step, state.fingerprint, state.authReady, dispatch]);
+	}, [state.step, state.fingerprint, state.authReady, dispatch, isPending]);
 }
