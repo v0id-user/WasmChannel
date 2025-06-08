@@ -1,23 +1,25 @@
-'use client'
+"use client";
 
 export default function BannerMessage() {
-    {/* I want just to import it as a empty component tho I can just make it a file */ }
-    return (
-        <>
-        </>
-    )
+	{
+		/* I want just to import it as a empty component tho I can just make it a file */
+	}
+	return <></>;
 }
 
-
-console.log(`%c         
+console.log(
+	`%c         
          ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░▒▓███████▓▒░ 
  ██  ██  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
 ████████  ░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
  ██  ██   ░▒▓█▓▒▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
 ████████   ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
  ██  ██    ░▒▓█▓▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-            ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░▒▓███████▓▒░ `, "color: red;")
-console.log(`%c 
+            ░▒▓██▓▒░  ░▒▓████████▓▒░▒▓█▓▒░▒▓███████▓▒░ `,
+	"color: red;",
+);
+console.log(
+	`%c 
   Hey,
     v0id.me
     
@@ -29,4 +31,6 @@ console.log(`%c
     GPG: gpg.v0id.me
     Email: hey@v0id.me | anything(at)v0id.me will end up in my inbox :P
   Follow me, I do make some cool stuff sometimes.
-    `, "color: #666;")
+    `,
+	"color: #666;",
+);

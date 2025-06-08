@@ -273,7 +273,7 @@ export class Room extends DurableObject {
 
 				const serializedFullPacket = serializePacket(fullPacket);
 
-				// TODO: Update the database(Send to queue) and cache with the message
+				// TODO: Insert the message into the database(Send to queue) and cache with the message
 
 				// Broadcast message to ALL clients (including sender for UI consistency)
 				const clientsIdsCopy = new Map(this.clientsById);
@@ -310,6 +310,7 @@ export class Room extends DurableObject {
 					);
 				}
 
+				// TODO: Make sure the message is there in the database
 				// TODO: Update the database(Send to queue) and cache with the reaction
 
 				// console.log(`Reaction updated - DB: ${dbUpdated}, Cache: ${cacheUpdated}`);

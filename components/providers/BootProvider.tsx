@@ -50,9 +50,9 @@ const BootDispatchContext = createContext<React.Dispatch<BootAction> | null>(
 );
 
 /*
-* Update the current state based on the action
-*
-*/
+ * Update the current state based on the action
+ *
+ */
 function bootReducer(state: BootState, action: BootAction): BootState {
 	console.log(`BOOT: ${action.type}`, action);
 
@@ -147,20 +147,20 @@ export const BootProvider = ({ children }: { children: React.ReactNode }) => {
 	 * The name useReducer is a bit misleading(I hate react), it's a hook and it's a function that returns a tuple of two elements:
 	 * 1. The current state
 	 * 2. The dispatch function
-	 * 
+	 *
 	 * The dispatch function is used to dispatch actions to the reducer which will update the state.
 	 * So it's kinda of a signal? or at least a dispatcher hook? But a reducer? nahh.. that doesn't
 	 * sound legit to me man, I mean first fighting the cookies await behavior, then fighting this
 	 * naming convention like bruh...
-	 * 
+	 *
 	 * Note:
 	 * Me(#v0id) WILL NEVER lean to this BS, but this is Cursor code so blame the AI not me please I wanted
 	 * simple zustand like state management, but Cursor is a bit dumb so I have to deal with this BS :/
-	 * 
+	 *
 	 * and no I'm not willing to spend 1 hour refactoring this, so I'm just gonna leave it
-	 * 
+	 *
 	 * tech debt is real boi
-	 * 
+	 *
 	 */
 	const [state, dispatch] = useReducer(bootReducer, {
 		step: "initializing",
