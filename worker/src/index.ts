@@ -11,6 +11,7 @@ import { Room } from "./objects/room";
 import { PacketKind, ReactionKind, WasmPacket } from "@/wasm/wasmchannel";
 import { user } from "./db/schema/schema";
 import { createPacket, serializePacket, deserializePacket } from "@/oop";
+import { DatabaseDriver } from "~/driver/storage";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
@@ -212,24 +213,104 @@ app.get("/openapi.json", (c) => {
 export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
-		console.log("Hey the queue is working");
+		console.log(
+			"Processing queue batch with",
+			batch.messages.length,
+			"messages",
+		);
+
+		// Create database driver for persistence
+		const dbDriver = new DatabaseDriver(env.DB);
+
+		// Separate messages and reactions for batch processing
+		const messagePackets: WasmPacket[] = [];
+		const reactionTasks: Promise<{
+			success: boolean;
+			messageId: string;
+			userId: string;
+		}>[] = [];
+
 		for (const message of batch.messages) {
 			try {
-				console.log("Message: ", message);
-				console.log("Body: ", message.body);
-				console.log("Payload: ", message.body.payload());
-				console.log("Kind: ", message.body.kind());
-				console.log("Reaction kind: ", message.body.reaction_kind());
-				console.log("Sent by: ", message.body.user_id());
-				console.log("Message id: ", message.body.message_id());
+				const packet = message.body;
+				const packetKind = packet.kind();
+
+				if (packetKind === PacketKind.Message) {
+					// Collect message packets for batch insert
+					messagePackets.push(packet);
+				} else if (packetKind === PacketKind.Reaction) {
+					// Queue reaction tasks for parallel processing
+					const messageId = packet.message_id()!;
+					const reactionKind = packet.reaction_kind()!;
+					const userId = packet.user_id()!;
+
+					reactionTasks.push(
+						dbDriver
+							.updateReaction(messageId, reactionKind, userId)
+							.then((success) => ({ success, messageId, userId }))
+							.catch((error) => {
+								console.error(
+									`Failed to update reaction for message ${messageId} by user ${userId}:`,
+									error,
+								);
+								return { success: false, messageId, userId };
+							}),
+					);
+				}
 			} catch (error) {
-				// Just skip it's an experiment at the end of the day
 				console.error("Error processing message:", error);
 				console.error("Error details:", {
 					messageId: message.id,
 					body: message.body,
 					error: error instanceof Error ? error.message : "Unknown error",
 				});
+			}
+		}
+
+		// Process messages in batch
+		if (messagePackets.length > 0) {
+			try {
+				await dbDriver.write(messagePackets);
+				console.log(
+					`Successfully saved ${messagePackets.length} messages to database`,
+				);
+			} catch (error) {
+				console.error("Error saving messages batch:", error);
+			}
+		}
+
+		// Process reactions in parallel
+		if (reactionTasks.length > 0) {
+			try {
+				const results = await Promise.allSettled(reactionTasks);
+				const successful = results.filter(
+					(r) => r.status === "fulfilled" && r.value.success,
+				).length;
+				const failed = results.filter(
+					(r) =>
+						r.status === "rejected" ||
+						(r.status === "fulfilled" && !r.value.success),
+				).length;
+
+				console.log(
+					`Reaction processing complete: ${successful} successful, ${failed} failed out of ${reactionTasks.length} total`,
+				);
+
+				// Log failed reactions for debugging
+				if (failed > 0) {
+					const failedReactions = results
+						.filter(
+							(r) =>
+								r.status === "rejected" ||
+								(r.status === "fulfilled" && !r.value.success),
+						)
+						.map((r) =>
+							r.status === "fulfilled" ? r.value : { error: r.reason },
+						);
+					console.error("Failed reactions:", failedReactions);
+				}
+			} catch (error) {
+				console.error("Error processing reactions:", error);
 			}
 		}
 	},

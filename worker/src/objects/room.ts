@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { Env } from "../index";
 import { createPacket, deserializePacket, serializePacket } from "@/oop/packet";
-import { PacketKind, WasmPacket } from "@/utils/wasm/init";
+import { PacketKind, ReactionKind, WasmPacket } from "@/utils/wasm/init";
 import { createAuthWithD1 } from "@/auth";
 import { DrizzleD1Database } from "drizzle-orm/d1";
 import { createDb } from "~/db";
@@ -105,9 +105,11 @@ export class Room extends DurableObject {
 		if (!this.isAllowed(clientId)) {
 			// Send rate limit error to the client
 			const errorPacket = createPacket(
-				PacketKind.Message, // You might want to create a specific error packet type
+				PacketKind.Message,
 				null,
-				new TextEncoder().encode("Rate limit exceeded: 5 messages per second"),
+				new TextEncoder().encode(
+					`Rate limit exceeded: ${this.RATE_LIMIT_COUNT} messages per second`,
+				),
 			);
 			const serializedError = serializePacket(errorPacket);
 
@@ -211,169 +213,218 @@ export class Room extends DurableObject {
 
 			// Validate packets coming from clients
 			if (!isServer) {
-				// Clients can only send Message, Reaction, or Typing packets
-				if (
-					packet.kind() !== PacketKind.Reaction &&
-					packet.kind() !== PacketKind.Message &&
-					packet.kind() !== PacketKind.Typing
-				) {
-					throw new Error(
-						"Invalid packet kind: clients can only send Message, Reaction, or Typing packets",
-					);
-				}
-
-				// For regular messages, clients can set message_id to ensure consistency
-				// For reactions, clients must set message_id (the message being reacted to)
-				// For typing, message_id should be null
-				// Clients should never set user_id (server always sets this)
-				if (packet.user_id() !== undefined) {
-					throw new Error(
-						"Invalid packet: clients cannot set user_id (server sets this)",
-					);
-				}
-
-				// Validate message_id requirements per packet type
-				if (packet.kind() === PacketKind.Message) {
-					// Regular messages should have client-generated message_id
-					if (!packet.message_id()) {
-						throw new Error(
-							"Message packets must have message_id set by client",
-						);
-					}
-				} else if (packet.kind() === PacketKind.Reaction) {
-					// Reactions need message_id (either from packet metadata or payload)
-					if (!packet.message_id()) {
-						// Try to get it from payload as before
-						const payloadBytes = packet.payload();
-						const messageIdFromPayload = new TextDecoder().decode(payloadBytes);
-						if (!messageIdFromPayload) {
-							throw new Error("Reaction packets must have message_id");
-						}
-					}
-				} else if (packet.kind() === PacketKind.Typing) {
-					// Typing packets should not have message_id
-					if (packet.message_id()) {
-						throw new Error("Typing packets should not have message_id");
-					}
-				}
+				this.#validateClientPacket(packet);
 			}
 
-			// Handle regular message packets
+			// Route to appropriate handler based on packet type
 			if (packet.kind() === PacketKind.Message && !isServer) {
-				// Use client's message_id to ensure consistency across all clients
-				const messageId = packet.message_id()!; // Already validated above
-
-				const fullPacket = new WasmPacket(
-					packet.kind(),
-					messageId, // Use client's message ID
-					senderId, // Server sets the user ID
-					packet.reaction_kind(),
-					packet.payload(),
+				await this.#handleMessagePacket(packet, senderId);
+			} else if (packet.kind() === PacketKind.Reaction && !isServer) {
+				await this.#handleReactionPacket(packet, senderId);
+			} else if (packet.kind() === PacketKind.Typing && !isServer) {
+				await this.#handleTypingPacket(packet, senderId);
+			} else {
+				console.log("Invalid packet kind:", packet.kind(), "from", senderId);
+				throw new Error(
+					"Invalid packet kind: " + packet.kind() + " from " + senderId,
 				);
-
-				const serializedFullPacket = serializePacket(fullPacket);
-
-				// TODO: Insert the message into the database(Send to queue) and cache with the message
-
-				// Broadcast message to ALL clients (including sender for UI consistency)
-				const clientsIdsCopy = new Map(this.clientsById);
-				for (const [clientId, ws] of clientsIdsCopy) {
-					try {
-						ws.send(serializedFullPacket);
-					} catch (error) {
-						console.error(
-							`Error sending message to client ${clientId}:`,
-							error,
-						);
-						// Remove client if send fails
-						this.clientsById.delete(clientId);
-						this.clientsBySocket.delete(ws);
-					}
-				}
-
-				return; // Early return for message packets
-			}
-
-			// Handle reaction packets specially (existing logic)
-			if (packet.kind() === PacketKind.Reaction && !isServer) {
-				// For reaction packets, extract messageId from payload if not in metadata
-				let messageId = packet.message_id();
-				if (!messageId) {
-					const payloadBytes = packet.payload();
-					messageId = new TextDecoder().decode(payloadBytes);
-				}
-				const reactionKind = packet.reaction_kind();
-
-				if (!messageId || reactionKind === null || reactionKind === undefined) {
-					throw new Error(
-						"Invalid reaction packet: missing message_id or reaction_kind",
-					);
-				}
-
-				// TODO: Make sure the message is there in the database
-				// TODO: Update the database(Send to queue) and cache with the reaction
-
-				// console.log(`Reaction updated - DB: ${dbUpdated}, Cache: ${cacheUpdated}`);
-
-				// Create updated packet with user ID and proper message ID for broadcasting
-				const fullPacket = new WasmPacket(
-					packet.kind(),
-					messageId, // Set the extracted messageId
-					senderId,
-					reactionKind,
-					new TextEncoder().encode(""), // Empty payload for broadcast
-				);
-
-				const serializedFullPacket = serializePacket(fullPacket);
-
-				// Broadcast reaction to all clients (including sender for UI update)
-				const clientsIdsCopy = new Map(this.clientsById);
-				for (const [clientId, ws] of clientsIdsCopy) {
-					try {
-						ws.send(serializedFullPacket);
-					} catch (error) {
-						console.error(
-							`Error sending reaction to client ${clientId}:`,
-							error,
-						);
-						// Remove client if send fails
-						this.clientsById.delete(clientId);
-						this.clientsBySocket.delete(ws);
-					}
-				}
-
-				return; // Early return for reaction packets
-			}
-
-			// Handle other packet types (Typing, etc.)
-			const fullPacket = new WasmPacket(
-				packet.kind(),
-				packet.message_id(), // Use packet's message_id if present
-				senderId,
-				packet.reaction_kind(),
-				packet.payload(),
-			);
-
-			// For typing indicators and other non-persistent packets, just broadcast
-			const serializedFullPacket = serializePacket(fullPacket);
-
-			const clientsIdsCopy = new Map(this.clientsById);
-			for (const [clientId, ws] of clientsIdsCopy) {
-				try {
-					if (clientId === senderId) continue; // Skip sender for typing indicators
-					ws.send(serializedFullPacket);
-				} catch (error) {
-					console.error(`Error sending message to client ${clientId}:`, error);
-					// Remove client if send fails
-					this.clientsById.delete(clientId);
-					this.clientsBySocket.delete(ws);
-				}
 			}
 		} catch (error) {
-			console.error("Error deserializing packet:", error);
-			// Just skip
+			console.error("Error processing packet:", error);
 			return;
 		}
+	}
+
+	#validateClientPacket(packet: WasmPacket): void {
+		// Clients can only send Message, Reaction, or Typing packets
+		if (
+			packet.kind() !== PacketKind.Reaction &&
+			packet.kind() !== PacketKind.Message &&
+			packet.kind() !== PacketKind.Typing
+		) {
+			throw new Error(
+				"Invalid packet kind: clients can only send Message, Reaction, or Typing packets",
+			);
+		}
+
+		// Clients should never set user_id (server always sets this)
+		if (packet.user_id() !== undefined) {
+			throw new Error(
+				"Invalid packet: clients cannot set user_id (server sets this)",
+			);
+		}
+
+		// Validate message_id requirements per packet type
+		if (packet.kind() === PacketKind.Message) {
+			if (!packet.message_id()) {
+				throw new Error("Message packets must have message_id set by client");
+			}
+		} else if (packet.kind() === PacketKind.Reaction) {
+			if (!packet.message_id()) {
+				const payloadBytes = packet.payload();
+				const messageIdFromPayload = new TextDecoder().decode(payloadBytes);
+				if (!messageIdFromPayload) {
+					throw new Error("Reaction packets must have message_id");
+				}
+			}
+		} else if (packet.kind() === PacketKind.Typing) {
+			if (packet.message_id()) {
+				throw new Error("Typing packets should not have message_id");
+			}
+		}
+	}
+
+	async #handleMessagePacket(
+		packet: WasmPacket,
+		senderId: string,
+	): Promise<void> {
+		const messageId = packet.message_id()!;
+
+		const fullPacket = new WasmPacket(
+			packet.kind(),
+			messageId,
+			senderId,
+			packet.reaction_kind(),
+			packet.payload(),
+		);
+
+		// Send to queue and cache with better error handling
+		const [queueResult, cacheResult] = await Promise.allSettled([
+			this.env.QUEUE_MESSAGES.send(fullPacket),
+			this.#saveToCache([fullPacket], senderId),
+		]);
+
+		// Log any failures but don't block the broadcast
+		if (queueResult.status === "rejected") {
+			console.error("Failed to send message to queue:", queueResult.reason);
+		}
+
+		if (cacheResult.status === "rejected") {
+			console.error("Failed to save message to cache:", cacheResult.reason);
+		}
+
+		// Always broadcast to clients for real-time experience, even if storage partially failed
+		const serializedPacket = serializePacket(fullPacket);
+		await this.#broadcastToAllClients(serializedPacket);
+	}
+
+	async #handleReactionPacket(
+		packet: WasmPacket,
+		senderId: string,
+	): Promise<void> {
+		// Extract messageId from metadata or payload
+		let messageId = packet.message_id();
+		if (!messageId) {
+			const payloadBytes = packet.payload();
+			messageId = new TextDecoder().decode(payloadBytes);
+		}
+
+		const reactionKind = packet.reaction_kind();
+
+		if (!messageId || reactionKind === undefined) {
+			throw new Error(
+				"Invalid reaction packet: missing message_id or reaction_kind",
+			);
+		}
+
+		const reactionPacket = new WasmPacket(
+			packet.kind(),
+			messageId,
+			senderId,
+			reactionKind,
+			new TextEncoder().encode(""),
+		);
+
+		// Send to queue and update cache with better error handling
+		const [queueResult, cacheResult] = await Promise.allSettled([
+			this.env.QUEUE_MESSAGES.send(reactionPacket),
+			this.#updateCacheReaction(messageId, reactionKind, senderId),
+		]);
+
+		// Log any failures but don't block the broadcast
+		if (queueResult.status === "rejected") {
+			console.error("Failed to send reaction to queue:", queueResult.reason);
+		}
+
+		if (cacheResult.status === "rejected") {
+			console.error("Failed to update reaction in cache:", cacheResult.reason);
+		}
+
+		// Always broadcast to clients for real-time experience, even if storage partially failed
+		const serializedPacket = serializePacket(reactionPacket);
+		await this.#broadcastToAllClients(serializedPacket);
+	}
+
+	async #handleTypingPacket(
+		packet: WasmPacket,
+		senderId: string,
+	): Promise<void> {
+		const fullPacket = new WasmPacket(
+			packet.kind(),
+			packet.message_id(),
+			senderId,
+			packet.reaction_kind(),
+			packet.payload(),
+		);
+
+		// For typing indicators and other non-persistent packets, just broadcast
+		const serializedPacket = serializePacket(fullPacket);
+		await this.#broadcastToOthersOnly(serializedPacket, senderId);
+	}
+
+	async #saveToCache(packets: WasmPacket[], senderId: string): Promise<void> {
+		try {
+			const cacheDriver = new CacheDriver(this.env.KV);
+			await cacheDriver.write(packets, senderId);
+		} catch (error) {
+			console.error("Error saving to cache:", error);
+		}
+	}
+
+	async #updateCacheReaction(
+		messageId: string,
+		reactionKind: ReactionKind,
+		userId: string,
+	): Promise<void> {
+		try {
+			const cacheDriver = new CacheDriver(this.env.KV);
+			await cacheDriver.updateReaction(messageId, reactionKind, userId);
+		} catch (error) {
+			console.error("Error updating cache reaction:", error);
+		}
+	}
+
+	async #broadcastToAllClients(serializedPacket: Uint8Array): Promise<void> {
+		const clientsIdsCopy = new Map(this.clientsById);
+		for (const [clientId, ws] of clientsIdsCopy) {
+			try {
+				ws.send(serializedPacket);
+			} catch (error) {
+				console.error(`Error sending to client ${clientId}:`, error);
+				this.#removeClient(clientId, ws);
+			}
+		}
+	}
+
+	async #broadcastToOthersOnly(
+		serializedPacket: Uint8Array,
+		senderId: string,
+	): Promise<void> {
+		const clientsIdsCopy = new Map(this.clientsById);
+		for (const [clientId, ws] of clientsIdsCopy) {
+			try {
+				if (clientId === senderId) continue; // Skip sender
+				ws.send(serializedPacket);
+			} catch (error) {
+				console.error(`Error sending to client ${clientId}:`, error);
+				this.#removeClient(clientId, ws);
+			}
+		}
+	}
+
+	#removeClient(clientId: string, ws: WebSocket): void {
+		this.clientsById.delete(clientId);
+		this.clientsBySocket.delete(ws);
 	}
 
 	// Broadcast to a single client (server use only)

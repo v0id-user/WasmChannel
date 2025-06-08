@@ -18,6 +18,13 @@ export enum ReactionKind {
 	Star = 4,
 }
 
+// Extended reaction structure for UI compatibility
+interface MessageReaction {
+	kind: ReactionKind;
+	count: number;
+	users: string[];
+}
+
 export const messages = sqliteTable("messages", {
 	id: text("id").primaryKey().default(createId()),
 	refrenceId: text("refrence_id").notNull().unique(),
@@ -30,7 +37,7 @@ export const messages = sqliteTable("messages", {
 	message: text("message").notNull(), // A.K.A payload
 
 	reactions: text("reactions", { mode: "json" })
-		.$type<ReactionKind[]>()
+		.$type<MessageReaction[]>()
 		.notNull()
 		.default(sql`'[]'`),
 

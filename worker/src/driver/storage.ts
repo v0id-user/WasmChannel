@@ -25,11 +25,70 @@ abstract class StorageDriver {
 
 	abstract write(packets: WasmPacket[], sentBy: string): Promise<void>;
 	abstract read(): Promise<WasmPacket[]>;
-	abstract appendReaction(
+	abstract updateReaction(
 		messageId: string,
 		reactionKind: ReactionKind,
 		userId: string,
 	): Promise<boolean>;
+
+	/**
+	 * Common logic for manipulating reactions on a message
+	 * @param existingReactions - Current reactions as JSON string or null
+	 * @param reactionKind - The type of reaction to toggle
+	 * @param userId - The user performing the reaction
+	 * @returns Updated reactions array and whether any changes were made
+	 */
+	protected manipulateReactions(
+		existingReactions: string | null,
+		reactionKind: ReactionKind,
+		userId: string,
+	): { reactions: MessageReaction[]; updated: boolean } {
+		let reactions: MessageReaction[] = [];
+
+		// Parse existing reactions
+		try {
+			reactions = existingReactions ? JSON.parse(existingReactions) : [];
+		} catch {
+			reactions = [];
+		}
+
+		// Find existing reaction of this kind
+		const existingReactionIndex = reactions.findIndex(
+			(r) => r.kind === reactionKind,
+		);
+		let updated = false;
+
+		if (existingReactionIndex >= 0) {
+			const existingReaction = reactions[existingReactionIndex];
+			const userIndex = existingReaction.users.indexOf(userId);
+
+			if (userIndex >= 0) {
+				// Remove user's reaction
+				existingReaction.users.splice(userIndex, 1);
+				existingReaction.count = existingReaction.users.length;
+
+				// Remove reaction if no users left
+				if (existingReaction.count === 0) {
+					reactions.splice(existingReactionIndex, 1);
+				}
+			} else {
+				// Add user's reaction
+				existingReaction.users.push(userId);
+				existingReaction.count = existingReaction.users.length;
+			}
+			updated = true;
+		} else {
+			// Add new reaction
+			reactions.push({
+				kind: reactionKind,
+				count: 1,
+				users: [userId],
+			});
+			updated = true;
+		}
+
+		return { reactions, updated };
+	}
 }
 
 export class DatabaseDriver extends StorageDriver {
@@ -40,7 +99,7 @@ export class DatabaseDriver extends StorageDriver {
 		this.db = createDb(driver);
 	}
 
-	async write(packets: WasmPacket[], sentBy: string): Promise<void> {
+	async write(packets: WasmPacket[]): Promise<void> {
 		// Convert all packets to database records
 		const insertData: DatabaseMessageInsert[] = packets.map((packet) => {
 			if (!packet.message_id() || !packet.user_id()) {
@@ -110,7 +169,7 @@ export class DatabaseDriver extends StorageDriver {
 		});
 	}
 
-	async appendReaction(
+	async updateReaction(
 		messageId: string,
 		reactionKind: ReactionKind,
 		userId: string,
@@ -130,58 +189,18 @@ export class DatabaseDriver extends StorageDriver {
 			}
 
 			const message = existingMessage[0];
-			let reactions: MessageReaction[] = [];
-
-			// Parse existing reactions
-			try {
-				reactions = message.reactions
-					? JSON.parse(message.reactions as any)
-					: [];
-			} catch {
-				reactions = [];
-			}
-
-			// Find existing reaction of this kind
-			const existingReactionIndex = reactions.findIndex(
-				(r) => r.kind === reactionKind,
+			const { reactions, updated } = this.manipulateReactions(
+				JSON.stringify(message.reactions),
+				reactionKind,
+				userId,
 			);
-			let updated = false;
-
-			if (existingReactionIndex >= 0) {
-				const existingReaction = reactions[existingReactionIndex];
-				const userIndex = existingReaction.users.indexOf(userId);
-
-				if (userIndex >= 0) {
-					// Remove user's reaction
-					existingReaction.users.splice(userIndex, 1);
-					existingReaction.count = existingReaction.users.length;
-
-					// Remove reaction if no users left
-					if (existingReaction.count === 0) {
-						reactions.splice(existingReactionIndex, 1);
-					}
-				} else {
-					// Add user's reaction
-					existingReaction.users.push(userId);
-					existingReaction.count = existingReaction.users.length;
-				}
-				updated = true;
-			} else {
-				// Add new reaction
-				reactions.push({
-					kind: reactionKind,
-					count: 1,
-					users: [userId],
-				});
-				updated = true;
-			}
 
 			if (updated) {
 				// Update the message in database
 				await this.db
 					.update(messages)
 					.set({
-						reactions: JSON.stringify(reactions) as any,
+						reactions,
 						updatedAt: new Date(),
 					})
 					.where(eq(messages.refrenceId, messageId));
@@ -242,8 +261,20 @@ export class CacheDriver extends StorageDriver {
 		// Get current messages from cache
 		const existingMessages = (await this.getCachedRecords()) || [];
 
+		// Filter out duplicates - prevent duplicate reference IDs in cache
+		const existingIds = new Set(existingMessages.map((m) => m.refrenceId));
+		const newRecords = cacheRecords.filter(
+			(record) => !existingIds.has(record.refrenceId),
+		);
+
+		// Only proceed if we have new records to add
+		if (newRecords.length === 0) {
+			console.log("No new messages to add to cache (all duplicates detected)");
+			return;
+		}
+
 		// Add new messages to the top of the stack (LIFO)
-		const updatedMessages = [...cacheRecords, ...existingMessages];
+		const updatedMessages = [...newRecords, ...existingMessages];
 
 		// Keep only the last 100 messages (stack style)
 		if (updatedMessages.length > CacheDriver.MAX_ITEMS) {
@@ -252,6 +283,9 @@ export class CacheDriver extends StorageDriver {
 
 		// Store back to KV
 		await kv.put(CacheDriver.CACHE_KEY, JSON.stringify(updatedMessages));
+		console.log(
+			`Added ${newRecords.length} new messages to cache (${cacheRecords.length - newRecords.length} duplicates filtered)`,
+		);
 	}
 
 	async read(): Promise<WasmPacket[]> {
@@ -279,7 +313,7 @@ export class CacheDriver extends StorageDriver {
 		});
 	}
 
-	async appendReaction(
+	async updateReaction(
 		messageId: string,
 		reactionKind: ReactionKind,
 		userId: string,
@@ -290,6 +324,9 @@ export class CacheDriver extends StorageDriver {
 			// Get current messages from cache
 			const cachedRecords = await this.getCachedRecords();
 			if (!cachedRecords) {
+				console.log(
+					`No cached records found for reaction update on message ${messageId}`,
+				);
 				return false; // Not in cache
 			}
 
@@ -298,69 +335,40 @@ export class CacheDriver extends StorageDriver {
 				(record) => record.refrenceId === messageId,
 			);
 			if (messageIndex === -1) {
+				console.log(
+					`Message ${messageId} not found in cache for reaction update`,
+				);
 				return false; // Message not found in cache
 			}
 
 			const message = cachedRecords[messageIndex];
-			let reactions: MessageReaction[] = [];
-
-			// Parse existing reactions
-			try {
-				reactions = message.reactions
-					? JSON.parse(message.reactions as any)
-					: [];
-			} catch {
-				reactions = [];
-			}
-
-			// Find existing reaction of this kind
-			const existingReactionIndex = reactions.findIndex(
-				(r) => r.kind === reactionKind,
+			const { reactions, updated } = this.manipulateReactions(
+				JSON.stringify(message.reactions),
+				reactionKind,
+				userId,
 			);
-			let updated = false;
-
-			if (existingReactionIndex >= 0) {
-				const existingReaction = reactions[existingReactionIndex];
-				const userIndex = existingReaction.users.indexOf(userId);
-
-				if (userIndex >= 0) {
-					// Remove user's reaction
-					existingReaction.users.splice(userIndex, 1);
-					existingReaction.count = existingReaction.users.length;
-
-					// Remove reaction if no users left
-					if (existingReaction.count === 0) {
-						reactions.splice(existingReactionIndex, 1);
-					}
-				} else {
-					// Add user's reaction
-					existingReaction.users.push(userId);
-					existingReaction.count = existingReaction.users.length;
-				}
-				updated = true;
-			} else {
-				// Add new reaction
-				reactions.push({
-					kind: reactionKind,
-					count: 1,
-					users: [userId],
-				});
-				updated = true;
-			}
 
 			if (updated) {
 				// Update the message in cache
-				cachedRecords[messageIndex].reactions = JSON.stringify(
-					reactions,
-				) as any;
+				cachedRecords[messageIndex].reactions = reactions as any;
 
 				// Store back to KV
 				await kv.put(CacheDriver.CACHE_KEY, JSON.stringify(cachedRecords));
+				console.log(
+					`Successfully updated reaction for message ${messageId} in cache`,
+				);
+			} else {
+				console.log(
+					`No reaction update needed for message ${messageId} (no changes)`,
+				);
 			}
 
 			return updated;
 		} catch (error) {
-			console.error("Error appending reaction to cache:", error);
+			console.error(
+				`Error updating reaction for message ${messageId} in cache:`,
+				error,
+			);
 			return false;
 		}
 	}
