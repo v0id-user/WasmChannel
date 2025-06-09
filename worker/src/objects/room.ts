@@ -85,7 +85,7 @@ export class Room extends DurableObject {
 		// (run the `constructor`) and deliver the message to the appropriate handler.
 		this.ctx.acceptWebSocket(server);
 
-		this.addClient(session.user.id, server);
+		await this.#addClient(session.user.id, server);
 
 		console.log(
 			`Client ${session.user.id} connected. Total clients: ${this.clientsById.size}`,
@@ -185,7 +185,7 @@ export class Room extends DurableObject {
 	}
 
 	// Add a new client
-	async addClient(clientId: string, ws: WebSocket): Promise<void> {
+	async #addClient(clientId: string, ws: WebSocket): Promise<void> {
 		this.clientsById.set(clientId, ws);
 		this.clientsBySocket.set(ws, clientId);
 
@@ -198,6 +198,7 @@ export class Room extends DurableObject {
 		// Notify other clients about new connection
 		await Promise.all([
 			this.#broadcastToOthers(serializedPacketOnlineUsers, clientId, true),
+			// This function only used for server to notify the client about the specific info
 			this.#broadcastToClient(serializedPacketOnlineUsers, clientId),
 		]);
 	}
@@ -211,17 +212,24 @@ export class Room extends DurableObject {
 		try {
 			const packet = deserializePacket(message);
 
-			// Validate packets coming from clients
-			if (!isServer) {
-				this.#validateClientPacket(packet);
+
+			if (isServer) {
+				// Server message
+				await this.#handleServerPacket(packet, senderId);
+				return
 			}
 
+			// Client message
+
+			// Validate packets coming from clients, it will throw an error if the packet is invalid
+			this.#validateClientPacket(packet);
+
 			// Route to appropriate handler based on packet type
-			if (packet.kind() === PacketKind.Message && !isServer) {
+			if (packet.kind() === PacketKind.Message) {
 				await this.#handleMessagePacket(packet, senderId);
-			} else if (packet.kind() === PacketKind.Reaction && !isServer) {
+			} else if (packet.kind() === PacketKind.Reaction) {
 				await this.#handleReactionPacket(packet, senderId);
-			} else if (packet.kind() === PacketKind.Typing && !isServer) {
+			} else if (packet.kind() === PacketKind.Typing) {
 				await this.#handleTypingPacket(packet, senderId);
 			} else {
 				console.log("Invalid packet kind:", packet.kind(), "from", senderId);
@@ -369,6 +377,11 @@ export class Room extends DurableObject {
 
 		// For typing indicators and other non-persistent packets, just broadcast
 		const serializedPacket = serializePacket(fullPacket);
+		await this.#broadcastToOthersOnly(serializedPacket, senderId);
+	}
+
+	async #handleServerPacket(packet: WasmPacket, senderId: string): Promise<void> {
+		const serializedPacket = serializePacket(packet);
 		await this.#broadcastToOthersOnly(serializedPacket, senderId);
 	}
 

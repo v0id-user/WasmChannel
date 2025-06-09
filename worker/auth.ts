@@ -43,8 +43,8 @@ export const auth = betterAuth({
 		defaultCookieAttributes: {
 			domain: process.env.DOMAIN!,
 			httpOnly: false,
-			secure: true,
-			sameSite: "None",
+			secure: process.env.DEBUG === "true" ? false : true,
+			sameSite: process.env.DEBUG === "true" ? "Lax" : "None",
 		},
 	},
 	trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
@@ -85,8 +85,8 @@ export function createAuth(db: DrizzleD1Database) {
 			defaultCookieAttributes: {
 				domain: process.env.DOMAIN!,
 				httpOnly: false,
-				secure: true,
-				sameSite: "None",
+				secure: process.env.DEBUG === "true" ? false : true,
+				sameSite: process.env.DEBUG === "true" ? "Lax" : "None",
 			},
 		},
 		trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
