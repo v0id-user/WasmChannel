@@ -19,7 +19,7 @@ export enum ReactionKind {
 }
 
 // Extended reaction structure for UI compatibility
-interface MessageReaction {
+export interface MessageReaction {
 	kind: ReactionKind;
 	count: number;
 	users: string[];
