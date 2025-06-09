@@ -121,7 +121,7 @@ wasmchannel/
 ├── components/             # React components
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Utility libraries
-├── rust_wasm/             # Rust WebAssembly source
+├── crates/             # Rust WebAssembly source
 │   ├── src/
 │   │   ├── oop/           # Object-oriented packet handling
 │   │   └── hash.rs        # CRC32 implementation
@@ -139,7 +139,7 @@ wasmchannel/
 
 ### Key Files
 
-- `rust_wasm/src/oop/packet.rs` - Core packet serialization logic
+- `crates/src/oop/packet.rs` - Core packet serialization logic
 - `worker/src/objects/room.ts` - Real-time room management
 - `components/chat.tsx` - Main chat interface
 - `build-wasm.ts` - WebAssembly build configuration

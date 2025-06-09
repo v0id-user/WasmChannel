@@ -101,7 +101,7 @@ type BuildMode = "dev" | "release";
 
 // Main build logic
 const mode: BuildMode = (process.argv[2] as BuildMode) || "dev";
-const rustWasmPath = path.resolve(process.cwd(), "rust_wasm");
+const rustWasmPath = path.resolve(process.cwd(), "crates");
 const outDirs = [
 	{ name: "public", path: path.resolve(process.cwd(), "public", "wasm") },
 	{ name: "worker", path: path.resolve(process.cwd(), "worker", "wasm") },
