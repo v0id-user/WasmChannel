@@ -17,11 +17,11 @@ import { ChatFooter } from "./chat/ChatFooter";
 import { ChatHeader } from "./chat/ChatHeader";
 import { MessagesArea } from "./chat/MessagesArea";
 import { LoadingState } from "./chat/LoadingState";
-
+import { orpc } from "@/lib/orpc";
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
-	
+
 	// Chat state management
 	const {
 		messages,
