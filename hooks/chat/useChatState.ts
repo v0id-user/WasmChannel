@@ -71,7 +71,7 @@ export function useChatState() {
 				return chatMessage;
 			})	
 			console.log("useChatState: Setting processed messages");
-			setMessages(chatMessages);
+			setMessages(chatMessages.reverse());
 		} else {
 			console.log("useChatState: No messages response available");
 		}

@@ -25,12 +25,10 @@ export const getMessages = protectedBase.messages.get.handler(
 					cachedMessages?.length || 0,
 					"messages",
 				);
-
-				if (cachedMessages && cachedMessages.length > 0) {
+				if (cachedMessages?.length) {
 					const output = {
 						messages: cachedMessages.map((msg) => ({
 							...msg,
-
 							// Very bad hack
 							createdAt: msg.createdAt || new Date(),
 							updatedAt: msg.updatedAt || new Date(),
@@ -40,7 +38,7 @@ export const getMessages = protectedBase.messages.get.handler(
 					console.log("[getMessages] Returning messages from cache", output);
 					return output;
 				}
-				console.log("[getMessages] Cache empty or no results");
+				console.log("[getMessages] Cache empty or no results, fetching from database");
 			} else {
 				console.log("[getMessages] Cursor provided, skipping cache");
 			}

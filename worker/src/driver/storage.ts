@@ -1,7 +1,7 @@
 import type { D1Database, KVNamespace } from "@cloudflare/workers-types";
 import { createDb } from "~/db";
 import { messages } from "~/db/schema/messages";
-import { desc, asc, isNull, lt, and, eq } from "drizzle-orm";
+import { desc, asc, lt, and, eq } from "drizzle-orm";
 import { WasmPacket } from "@/wasm/wasmchannel";
 import { PacketKind, ReactionKind } from "@/wasm/wasmchannel";
 
@@ -146,7 +146,7 @@ export class DatabaseDriver extends StorageDriver {
 		const msgs = await this.db
 			.select()
 			.from(messages)
-			.where(isNull(messages.deletedAt))
+			.where(eq(messages.deletedAt, messages.createdAt))
 			.orderBy(asc(messages.createdAt));
 
 		return msgs.map((msg) => {
@@ -180,7 +180,7 @@ export class DatabaseDriver extends StorageDriver {
 				.select()
 				.from(messages)
 				.where(
-					and(eq(messages.refrenceId, messageId), isNull(messages.deletedAt)),
+					and(eq(messages.refrenceId, messageId), eq(messages.deletedAt, messages.createdAt)),
 				)
 				.limit(1);
 
@@ -217,18 +217,25 @@ export class DatabaseDriver extends StorageDriver {
 		limit: number = 50,
 		cursor?: string,
 	): Promise<DatabaseMessage[]> {
-		const conditions = [isNull(messages.deletedAt)];
+		console.log("[getMessages DB] Starting database query with params:", { limit, cursor });
+		
+		const conditions = [eq(messages.deletedAt, messages.createdAt)];
+		console.log("[getMessages DB] Base condition: messages not deleted");
 
 		if (cursor) {
 			conditions.push(lt(messages.createdAt, new Date(cursor)));
+			console.log("[getMessages DB] Added cursor condition:", cursor);
 		}
 
-		return await this.db
+		const result = await this.db
 			.select()
 			.from(messages)
 			.where(and(...conditions))
 			.limit(limit)
 			.orderBy(desc(messages.createdAt));
+
+		console.log("[getMessages DB] Query complete, found", result.length, "messages");
+		return result;
 	}
 }
 
