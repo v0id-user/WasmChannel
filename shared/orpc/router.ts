@@ -25,7 +25,7 @@ export interface Message {
 }
 const messagesOutput = z.object({
 	messages: z.array(z.custom<Message>()),
-	source: z.enum(["cache", "database"]).optional(),
+	source: z.enum(["cache", "database", "cache+database"]).optional(),
 	error: z.string().optional(),
 });
 
