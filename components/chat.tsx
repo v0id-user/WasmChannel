@@ -19,12 +19,14 @@ import { MessagesArea } from "./chat/MessagesArea";
 import { LoadingState } from "./chat/LoadingState";
 import { orpc } from "@/lib/orpc";
 import { useQuery } from "@tanstack/react-query";
+import { Message } from "@/types/orpc";
+
+
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { data, isPending, isError, error } = useQuery(
+	const { data: messagesResponse, isPending, isError, error } = useQuery(
 		orpc.messages.get.queryOptions({
 			input: {
 				cursor: undefined,
@@ -33,6 +35,7 @@ export default function Chat() {
 			refetchOnWindowFocus: false,
 		}),
 	);
+
 
 	// Chat state management
 	const {
@@ -98,12 +101,17 @@ export default function Chat() {
 	}, [clearAllTimeouts]);
 
 	// Early return for loading state
-	if (!bootState.userId || !ws || !isClient) {
+	if (!bootState.userId || !ws || !isClient || isPending) {
 		console.log("chat.tsx: Waiting...");
 		console.log("Client state:", isClient);
 		console.log("WebSocket state:", ws);
 		console.log("User ID:", bootState.userId);
 		return <LoadingState />;
+	}
+
+	if (isError) {
+		console.error("chat.tsx: Error fetching messages:", error);
+		return <div>خطأ في الاتصال بالخادم</div>;
 	}
 
 	// Group messages for rendering

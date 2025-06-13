@@ -4,3 +4,4 @@ export type {
 	ReactionKind,
 	WasmPacket,
 } from "@/public/wasm/wasmchannel";
+export type { Message } from "@/shared/orpc/router";
