@@ -9,15 +9,21 @@ export function ChatHeader({
 }: ChatHeaderProps) {
 	return (
 		<div
-			className="text-white p-4 flex-shrink-0 border-b font-mono"
-			style={{ backgroundColor: "#000000", borderBottomColor: "#0143EB" }}
+			className="px-3 py-1 flex-shrink-0 border-b font-mono text-xs"
+			style={{ 
+				backgroundColor: "#F8F8F8", 
+				borderBottomColor: "#E0E0E0",
+				color: "#666666"
+			}}
 		>
-			<h1 className="text-sm font-bold tracking-wide uppercase font-mono">
-				{title}
-			</h1>
-			<p className="text-xs mt-1 font-mono" style={{ color: "#0143EB" }}>
-				{subtitle}
-			</p>
+			<div className="flex items-center justify-between">
+				<span className="font-normal tracking-wide font-mono">
+					{title}
+				</span>
+				<span className="text-xs opacity-60 font-mono">
+					{subtitle}
+				</span>
+			</div>
 		</div>
 	);
 }

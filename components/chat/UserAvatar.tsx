@@ -8,8 +8,8 @@ interface UserAvatarProps {
 
 export function UserAvatar({ user, size = "sm" }: UserAvatarProps) {
 	const sizeClasses = {
-		xs: "w-5 h-5 text-xs",
-		sm: "w-6 h-6 text-xs",
+		xs: "w-4 h-4 text-xs",
+		sm: "w-5 h-5 text-xs",
 	};
 
 	return (
@@ -24,7 +24,7 @@ export function UserAvatar({ user, size = "sm" }: UserAvatarProps) {
 			{user.name.charAt(0).toUpperCase()}
 			{user.isOnline && (
 				<div
-					className="w-2 h-2 border absolute -bottom-0 -right-0"
+					className="w-1.5 h-1.5 border absolute -bottom-0 -right-0"
 					style={{ backgroundColor: "#0143EB", borderColor: "#000000" }}
 				></div>
 			)}

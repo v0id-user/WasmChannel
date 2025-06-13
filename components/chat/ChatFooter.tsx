@@ -26,7 +26,7 @@ export function ChatFooter() {
 		<>
 			{/* Navigation Links */}
 			<div
-				className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs font-mono"
+				className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs font-mono"
 				style={{ color: "#000000" }}
 			>
 				<a
@@ -82,15 +82,15 @@ export function ChatFooter() {
 					<img
 						src="https://storage.ko-fi.com/cdn/cup-border.png"
 						alt="Ko-fi"
-						width={16}
-						height={16}
+						width={14}
+						height={14}
 						style={{ filter: "brightness(0)" }}
 					/>
 				</a>
 			</div>
 
 			<div
-				className="mt-2 text-xs text-center font-mono"
+				className="mt-1 text-xs text-center font-mono"
 				style={{ color: "#0143EB" }}
 			>
 				تجربة • WebAssembly + Next.js

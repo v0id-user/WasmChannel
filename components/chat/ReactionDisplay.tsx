@@ -46,7 +46,7 @@ export function ReactionDisplay({
 	if (reactions.length === 0) return null;
 
 	return (
-		<div className="flex flex-wrap gap-2 mt-2">
+		<div className="flex flex-wrap gap-1 mt-1">
 			{reactions.map((reaction) => {
 				const hasUserReacted = reaction.users.includes(currentUserId);
 				const isAnimating = animatingReactions.has(reaction.kind);
@@ -56,7 +56,7 @@ export function ReactionDisplay({
 						key={reaction.kind}
 						onClick={() => handleReactionClick(reaction.kind)}
 						className={`
-							inline-flex items-center gap-2 px-2 py-1 text-xs transition-all duration-200 border font-mono font-bold
+							inline-flex items-center gap-1 px-1 py-0.5 text-xs transition-all duration-200 border font-mono font-bold
 							${isAnimating ? "animate-bounce scale-110" : ""}
 						`}
 						style={{
@@ -79,10 +79,10 @@ export function ReactionDisplay({
 						}}
 						title={`${reactionEmojis[reaction.kind]} ${reaction.count}`}
 					>
-						<span className={`text-sm ${isAnimating ? "animate-pulse" : ""}`}>
+						<span className={`text-xs ${isAnimating ? "animate-pulse" : ""}`}>
 							{reactionEmojis[reaction.kind]}
 						</span>
-						<span className="font-bold font-mono">{reaction.count}</span>
+						<span className="font-bold font-mono text-xs">{reaction.count}</span>
 					</button>
 				);
 			})}

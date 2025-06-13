@@ -9,11 +9,11 @@ export function LoadingState({ message = "جاري التحميل" }: LoadingSta
 			style={{ backgroundColor: "#F3F3F3" }}
 		>
 			<div
-				className="w-full max-w-2xl h-96 bg-white border"
+				className="w-full max-w-xl h-64 bg-white border"
 				style={{ borderColor: "#000000" }}
 			>
 				<div className="h-full flex items-center justify-center">
-					<div className="font-mono text-lg" style={{ color: "#0143EB" }}>
+					<div className="font-mono text-base" style={{ color: "#0143EB" }}>
 						<span className="animate-pulse">_</span>
 						<span className="animate-pulse">...</span>
 						{message}

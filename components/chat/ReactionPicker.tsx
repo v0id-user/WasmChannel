@@ -23,14 +23,14 @@ export function ReactionPicker({
 
 	return (
 		<div
-			className="absolute bottom-full mb-2 left-0 bg-white border p-2 flex gap-1 z-10 animate-fade-in-up"
+			className="absolute bottom-full mb-1 left-0 bg-white border p-1 flex gap-0.5 z-10 animate-fade-in-up"
 			style={{ borderColor: "#000000" }}
 		>
 			{availableReactions.map((reaction) => (
 				<button
 					key={reaction}
 					onClick={() => onReactionSelect(messageId, reaction)}
-					className="p-2 text-lg border transition-all"
+					className="p-1 text-sm border transition-all"
 					style={{ borderColor: "#000000" }}
 					onMouseEnter={(e) => {
 						e.target.style.backgroundColor = "#0143EB";

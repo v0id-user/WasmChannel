@@ -16,22 +16,22 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
 
 	return (
 		<div
-			className="px-4 py-2 animate-fade-in-up border-l-4"
+			className="px-3 py-1 animate-fade-in-up border-l-4"
 			style={{ borderLeftColor: "#0143EB" }}
 		>
-			<div className="flex items-center gap-3 text-sm font-mono">
+			<div className="flex items-center gap-2 text-sm font-mono">
 				<span style={{ color: "#0143EB" }}>{typingText}</span>
-				<div className="flex gap-1">
+				<div className="flex gap-0.5">
 					<div
-						className="w-2 h-2 border animate-pulse-dots"
+						className="w-1.5 h-1.5 border animate-pulse-dots"
 						style={{ backgroundColor: "#0143EB", borderColor: "#000000" }}
 					></div>
 					<div
-						className="w-2 h-2 border animate-pulse-dots"
+						className="w-1.5 h-1.5 border animate-pulse-dots"
 						style={{ backgroundColor: "#0143EB", borderColor: "#000000" }}
 					></div>
 					<div
-						className="w-2 h-2 border animate-pulse-dots"
+						className="w-1.5 h-1.5 border animate-pulse-dots"
 						style={{ backgroundColor: "#0143EB", borderColor: "#000000" }}
 					></div>
 				</div>

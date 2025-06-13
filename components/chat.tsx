@@ -17,28 +17,12 @@ import { ChatFooter } from "./chat/ChatFooter";
 import { ChatHeader } from "./chat/ChatHeader";
 import { MessagesArea } from "./chat/MessagesArea";
 import { LoadingState } from "./chat/LoadingState";
-import { orpc } from "@/lib/orpc";
-import { useQuery } from "@tanstack/react-query";
-import { Message } from "@/types/orpc";
 
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
 
-	const {
-		data: messagesResponse,
-		isPending,
-		isError,
-		error,
-	} = useQuery(
-		orpc.messages.get.queryOptions({
-			input: {
-				cursor: undefined,
-				limit: 100,
-			},
-			refetchOnWindowFocus: false,
-		}),
-	);
+	
 
 	// Chat state management
 	const {
@@ -51,6 +35,9 @@ export default function Chat() {
 		onlineUsersCount,
 		setOnlineUsersCount,
 		isClient,
+		isPending,
+		isError,
+		error
 	} = useChatState();
 
 	// Typing timeout management
@@ -127,7 +114,7 @@ export default function Chat() {
 			dir="rtl"
 		>
 			<div
-				className="w-full max-w-2xl h-[600px] bg-white border flex flex-col chat-container"
+				className="w-full max-w-2xl h-[600px] bg-white border-[0.5px] flex flex-col chat-container"
 				style={{ borderColor: "#000000" }}
 			>
 				<ChatHeader />

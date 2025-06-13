@@ -17,7 +17,7 @@ export function MessageInput({
 		const textarea = textareaRef.current;
 		if (textarea) {
 			textarea.style.height = "auto";
-			textarea.style.height = Math.min(textarea.scrollHeight, 96) + "px";
+			textarea.style.height = Math.min(textarea.scrollHeight, 80) + "px";
 		}
 	}, []);
 
@@ -34,17 +34,17 @@ export function MessageInput({
 
 	return (
 		<div
-			className="border-t p-4 flex-shrink-0 font-mono"
+			className="border-t p-2 flex-shrink-0 font-mono"
 			style={{ backgroundColor: "#F3F3F3", borderTopColor: "#000000" }}
 		>
-			<div className="flex gap-3 items-end">
+			<div className="flex gap-2 items-end">
 				<textarea
 					ref={textareaRef}
 					value={newMessage}
 					onChange={(e) => setNewMessage(e.target.value)}
 					onKeyDown={handleKeyPress}
 					placeholder="اكتب رسالتك هنا..."
-					className="flex-1 resize-none px-3 py-2 text-sm border font-mono min-h-[36px] leading-5 focus:outline-none transition-colors"
+					className="flex-1 resize-none px-2 py-1 text-sm border font-mono min-h-[28px] leading-5 focus:outline-none transition-colors"
 					style={{
 						borderColor: "#000000",
 						backgroundColor: "#FFFFFF",
@@ -64,7 +64,7 @@ export function MessageInput({
 				<button
 					onClick={onSendMessage}
 					disabled={!newMessage.trim()}
-					className="px-4 py-2 text-sm flex-shrink-0 transition-colors border font-bold tracking-wide uppercase font-mono"
+					className="px-3 py-1 text-sm flex-shrink-0 transition-colors border font-bold tracking-wide uppercase font-mono"
 					style={{
 						backgroundColor: newMessage.trim() ? "#0143EB" : "#F3F3F3",
 						color: newMessage.trim() ? "#FFFFFF" : "#000000",
@@ -89,7 +89,7 @@ export function MessageInput({
 				</button>
 			</div>
 			<div
-				className="text-xs mt-2 text-center font-mono"
+				className="text-xs mt-1 text-center font-mono"
 				style={{ color: "#0143EB" }}
 			>
 				اضغط Enter للإرسال، Shift+Enter للسطر الجديد

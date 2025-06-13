@@ -27,16 +27,16 @@ export function ChatMessage({
 	useEffect(() => {
 		// Format time on client side to avoid hydration issues
 		setFormattedTime(
-			message.timestamp.toLocaleTimeString("ar-SA", {
+			message.timestamp?.toLocaleTimeString?.("ar-SA", {
 				hour: "2-digit",
 				minute: "2-digit",
-			}),
+			}) ?? "",
 		);
 	}, [message.timestamp]);
 
 	return (
 		<div
-			className={`group px-4 py-2 border-b border-l-4 relative transition-all font-mono ${
+			className={`group px-3 py-1 border-b border-l-4 relative transition-all font-mono ${
 				message.isOwn ? "animate-slide-in-left" : "animate-slide-in-right"
 			}`}
 			style={{
@@ -55,12 +55,12 @@ export function ChatMessage({
 			}}
 		>
 			{showAvatar ? (
-				<div className="flex gap-3">
+				<div className="flex gap-2">
 					<UserAvatar user={user} size="sm" />
 					<div className="flex-1 min-w-0">
-						<div className="flex items-baseline gap-3 mb-1">
+						<div className="flex items-baseline gap-2 mb-1">
 							<span
-								className="text-sm font-bold tracking-wide uppercase font-mono"
+								className="text-xs font-bold tracking-wide uppercase font-mono"
 								style={{ color: message.isOwn ? "#0143EB" : "#000000" }}
 							>
 								{user.name}
@@ -74,19 +74,19 @@ export function ChatMessage({
 							{!message.isOwn && (
 								<button
 									onClick={() => setShowReactionPicker(!showReactionPicker)}
-									className="text-xs opacity-0 group-hover:opacity-100 transition-all ml-2 p-1 border font-mono"
+									className="text-xs opacity-0 group-hover:opacity-100 transition-all ml-1 p-0.5 border font-mono"
 									style={{
 										color: "#0143EB",
 										borderColor: "#0143EB",
 									}}
-									onMouseEnter={(e) => {
-										e.target.style.backgroundColor = "#0143EB";
-										e.target.style.color = "#FFFFFF";
-									}}
-									onMouseLeave={(e) => {
-										e.target.style.backgroundColor = "transparent";
-										e.target.style.color = "#0143EB";
-									}}
+																onMouseEnter={(e) => {
+								(e.target as HTMLElement).style.backgroundColor = "#0143EB";
+								(e.target as HTMLElement).style.color = "#FFFFFF";
+							}}
+							onMouseLeave={(e) => {
+								(e.target as HTMLElement).style.backgroundColor = "transparent";
+								(e.target as HTMLElement).style.color = "#0143EB";
+							}}
 									title="إضافة تفاعل"
 								>
 									<SmilePlus className="w-3 h-3" />
@@ -118,8 +118,8 @@ export function ChatMessage({
 					</div>
 				</div>
 			) : (
-				<div className="flex gap-3">
-					<div className="w-6 flex justify-center">
+				<div className="flex gap-2">
+					<div className="w-5 flex justify-center">
 						<time
 							className="text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity"
 							style={{ color: "#0143EB" }}
@@ -143,18 +143,18 @@ export function ChatMessage({
 						{!message.isOwn && (
 							<button
 								onClick={() => setShowReactionPicker(!showReactionPicker)}
-								className="absolute top-0 left-0 text-xs opacity-0 group-hover:opacity-100 transition-all p-1 border font-mono"
+								className="absolute top-0 left-0 text-xs opacity-0 group-hover:opacity-100 transition-all p-0.5 border font-mono"
 								style={{
 									color: "#0143EB",
 									borderColor: "#0143EB",
 								}}
 								onMouseEnter={(e) => {
-									e.target.style.backgroundColor = "#0143EB";
-									e.target.style.color = "#FFFFFF";
+									(e.target as HTMLElement).style.backgroundColor = "#0143EB";
+									(e.target as HTMLElement).style.color = "#FFFFFF";
 								}}
 								onMouseLeave={(e) => {
-									e.target.style.backgroundColor = "transparent";
-									e.target.style.color = "#0143EB";
+									(e.target as HTMLElement).style.backgroundColor = "transparent";
+									(e.target as HTMLElement).style.color = "#0143EB";
 								}}
 								title="إضافة تفاعل"
 							>
