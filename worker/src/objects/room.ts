@@ -30,8 +30,11 @@ export class Room extends DurableObject {
 			// Get all hibernated WebSockets and rebuild our maps
 			const hibernatedSockets = this.ctx.getWebSockets();
 			for (const ws of hibernatedSockets) {
-				const clientId =
-					ws.deserializeAttachment() || Math.random().toString(36).substring(7);
+				const clientId = ws.deserializeAttachment();
+				if (!clientId) {
+					// Crash the constructor if the client ID is not found
+					throw new Error("Client ID not found");
+				}
 				this.clientsById.set(clientId, ws);
 				this.clientsBySocket.set(ws, clientId);
 			}
@@ -65,10 +68,15 @@ export class Room extends DurableObject {
 
 		// Check if the user is authenticated
 		if (!session) {
-			return new Response(null, {
-				status: 401,
-				statusText: "Unauthorized",
-			});
+			return new Response(
+				JSON.stringify({
+					error: "Unauthorized",
+				}),
+				{
+					status: 401,
+					statusText: "Unauthorized",
+				},
+			);
 		}
 
 		// Store clientId in the WebSocket for hibernation survival
@@ -212,11 +220,10 @@ export class Room extends DurableObject {
 		try {
 			const packet = deserializePacket(message);
 
-
 			if (isServer) {
 				// Server message
 				await this.#handleServerPacket(packet, senderId);
-				return
+				return;
 			}
 
 			// Client message
@@ -296,24 +303,39 @@ export class Room extends DurableObject {
 			packet.payload(),
 		);
 
-		// Send to queue and cache with better error handling
-		const [queueResult, cacheResult] = await Promise.allSettled([
-			this.env.QUEUE_MESSAGES.send(fullPacket),
+		console.log("Sending message to queue", fullPacket);
+		console.log("Sending message to cache", fullPacket);
+
+		// TODO: Test this
+		console.log("Env", this.env);
+		console.log("Queue", this.env.QUEUE_MESSAGES);
+
+		const serializedFullPacket = serializePacket(fullPacket);
+
+		// Broadcast to all clients first 
+		await this.#broadcastToAllClients(serializedFullPacket);
+
+		// Handle all operations in parallel
+		await Promise.all([
+			// Send to queue
+			this.env.QUEUE_MESSAGES.send(serializedFullPacket, {
+				contentType: "bytes",
+			}),
+			// Save to cache
 			this.#saveToCache([fullPacket], senderId),
 		]);
 
-		// Log any failures but don't block the broadcast
-		if (queueResult.status === "rejected") {
-			console.error("Failed to send message to queue:", queueResult.reason);
-		}
+		// console.log("Queue result", queueResult);
+		// console.log("Cache result", cacheResult);
 
-		if (cacheResult.status === "rejected") {
-			console.error("Failed to save message to cache:", cacheResult.reason);
-		}
+		// // Log any failures but don't block the broadcast
+		// if (queueResult.status === "rejected") {
+		// 	throw new Error("Failed to send message to queue:", queueResult.reason);
+		// }
 
-		// Always broadcast to clients for real-time experience, even if storage partially failed
-		const serializedPacket = serializePacket(fullPacket);
-		await this.#broadcastToAllClients(serializedPacket);
+		// if (cacheResult.status === "rejected") {
+		// 	throw new Error("Failed to save message to cache:", cacheResult.reason);
+		// }
 	}
 
 	async #handleReactionPacket(
@@ -343,24 +365,30 @@ export class Room extends DurableObject {
 			new TextEncoder().encode(""),
 		);
 
-		// Send to queue and update cache with better error handling
-		const [queueResult, cacheResult] = await Promise.allSettled([
-			this.env.QUEUE_MESSAGES.send(reactionPacket),
+		const serializedReactionPacket = serializePacket(reactionPacket);
+
+		// Broadcast to all clients first
+		await this.#broadcastToAllClients(serializedReactionPacket);
+
+		// Handle all operations in parallel
+		await Promise.all([
+			// Send to queue
+			this.env.QUEUE_MESSAGES.send(serializedReactionPacket, {
+				contentType: "bytes",
+			}),
+			// Update cache
 			this.#updateCacheReaction(messageId, reactionKind, senderId),
 		]);
 
-		// Log any failures but don't block the broadcast
-		if (queueResult.status === "rejected") {
-			console.error("Failed to send reaction to queue:", queueResult.reason);
-		}
+		// // Log any failures but don't block the broadcast
+		// if (queueResult.status === "rejected") {
+		// 	console.error("Failed to send reaction to queue:", queueResult.reason);
+		// }
 
-		if (cacheResult.status === "rejected") {
-			console.error("Failed to update reaction in cache:", cacheResult.reason);
-		}
+		// if (cacheResult.status === "rejected") {
+		// 	console.error("Failed to update reaction in cache:", cacheResult.reason);
+		// }
 
-		// Always broadcast to clients for real-time experience, even if storage partially failed
-		const serializedPacket = serializePacket(reactionPacket);
-		await this.#broadcastToAllClients(serializedPacket);
 	}
 
 	async #handleTypingPacket(
@@ -380,7 +408,10 @@ export class Room extends DurableObject {
 		await this.#broadcastToOthersOnly(serializedPacket, senderId);
 	}
 
-	async #handleServerPacket(packet: WasmPacket, senderId: string): Promise<void> {
+	async #handleServerPacket(
+		packet: WasmPacket,
+		senderId: string,
+	): Promise<void> {
 		const serializedPacket = serializePacket(packet);
 		await this.#broadcastToOthersOnly(serializedPacket, senderId);
 	}

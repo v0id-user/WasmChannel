@@ -46,4 +46,4 @@ export function MessagesArea({
 			<div ref={messagesEndRef} />
 		</div>
 	);
-} 
+}

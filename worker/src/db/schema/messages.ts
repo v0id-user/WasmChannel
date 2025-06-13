@@ -45,11 +45,13 @@ export const messages = sqliteTable("messages", {
 		.references(() => user.id, { onDelete: "cascade" })
 		.notNull(),
 
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	deletedAt: integer("deleted_at", { mode: "timestamp" }),
+	createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
+		() => /* @__PURE__ */ new Date(),
+	),
+	updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(
+		() => /* @__PURE__ */ new Date(),
+	),
+	deletedAt: integer("deleted_at", { mode: "timestamp" }).$defaultFn(
+		() => /* @__PURE__ */ new Date(),
+	),
 });

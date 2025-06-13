@@ -41,7 +41,10 @@ export function usePacketHandler({
 						});
 						setMessages((prev) => {
 							const newMessages = [...prev, result.data];
-							console.log("Messages state updated, new count:", newMessages.length);
+							console.log(
+								"Messages state updated, new count:",
+								newMessages.length,
+							);
 							return newMessages;
 						});
 					} else {
@@ -150,4 +153,4 @@ export function usePacketHandler({
 	);
 
 	return { handlePacket };
-} 
+}

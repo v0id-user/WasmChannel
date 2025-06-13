@@ -8,7 +8,11 @@ export default function MainLayout({
 	const { bootstrapped } = useStoreClient();
 
 	if (process.env.NEXT_PUBLIC_DEBUG !== "yes") {
-		return <div className="flex items-center justify-center min-h-screen"><strong>Test pages only on debug mode...</strong></div>;
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<strong>Test pages only on debug mode...</strong>
+			</div>
+		);
 	}
 
 	if (!bootstrapped) {

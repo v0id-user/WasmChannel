@@ -6,17 +6,18 @@ import { createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
-import { RPCHandler } from "@orpc/server/fetch";
+import { OpenAPIHandler } from '@orpc/openapi/fetch'
 import { Room } from "./objects/room";
 import { PacketKind, ReactionKind, WasmPacket } from "@/wasm/wasmchannel";
 import { user } from "./db/schema/schema";
 import { createPacket, serializePacket, deserializePacket } from "@/oop";
 import { DatabaseDriver } from "~/driver/storage";
+import { CORSPlugin } from "@orpc/server/plugins";
 
 export type Env = Cloudflare.Env & {
 	DB: D1Database;
 	KV: KVNamespace;
-	QUEUE_MESSAGES: Queue<WasmPacket>;
+	QUEUE_MESSAGES: Queue<Uint8Array>;
 	ROOM: DurableObjectNamespace<Room>;
 };
 
@@ -28,7 +29,17 @@ type Context = {
 const app = new Hono<{ Bindings: Env; Variables: Context }>();
 
 // RPC handler
-const handler = new RPCHandler(router);
+const handler = new OpenAPIHandler(router, {
+	plugins: [
+		new CORSPlugin({
+			origin: (origin) => origin,
+			allowMethods: ["POST", "OPTIONS"],
+			allowHeaders: ["Content-Type", "Authorization"],
+			exposeHeaders: ["Content-Length"],
+			credentials: true,
+		}),
+	],
+});
 const openAPIGenerator = new OpenAPIGenerator({
 	schemaConverters: [new ZodToJsonSchemaConverter()],
 });
@@ -39,9 +50,9 @@ const openAPI = openAPIGenerator.generate(router, {
 	},
 });
 
-// Enable CORS for auth routes
+// Enable CORS for all routes
 app.use(
-	"/api/auth/*",
+	"*",
 	cors({
 		origin: process.env.FRONTEND_URL || "http://localhost:3000",
 		allowHeaders: ["Content-Type", "Authorization"],
@@ -56,18 +67,6 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 	const db = createDb(c.env.DB);
 	return createAuthWithD1(db).handler(c.req.raw);
 });
-
-// Enable CORS for RPC routes
-app.use(
-	"/rpc/*",
-	cors({
-		origin: process.env.FRONTEND_URL || "http://localhost:3000",
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization"],
-		exposeHeaders: ["Content-Length"],
-		credentials: true,
-	}),
-);
 
 // Handle RPC routes
 app.use("/rpc/*", async (c, next) => {
@@ -212,7 +211,7 @@ app.get("/openapi.json", (c) => {
 
 export default {
 	fetch: app.fetch,
-	async queue(batch: MessageBatch<WasmPacket>, env: Env) {
+	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
 		console.log(
 			"Processing queue batch with",
 			batch.messages.length,
@@ -232,7 +231,8 @@ export default {
 
 		for (const message of batch.messages) {
 			try {
-				const packet = message.body;
+				const body = message.body instanceof Uint8Array ? message.body : new Uint8Array(message.body);
+				const packet = deserializePacket(body);
 				const packetKind = packet.kind();
 
 				if (packetKind === PacketKind.Message) {

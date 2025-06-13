@@ -1,13 +1,9 @@
-import { ping } from "./helpers";
-import { get } from "./messages";
+import { getMessages } from "./messages";
 import type { RouterClient } from "@orpc/server";
 
 export const router = {
-	helper: {
-		ping,
-	},
-	chat: {
-		get,
+	messages: {
+		get: getMessages,
 	},
 };
 

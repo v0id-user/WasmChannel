@@ -2,7 +2,9 @@ interface LoadingStateProps {
 	message?: string;
 }
 
-export function LoadingState({ message = "جاري التحميل..." }: LoadingStateProps) {
+export function LoadingState({
+	message = "جاري التحميل...",
+}: LoadingStateProps) {
 	return (
 		<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 			<div className="w-full max-w-2xl h-96 bg-white rounded-lg shadow-lg border border-gray-200">
@@ -12,4 +14,4 @@ export function LoadingState({ message = "جاري التحميل..." }: Loading
 			</div>
 		</div>
 	);
-} 
+}

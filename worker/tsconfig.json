@@ -8,13 +8,12 @@
 		"lib": ["ESNext"],
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
+		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./*"],
-			"~/*": ["./src/*"]
+			"~/*": ["./src/*"],
+			"@shared/*": ["../shared/*"]
 		},
-		"composite": true,
-		"declaration": true,
-		"emitDeclarationOnly": true,
 		"outDir": "dist"
 	}
 }

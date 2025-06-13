@@ -18,9 +18,21 @@ import { ChatHeader } from "./chat/ChatHeader";
 import { MessagesArea } from "./chat/MessagesArea";
 import { LoadingState } from "./chat/LoadingState";
 import { orpc } from "@/lib/orpc";
+import { useQuery } from "@tanstack/react-query";
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { data, isPending, isError, error } = useQuery(
+		orpc.messages.get.queryOptions({
+			input: {
+				cursor: undefined,
+				limit: 100,
+			},
+			refetchOnWindowFocus: false,
+		}),
+	);
 
 	// Chat state management
 	const {

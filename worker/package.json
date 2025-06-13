@@ -10,32 +10,33 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"types:build": "tsc -p tsconfig.json --emitDeclarationOnly",
-		"bcg": "bunx @better-auth/cli generate",
 		"bdg": "bunx drizzle-kit generate",
 		"bdm": "bunx drizzle-kit migrate",
-		"bds": "bunx drizzle-kit push",
+		"wda": "bunx wrangler d1 migrations apply DB",
+		"mall": "bun bdg && bun bdm && bun wda",
 		"deploy": "wrangler deploy --minify",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"auth:generate": "bunx @better-auth/cli generate",
 		"auth:migrate": "bunx @better-auth/cli migrate"
 	},
 	"dependencies": {
-		"@orpc/client": "^1.3.0",
-		"@orpc/openapi": "^1.3.0",
-		"@orpc/server": "^1.3.0",
-		"@orpc/zod": "^1.3.0",
+		"@orpc/client": "^1.5.1",
+		"@orpc/contract": "^1.5.1",
+		"@orpc/openapi": "^1.5.1",
+		"@orpc/server": "^1.5.1",
+		"@orpc/zod": "^1.5.1",
 		"@paralleldrive/cuid2": "^2.2.2",
-		"better-auth": "^1.2.8",
+		"better-auth": "^1.2.9",
 		"dotenv": "^16.5.0",
 		"drizzle-orm": "^0.43.1",
-		"hono": "^4.7.10",
+		"hono": "^4.7.11",
 		"kysely-d1": "^0.4.0",
-		"nanoid": "^5.1.5"
+		"nanoid": "^5.1.5",
+		"wrangler": "^4.20.0"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250524.0",
+		"@cloudflare/workers-types": "^4.20250613.0",
 		"drizzle-kit": "^0.31.1",
-		"tsx": "^4.19.4",
-		"wrangler": "^4.4.0"
+		"tsx": "^4.20.3"
 	}
 }

@@ -1,14 +1,17 @@
-import { RPCLink } from "@orpc/client/fetch";
-import type { Router } from "@/types/worker";
+import type { ContractRouterClient } from "@orpc/contract";
+import type { JsonifiedClient } from "@orpc/openapi-client";
+import { OpenAPILink } from "@orpc/openapi-client/fetch";
 import { createORPCClient } from "@orpc/client";
 import { createContext, use } from "react";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createORPCReactQueryUtils, RouterUtils } from "@orpc/react-query";
+import { contract } from "@/shared/orpc/router";
 
-// We can't import the actual router here since it's in the worker
-// The type is sufficient for client-side typing
-type ORPCReactUtils = RouterUtils<Router>;
-
+declare global {
+	let $client:
+		| JsonifiedClient<ContractRouterClient<typeof contract>>
+		| undefined;
+}
 export const queryClient = new QueryClient({
 	queryCache: new QueryCache({
 		onError: (error, query) => {
@@ -19,8 +22,8 @@ export const queryClient = new QueryClient({
 	}),
 });
 
-export const link = new RPCLink({
-	url: `${process.env.NEXT_PUBLIC_WORKER}/rpc`,
+export const link = new OpenAPILink(contract, {
+	url: `${process.env.NEXT_PUBLIC_WORKER?.replace(/\/$/, "")}/rpc`,
 	fetch(url, options) {
 		return fetch(url, {
 			...options,
@@ -30,13 +33,16 @@ export const link = new RPCLink({
 	},
 });
 
-export const client: Router = createORPCClient(link);
+const client: JsonifiedClient<ContractRouterClient<typeof contract>> =
+	createORPCClient(link);
 
 export const orpc = createORPCReactQueryUtils(client);
 
-export const ORPCContext = createContext<ORPCReactUtils | undefined>(undefined);
+export const ORPCContext = createContext<
+	RouterUtils<ContractRouterClient<typeof contract>> | undefined
+>(undefined);
 
-export function useORPC(): ORPCReactUtils {
+export function useORPC(): RouterUtils<ContractRouterClient<typeof contract>> {
 	const orpc = use(ORPCContext);
 	if (!orpc) {
 		throw new Error("ORPCContext is not set up properly");

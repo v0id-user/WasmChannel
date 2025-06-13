@@ -9,7 +9,11 @@ interface UseReactionHandlerProps {
 	messages: Message[];
 }
 
-export function useReactionHandler({ ws, bootUserId, messages }: UseReactionHandlerProps) {
+export function useReactionHandler({
+	ws,
+	bootUserId,
+	messages,
+}: UseReactionHandlerProps) {
 	const handleReactionClick = useCallback(
 		(messageId: string, reactionKind: ReactionKind) => {
 			if (!ws || !bootUserId) return;
@@ -53,4 +57,4 @@ export function useReactionHandler({ ws, bootUserId, messages }: UseReactionHand
 	);
 
 	return { handleReactionClick };
-} 
+}

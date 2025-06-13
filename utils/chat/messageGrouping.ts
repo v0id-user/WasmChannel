@@ -8,30 +8,27 @@ export interface GroupedMessage {
 }
 
 export function groupMessagesByUser(messages: Message[]): GroupedMessage[] {
-	return messages.reduce(
-		(acc, message, index) => {
-			const prevMessage = messages[index - 1];
-			const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
+	return messages.reduce((acc, message, index) => {
+		const prevMessage = messages[index - 1];
+		const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
 
-			// Find user or create a fallback user with userId as name
-			const foundUser = users.find((u) => u.id === message.userId);
-			const user = foundUser || {
-				id: message.userId,
-				name: message.userId, // Use userId as name
-				isOnline: true,
-			};
+		// Find user or create a fallback user with userId as name
+		const foundUser = users.find((u) => u.id === message.userId);
+		const user = foundUser || {
+			id: message.userId,
+			name: message.userId, // Use userId as name
+			isOnline: true,
+		};
 
-			if (!foundUser) {
-				console.log("Creating fallback user for userId:", message.userId);
-			}
+		if (!foundUser) {
+			console.log("Creating fallback user for userId:", message.userId);
+		}
 
-			acc.push({
-				message,
-				showAvatar,
-				user,
-			});
-			return acc;
-		},
-		[] as GroupedMessage[],
-	);
-} 
+		acc.push({
+			message,
+			showAvatar,
+			user,
+		});
+		return acc;
+	}, [] as GroupedMessage[]);
+}
