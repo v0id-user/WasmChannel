@@ -33,28 +33,65 @@ export function MessageInput({
 	};
 
 	return (
-		<div className="bg-gray-100 border-t border-gray-200 p-3 rounded-b-lg flex-shrink-0">
-			<div className="flex gap-2 items-end">
+		<div
+			className="border-t p-4 flex-shrink-0 font-mono"
+			style={{ backgroundColor: "#F3F3F3", borderTopColor: "#000000" }}
+		>
+			<div className="flex gap-3 items-end">
 				<textarea
 					ref={textareaRef}
 					value={newMessage}
 					onChange={(e) => setNewMessage(e.target.value)}
 					onKeyDown={handleKeyPress}
 					placeholder="اكتب رسالتك هنا..."
-					className="flex-1 resize-none px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[36px] leading-5"
+					className="flex-1 resize-none px-3 py-2 text-sm border font-mono min-h-[36px] leading-5 focus:outline-none transition-colors"
+					style={{
+						borderColor: "#000000",
+						backgroundColor: "#FFFFFF",
+						color: "#000000",
+					}}
+					onFocus={(e) => {
+						e.target.style.borderColor = "#0143EB";
+						e.target.style.backgroundColor = "#F3F3F3";
+					}}
+					onBlur={(e) => {
+						e.target.style.borderColor = "#000000";
+						e.target.style.backgroundColor = "#FFFFFF";
+					}}
 					rows={1}
 					aria-label="كتابة رسالة جديدة"
 				/>
 				<button
 					onClick={onSendMessage}
 					disabled={!newMessage.trim()}
-					className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
+					className="px-4 py-2 text-sm flex-shrink-0 transition-colors border font-bold tracking-wide uppercase font-mono"
+					style={{
+						backgroundColor: newMessage.trim() ? "#0143EB" : "#F3F3F3",
+						color: newMessage.trim() ? "#FFFFFF" : "#000000",
+						borderColor: "#000000",
+						cursor: newMessage.trim() ? "pointer" : "not-allowed",
+					}}
+					onMouseEnter={(e) => {
+						if (newMessage.trim()) {
+							e.target.style.backgroundColor = "#000000";
+							e.target.style.color = "#FFFFFF";
+						}
+					}}
+					onMouseLeave={(e) => {
+						if (newMessage.trim()) {
+							e.target.style.backgroundColor = "#0143EB";
+							e.target.style.color = "#FFFFFF";
+						}
+					}}
 					aria-label="إرسال الرسالة"
 				>
 					إرسال
 				</button>
 			</div>
-			<div className="text-xs text-gray-500 mt-1 text-center">
+			<div
+				className="text-xs mt-2 text-center font-mono"
+				style={{ color: "#0143EB" }}
+			>
 				اضغط Enter للإرسال، Shift+Enter للسطر الجديد
 			</div>
 		</div>

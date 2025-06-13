@@ -312,7 +312,7 @@ export class Room extends DurableObject {
 
 		const serializedFullPacket = serializePacket(fullPacket);
 
-		// Broadcast to all clients first 
+		// Broadcast to all clients first
 		await this.#broadcastToAllClients(serializedFullPacket);
 
 		// Handle all operations in parallel
@@ -388,7 +388,6 @@ export class Room extends DurableObject {
 		// if (cacheResult.status === "rejected") {
 		// 	console.error("Failed to update reaction in cache:", cacheResult.reason);
 		// }
-
 	}
 
 	async #handleTypingPacket(

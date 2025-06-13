@@ -46,7 +46,7 @@ export function ReactionDisplay({
 	if (reactions.length === 0) return null;
 
 	return (
-		<div className="flex flex-wrap gap-1 mt-2">
+		<div className="flex flex-wrap gap-2 mt-2">
 			{reactions.map((reaction) => {
 				const hasUserReacted = reaction.users.includes(currentUserId);
 				const isAnimating = animatingReactions.has(reaction.kind);
@@ -56,20 +56,33 @@ export function ReactionDisplay({
 						key={reaction.kind}
 						onClick={() => handleReactionClick(reaction.kind)}
 						className={`
-							inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all duration-200
-							${
-								hasUserReacted
-									? "bg-blue-100 text-blue-700 border border-blue-300 cursor-default"
-									: "bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:scale-105 active:scale-95 cursor-pointer"
-							}
+							inline-flex items-center gap-2 px-2 py-1 text-xs transition-all duration-200 border font-mono font-bold
 							${isAnimating ? "animate-bounce scale-110" : ""}
 						`}
+						style={{
+							backgroundColor: hasUserReacted ? "#0143EB" : "#F3F3F3",
+							color: hasUserReacted ? "#FFFFFF" : "#000000",
+							borderColor: "#000000",
+							cursor: hasUserReacted ? "default" : "pointer",
+						}}
+						onMouseEnter={(e) => {
+							if (!hasUserReacted) {
+								e.target.style.backgroundColor = "#000000";
+								e.target.style.color = "#FFFFFF";
+							}
+						}}
+						onMouseLeave={(e) => {
+							if (!hasUserReacted) {
+								e.target.style.backgroundColor = "#F3F3F3";
+								e.target.style.color = "#000000";
+							}
+						}}
 						title={`${reactionEmojis[reaction.kind]} ${reaction.count}`}
 					>
 						<span className={`text-sm ${isAnimating ? "animate-pulse" : ""}`}>
 							{reactionEmojis[reaction.kind]}
 						</span>
-						<span className="font-medium">{reaction.count}</span>
+						<span className="font-bold font-mono">{reaction.count}</span>
 					</button>
 				);
 			})}

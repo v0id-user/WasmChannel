@@ -21,12 +21,16 @@ import { orpc } from "@/lib/orpc";
 import { useQuery } from "@tanstack/react-query";
 import { Message } from "@/types/orpc";
 
-
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
 
-	const { data: messagesResponse, isPending, isError, error } = useQuery(
+	const {
+		data: messagesResponse,
+		isPending,
+		isError,
+		error,
+	} = useQuery(
 		orpc.messages.get.queryOptions({
 			input: {
 				cursor: undefined,
@@ -35,7 +39,6 @@ export default function Chat() {
 			refetchOnWindowFocus: false,
 		}),
 	);
-
 
 	// Chat state management
 	const {
@@ -111,7 +114,7 @@ export default function Chat() {
 
 	if (isError) {
 		console.error("chat.tsx: Error fetching messages:", error);
-		return <div>خطأ في الاتصال بالخادم</div>;
+		return <div className="font-mono">خطأ في الاتصال بالخادم</div>;
 	}
 
 	// Group messages for rendering
@@ -119,10 +122,14 @@ export default function Chat() {
 
 	return (
 		<div
-			className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4"
+			className="min-h-screen flex flex-col items-center justify-center p-4 font-mono"
+			style={{ backgroundColor: "#F3F3F3" }}
 			dir="rtl"
 		>
-			<div className="w-full max-w-2xl h-[600px] bg-white rounded-lg shadow-lg border border-gray-200 flex flex-col chat-container">
+			<div
+				className="w-full max-w-2xl h-[600px] bg-white border flex flex-col chat-container"
+				style={{ borderColor: "#000000" }}
+			>
 				<ChatHeader />
 				<OnlineUsersBar onlineUsersCount={onlineUsersCount} />
 				<MessagesArea

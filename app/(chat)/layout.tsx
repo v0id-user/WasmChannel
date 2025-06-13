@@ -1,5 +1,5 @@
 export default function ChatLayout({
 	children,
 }: { children: React.ReactNode }) {
-	return <>{children}</>;
+	return <div className="font-mono">{children}</div>;
 }

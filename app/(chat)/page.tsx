@@ -22,18 +22,42 @@ export default function ChatPage() {
 	if (hasError) {
 		return (
 			<div
-				className="flex items-center justify-center min-h-screen bg-gray-50"
+				className="flex items-center justify-center min-h-screen font-mono"
+				style={{ backgroundColor: "#F3F3F3" }}
 				dir="rtl"
 			>
 				<div className="flex flex-col items-center space-y-6 p-8">
 					<div className="text-center space-y-4">
-						<div className="text-lg font-medium text-red-600">
+						<div
+							className="text-lg font-bold font-mono"
+							style={{ color: "#000000" }}
+						>
 							حدث خطأ أثناء التحميل
 						</div>
-						<div className="text-sm text-red-500 max-w-md">{state.error}</div>
+						<div
+							className="text-sm font-mono max-w-md"
+							style={{ color: "#0143EB" }}
+						>
+							{state.error}
+						</div>
 						<button
 							onClick={() => window.location.reload()}
-							className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+							className="px-6 py-3 border font-bold font-mono transition-colors tracking-wide uppercase"
+							style={{
+								backgroundColor: "#0143EB",
+								color: "#FFFFFF",
+								borderColor: "#000000",
+							}}
+							onMouseEnter={(e) => {
+								(e.target as HTMLButtonElement).style.backgroundColor =
+									"#000000";
+								(e.target as HTMLButtonElement).style.color = "#FFFFFF";
+							}}
+							onMouseLeave={(e) => {
+								(e.target as HTMLButtonElement).style.backgroundColor =
+									"#0143EB";
+								(e.target as HTMLButtonElement).style.color = "#FFFFFF";
+							}}
 						>
 							إعادة تحميل الصفحة
 						</button>
@@ -47,24 +71,34 @@ export default function ChatPage() {
 		console.log("PAGE: Showing loading screen...");
 		return (
 			<div
-				className="flex items-center justify-center min-h-screen bg-gray-50"
+				className="flex items-center justify-center min-h-screen font-mono"
+				style={{ backgroundColor: "#F3F3F3" }}
 				dir="rtl"
 			>
 				<div className="flex flex-col items-center space-y-6 p-8">
 					{/* Main spinner */}
 					<div className="relative">
-						<div className="w-12 h-12 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
-						<div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-b-gray-600 rounded-full animate-spin animation-delay-150"></div>
+						<div
+							className="w-12 h-12 border rounded-full animate-spin"
+							style={{ borderColor: "#000000", borderTopColor: "transparent" }}
+						></div>
+						<div
+							className="absolute inset-0 w-12 h-12 border border-transparent rounded-full animate-spin animation-delay-150"
+							style={{ borderBottomColor: "#0143EB" }}
+						></div>
 					</div>
 
 					{/* Status message */}
 					<div className="text-center space-y-2">
-						<div className="text-lg font-medium text-black">
+						<div
+							className="text-lg font-bold font-mono"
+							style={{ color: "#000000" }}
+						>
 							{state.message}
 						</div>
 
 						{/* Subtle step indicator */}
-						<div className="text-xs text-gray-500 font-mono">
+						<div className="text-xs font-mono" style={{ color: "#0143EB" }}>
 							{state.step.replace("-", " ")}
 						</div>
 					</div>
@@ -93,13 +127,15 @@ export default function ChatPage() {
 							return (
 								<div
 									key={step}
-									className={`w-2 h-2 rounded-full transition-all duration-300 ${
-										isCompleted
-											? "bg-black"
+									className="w-2 h-2 border transition-all duration-300"
+									style={{
+										backgroundColor: isCompleted
+											? "#000000"
 											: isActive
-												? "bg-gray-600 animate-pulse"
-												: "bg-gray-300"
-									}`}
+												? "#0143EB"
+												: "#F3F3F3",
+										borderColor: "#000000",
+									}}
 								/>
 							);
 						})}

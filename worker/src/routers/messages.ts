@@ -20,16 +20,20 @@ export const getMessages = protectedBase.messages.get.handler(
 				console.log("[getMessages] No cursor provided, attempting cache fetch");
 				// First try to get messages from cache
 				const cachedMessages = await cacheDriver.getMessages(input.limit || 50);
-				console.log("[getMessages] Cache fetch result:", cachedMessages?.length || 0, "messages");
+				console.log(
+					"[getMessages] Cache fetch result:",
+					cachedMessages?.length || 0,
+					"messages",
+				);
 
 				if (cachedMessages && cachedMessages.length > 0) {
 					const output = {
-						messages: cachedMessages.map(msg => ({
+						messages: cachedMessages.map((msg) => ({
 							...msg,
 
 							// Very bad hack
 							createdAt: msg.createdAt || new Date(),
-							updatedAt: msg.updatedAt || new Date()
+							updatedAt: msg.updatedAt || new Date(),
 						})),
 						source: "cache" as const,
 					};
@@ -47,14 +51,18 @@ export const getMessages = protectedBase.messages.get.handler(
 				input.limit || 50,
 				input.cursor,
 			);
-			console.log("[getMessages] Database fetch result:", dbMessages.length, "messages");
+			console.log(
+				"[getMessages] Database fetch result:",
+				dbMessages.length,
+				"messages",
+			);
 
 			const output = {
-				messages: dbMessages.map(msg => ({
+				messages: dbMessages.map((msg) => ({
 					...msg,
 					// Very bad hack
 					createdAt: msg.createdAt || new Date(),
-					updatedAt: msg.updatedAt || new Date()
+					updatedAt: msg.updatedAt || new Date(),
 				})),
 				source: "database" as const,
 			};

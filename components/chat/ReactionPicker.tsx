@@ -22,12 +22,26 @@ export function ReactionPicker({
 	];
 
 	return (
-		<div className="absolute bottom-full mb-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-1 z-10 animate-fade-in-up">
+		<div
+			className="absolute bottom-full mb-2 left-0 bg-white border p-2 flex gap-1 z-10 animate-fade-in-up"
+			style={{ borderColor: "#000000" }}
+		>
 			{availableReactions.map((reaction) => (
 				<button
 					key={reaction}
 					onClick={() => onReactionSelect(messageId, reaction)}
-					className="p-2 hover:bg-gray-100 rounded-md text-lg hover:scale-110 active:scale-95 transform transition-transform"
+					className="p-2 text-lg border transition-all"
+					style={{ borderColor: "#000000" }}
+					onMouseEnter={(e) => {
+						e.target.style.backgroundColor = "#0143EB";
+						e.target.style.borderColor = "#000000";
+						e.target.style.transform = "scale(1.1)";
+					}}
+					onMouseLeave={(e) => {
+						e.target.style.backgroundColor = "transparent";
+						e.target.style.borderColor = "#000000";
+						e.target.style.transform = "scale(1)";
+					}}
 					title={reactionEmojis[reaction]}
 				>
 					{reactionEmojis[reaction]}

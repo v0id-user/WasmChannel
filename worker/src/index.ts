@@ -6,7 +6,7 @@ import { createAuthWithD1 } from "@/auth";
 import { ZodToJsonSchemaConverter } from "@orpc/zod";
 import { OpenAPIGenerator } from "@orpc/openapi";
 import { Cloudflare } from "@cloudflare/workers-types";
-import { OpenAPIHandler } from '@orpc/openapi/fetch'
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { Room } from "./objects/room";
 import { PacketKind, ReactionKind, WasmPacket } from "@/wasm/wasmchannel";
 import { user } from "./db/schema/schema";
@@ -231,7 +231,10 @@ export default {
 
 		for (const message of batch.messages) {
 			try {
-				const body = message.body instanceof Uint8Array ? message.body : new Uint8Array(message.body);
+				const body =
+					message.body instanceof Uint8Array
+						? message.body
+						: new Uint8Array(message.body);
 				const packet = deserializePacket(body);
 				const packetKind = packet.kind();
 
