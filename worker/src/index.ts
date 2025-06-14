@@ -212,16 +212,14 @@ app.get("/openapi.json", (c) => {
 export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
-		console.log(
-			"Processing queue batch with",
-			batch.messages.length,
-			"messages",
-		);
+		console.log("[Queue] Starting batch processing with", batch.messages.length, "messages");
 
 		// Create database driver for persistence
+		console.log("[Queue] Initializing database driver");
 		const dbDriver = new DatabaseDriver(env.DB);
 
 		// Separate messages and reactions for batch processing
+		console.log("[Queue] Setting up message and reaction collections");
 		const messagePackets: WasmPacket[] = [];
 		const reactionTasks: Promise<{
 			success: boolean;
@@ -229,31 +227,38 @@ export default {
 			userId: string;
 		}>[] = [];
 
+		console.log("[Queue] Processing individual messages");
 		for (const message of batch.messages) {
 			try {
+				console.log("[Queue] Processing message ID:", message.id);
 				const body =
 					message.body instanceof Uint8Array
 						? message.body
 						: new Uint8Array(message.body);
 				const packet = deserializePacket(body);
 				const packetKind = packet.kind();
+				console.log("[Queue] Packet kind:", packetKind);
 
 				if (packetKind === PacketKind.Message) {
-					// Collect message packets for batch insert
+					console.log("[Queue] Adding message packet to batch");
 					messagePackets.push(packet);
 				} else if (packetKind === PacketKind.Reaction) {
-					// Queue reaction tasks for parallel processing
+					console.log("[Queue] Processing reaction packet");
 					const messageId = packet.message_id()!;
 					const reactionKind = packet.reaction_kind()!;
 					const userId = packet.user_id()!;
+					console.log("[Queue] Reaction details - Message:", messageId, "User:", userId, "Kind:", reactionKind);
 
 					reactionTasks.push(
 						dbDriver
 							.updateReaction(messageId, reactionKind, userId)
-							.then((success) => ({ success, messageId, userId }))
+							.then((success) => {
+								console.log("[Queue] Reaction update successful for message:", messageId);
+								return { success, messageId, userId };
+							})
 							.catch((error) => {
 								console.error(
-									`Failed to update reaction for message ${messageId} by user ${userId}:`,
+									`[Queue] Failed to update reaction for message ${messageId} by user ${userId}:`,
 									error,
 								);
 								return { success: false, messageId, userId };
@@ -261,8 +266,8 @@ export default {
 					);
 				}
 			} catch (error) {
-				console.error("Error processing message:", error);
-				console.error("Error details:", {
+				console.error("[Queue] Error processing message:", error);
+				console.error("[Queue] Error details:", {
 					messageId: message.id,
 					body: message.body,
 					error: error instanceof Error ? error.message : "Unknown error",
@@ -272,18 +277,22 @@ export default {
 
 		// Process messages in batch
 		if (messagePackets.length > 0) {
+			console.log("[Queue] Starting batch message processing");
 			try {
 				await dbDriver.write(messagePackets);
 				console.log(
-					`Successfully saved ${messagePackets.length} messages to database`,
+					`[Queue] Successfully saved ${messagePackets.length} messages to database`,
 				);
 			} catch (error) {
-				console.error("Error saving messages batch:", error);
+				console.error("[Queue] Error saving messages batch:", error);
 			}
+		} else {
+			console.log("[Queue] No messages to process in batch");
 		}
 
 		// Process reactions in parallel
 		if (reactionTasks.length > 0) {
+			console.log("[Queue] Starting parallel reaction processing");
 			try {
 				const results = await Promise.allSettled(reactionTasks);
 				const successful = results.filter(
@@ -296,11 +305,12 @@ export default {
 				).length;
 
 				console.log(
-					`Reaction processing complete: ${successful} successful, ${failed} failed out of ${reactionTasks.length} total`,
+					`[Queue] Reaction processing complete: ${successful} successful, ${failed} failed out of ${reactionTasks.length} total`,
 				);
 
 				// Log failed reactions for debugging
 				if (failed > 0) {
+					console.log("[Queue] Processing failed reactions");
 					const failedReactions = results
 						.filter(
 							(r) =>
@@ -310,11 +320,13 @@ export default {
 						.map((r) =>
 							r.status === "fulfilled" ? r.value : { error: r.reason },
 						);
-					console.error("Failed reactions:", failedReactions);
+					console.error("[Queue] Failed reactions:", failedReactions);
 				}
 			} catch (error) {
-				console.error("Error processing reactions:", error);
+				console.error("[Queue] Error processing reactions:", error);
 			}
+		} else {
+			console.log("[Queue] No reactions to process");
 		}
 	},
 };

@@ -41,6 +41,7 @@ export const getInitialMessages = (): Message[] => [
 			{ kind: ReactionKind.Heart, count: 1, users: ["1"] },
 		],
 		isOwn: false,
+		refrenceId: "1",
 	},
 	{
 		id: "2",
@@ -49,6 +50,7 @@ export const getInitialMessages = (): Message[] => [
 		timestamp: new Date("2024-01-01T12:01:00Z"),
 		reactions: [],
 		isOwn: true,
+		refrenceId: "2",
 	},
 	{
 		id: "3",
@@ -57,6 +59,7 @@ export const getInitialMessages = (): Message[] => [
 		timestamp: new Date("2024-01-01T12:02:00Z"),
 		reactions: [{ kind: ReactionKind.Star, count: 1, users: ["2"] }],
 		isOwn: false,
+		refrenceId: "3",
 	},
 	{
 		id: "4",
@@ -65,5 +68,6 @@ export const getInitialMessages = (): Message[] => [
 		timestamp: new Date("2024-01-01T12:03:00Z"),
 		reactions: [{ kind: ReactionKind.Heart, count: 3, users: ["2", "4", "5"] }],
 		isOwn: true,
+		refrenceId: "4",
 	},
 ];

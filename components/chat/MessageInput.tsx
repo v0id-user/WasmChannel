@@ -73,14 +73,14 @@ export function MessageInput({
 					}}
 					onMouseEnter={(e) => {
 						if (newMessage.trim()) {
-							e.target.style.backgroundColor = "#000000";
-							e.target.style.color = "#FFFFFF";
+							(e.target as HTMLButtonElement).style.backgroundColor = "#000000";
+							(e.target as HTMLButtonElement).style.color = "#FFFFFF";
 						}
 					}}
 					onMouseLeave={(e) => {
 						if (newMessage.trim()) {
-							e.target.style.backgroundColor = "#0143EB";
-							e.target.style.color = "#FFFFFF";
+							(e.target as HTMLButtonElement).style.backgroundColor = "#0143EB";
+							(e.target as HTMLButtonElement).style.color = "#FFFFFF";
 						}
 					}}
 					aria-label="إرسال الرسالة"

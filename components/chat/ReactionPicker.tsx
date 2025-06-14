@@ -33,14 +33,14 @@ export function ReactionPicker({
 					className="p-1 text-sm border transition-all"
 					style={{ borderColor: "#000000" }}
 					onMouseEnter={(e) => {
-						e.target.style.backgroundColor = "#0143EB";
-						e.target.style.borderColor = "#000000";
-						e.target.style.transform = "scale(1.1)";
+						(e.target as HTMLButtonElement).style.backgroundColor = "#0143EB";
+						(e.target as HTMLButtonElement).style.borderColor = "#000000";
+						(e.target as HTMLButtonElement).style.transform = "scale(1.1)";
 					}}
 					onMouseLeave={(e) => {
-						e.target.style.backgroundColor = "transparent";
-						e.target.style.borderColor = "#000000";
-						e.target.style.transform = "scale(1)";
+						(e.target as HTMLButtonElement).style.backgroundColor = "transparent";
+						(e.target as HTMLButtonElement).style.borderColor = "#000000";
+						(e.target as HTMLButtonElement).style.transform = "scale(1)";
 					}}
 					title={reactionEmojis[reaction]}
 				>

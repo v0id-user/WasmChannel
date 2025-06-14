@@ -87,6 +87,7 @@ export function useChat(
 							timestamp: new Date(),
 							reactions: [],
 							isOwn: false,
+							refrenceId: messageId,
 						};
 						setMessages((prev) => [...prev, response]);
 					}

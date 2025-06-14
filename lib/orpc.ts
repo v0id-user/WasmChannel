@@ -36,6 +36,7 @@ export const link = new OpenAPILink(contract, {
 const client: JsonifiedClient<ContractRouterClient<typeof contract>> =
 	createORPCClient(link);
 
+export { client };
 export const orpc = createORPCReactQueryUtils(client);
 
 export const ORPCContext = createContext<

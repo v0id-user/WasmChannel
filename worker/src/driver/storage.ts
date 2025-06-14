@@ -20,6 +20,7 @@ abstract class StorageDriver {
 	protected driver: D1Database | KVNamespace;
 
 	constructor(driver: D1Database | KVNamespace) {
+		console.log("[StorageDriver] Initializing storage driver");
 		this.driver = driver;
 	}
 
@@ -31,54 +32,49 @@ abstract class StorageDriver {
 		userId: string,
 	): Promise<boolean>;
 
-	/**
-	 * Common logic for manipulating reactions on a message
-	 * @param existingReactions - Current reactions as JSON string or null
-	 * @param reactionKind - The type of reaction to toggle
-	 * @param userId - The user performing the reaction
-	 * @returns Updated reactions array and whether any changes were made
-	 */
 	protected manipulateReactions(
 		existingReactions: string | null,
 		reactionKind: ReactionKind,
 		userId: string,
 	): { reactions: MessageReaction[]; updated: boolean } {
+		console.log("[manipulateReactions] Starting reaction manipulation", { reactionKind, userId });
 		let reactions: MessageReaction[] = [];
 
-		// Parse existing reactions
 		try {
 			reactions = existingReactions ? JSON.parse(existingReactions) : [];
+			console.log("[manipulateReactions] Successfully parsed existing reactions");
 		} catch {
+			console.log("[manipulateReactions] Failed to parse reactions, using empty array");
 			reactions = [];
 		}
 
-		// Find existing reaction of this kind
 		const existingReactionIndex = reactions.findIndex(
 			(r) => r.kind === reactionKind,
 		);
 		let updated = false;
 
 		if (existingReactionIndex >= 0) {
+			console.log("[manipulateReactions] Found existing reaction of kind", reactionKind);
 			const existingReaction = reactions[existingReactionIndex];
 			const userIndex = existingReaction.users.indexOf(userId);
 
 			if (userIndex >= 0) {
-				// Remove user's reaction
+				console.log("[manipulateReactions] Removing user's reaction");
 				existingReaction.users.splice(userIndex, 1);
 				existingReaction.count = existingReaction.users.length;
 
-				// Remove reaction if no users left
 				if (existingReaction.count === 0) {
+					console.log("[manipulateReactions] Removing empty reaction");
 					reactions.splice(existingReactionIndex, 1);
 				}
 			} else {
-				// Add user's reaction
+				console.log("[manipulateReactions] Adding user's reaction");
 				existingReaction.users.push(userId);
 				existingReaction.count = existingReaction.users.length;
 			}
 			updated = true;
 		} else {
-			// Add new reaction
+			console.log("[manipulateReactions] Creating new reaction");
 			reactions.push({
 				kind: reactionKind,
 				count: 1,
@@ -87,6 +83,7 @@ abstract class StorageDriver {
 			updated = true;
 		}
 
+		console.log("[manipulateReactions] Reaction manipulation complete", { updated });
 		return { reactions, updated };
 	}
 }
@@ -96,11 +93,13 @@ export class DatabaseDriver extends StorageDriver {
 
 	constructor(driver: D1Database) {
 		super(driver);
+		console.log("[DatabaseDriver] Initializing database driver");
 		this.db = createDb(driver);
 	}
 
 	async write(packets: WasmPacket[]): Promise<void> {
-		// Convert all packets to database records
+		console.log("[DatabaseDriver.write] Starting write operation with", packets.length, "packets");
+		
 		const insertData: DatabaseMessageInsert[] = packets.map((packet) => {
 			if (!packet.message_id() || !packet.user_id()) {
 				throw new Error("Message id or user id are not set");
@@ -117,46 +116,44 @@ export class DatabaseDriver extends StorageDriver {
 			};
 		});
 
-		// Insert all messages into the database using drizzle
 		if (insertData.length > 0) {
 			try {
+				console.log("[DatabaseDriver.write] Inserting", insertData.length, "messages");
 				await this.db.insert(messages).values(insertData);
-				console.log(`Successfully inserted ${insertData.length} messages`);
+				console.log("[DatabaseDriver.write] Successfully inserted messages");
 			} catch (error: any) {
-				// Check if it's a unique constraint violation (duplicate reference ID)
 				if (
 					error?.message?.includes("UNIQUE constraint failed") ||
 					error?.message?.includes("refrenceId") ||
 					error?.code === "SQLITE_CONSTRAINT_UNIQUE"
 				) {
-					console.log(
-						"Duplicate message reference ID detected, ignoring insert",
-					);
-					// Silently ignore duplicate messages to prevent impersonation
-					return;
+					console.log(insertData);
+					console.log(error);
+					console.log("[DatabaseDriver.write] Duplicate message detected, ignoring");
+					throw new Error(`Duplicate message detected ${error.message}`);
 				}
-				// Re-throw other errors
+				console.error("[DatabaseDriver.write] Error during insert:", error);
 				throw error;
 			}
 		}
 	}
 
 	async read(): Promise<WasmPacket[]> {
-		// Fetch all messages from the database
+		console.log("[DatabaseDriver.read] Starting read operation");
+		
 		const msgs = await this.db
 			.select()
 			.from(messages)
 			.where(eq(messages.deletedAt, messages.createdAt))
 			.orderBy(asc(messages.createdAt));
 
+		console.log("[DatabaseDriver.read] Retrieved", msgs.length, "messages");
+
 		return msgs.map((msg) => {
-			// Convert string enum values to numeric enum values
 			const packetKind = parseInt(msg.kind) as PacketKind;
 			const reactionKind = msg.reactionKind
 				? (parseInt(msg.reactionKind) as ReactionKind)
 				: null;
-
-			// Convert message string to Uint8Array
 			const messageBytes = new TextEncoder().encode(msg.message);
 
 			return new WasmPacket(
@@ -174,8 +171,9 @@ export class DatabaseDriver extends StorageDriver {
 		reactionKind: ReactionKind,
 		userId: string,
 	): Promise<boolean> {
+		console.log("[DatabaseDriver.updateReaction] Starting reaction update", { messageId, reactionKind, userId });
+		
 		try {
-			// Find the message
 			const existingMessage = await this.db
 				.select()
 				.from(messages)
@@ -185,6 +183,7 @@ export class DatabaseDriver extends StorageDriver {
 				.limit(1);
 
 			if (existingMessage.length === 0) {
+				console.log("[DatabaseDriver.updateReaction] Message not found");
 				return false;
 			}
 
@@ -196,7 +195,7 @@ export class DatabaseDriver extends StorageDriver {
 			);
 
 			if (updated) {
-				// Update the message in database
+				console.log("[DatabaseDriver.updateReaction] Updating message in database");
 				await this.db
 					.update(messages)
 					.set({
@@ -204,11 +203,12 @@ export class DatabaseDriver extends StorageDriver {
 						updatedAt: new Date(),
 					})
 					.where(eq(messages.refrenceId, messageId));
+				console.log("[DatabaseDriver.updateReaction] Update successful");
 			}
 
 			return updated;
 		} catch (error) {
-			console.error("Error appending reaction to database:", error);
+			console.error("[DatabaseDriver.updateReaction] Error:", error);
 			return false;
 		}
 	}
@@ -217,14 +217,33 @@ export class DatabaseDriver extends StorageDriver {
 		limit: number = 50,
 		cursor?: string,
 	): Promise<DatabaseMessage[]> {
-		console.log("[getMessages DB] Starting database query with params:", { limit, cursor });
+		console.log("[DatabaseDriver.getMessages] Starting query", { limit, cursor });
 		
 		const conditions = [eq(messages.deletedAt, messages.createdAt)];
-		console.log("[getMessages DB] Base condition: messages not deleted");
+		console.log("[DatabaseDriver.getMessages] Base condition: messages not deleted");
 
 		if (cursor) {
-			conditions.push(lt(messages.createdAt, new Date(cursor)));
-			console.log("[getMessages DB] Added cursor condition:", cursor);
+			// Check if cursor is a valid date
+			const cursorDate = new Date(cursor);
+			if (!isNaN(cursorDate.getTime())) {
+				conditions.push(lt(messages.createdAt, cursorDate));
+				console.log("[DatabaseDriver.getMessages] Added date cursor condition:", cursor);
+			} else {
+				const message = await this.db
+					.select()
+					.from(messages)
+					.where(eq(messages.refrenceId, cursor))
+					.limit(1);
+
+				if (!message[0].createdAt){
+					throw new Error(`Message ${cursor} not found`);
+				}
+
+				if (message.length) {
+					conditions.push(lt(messages.createdAt, message[0].createdAt));
+					console.log("[DatabaseDriver.getMessages] Added date cursor condition from reference ID:", message[0].createdAt);
+				}
+			}
 		}
 
 		const result = await this.db
@@ -234,7 +253,7 @@ export class DatabaseDriver extends StorageDriver {
 			.limit(limit)
 			.orderBy(desc(messages.createdAt));
 
-		console.log("[getMessages DB] Query complete, found", result.length, "messages");
+		console.log("[DatabaseDriver.getMessages] Query complete, found", result.length, "messages");
 		return result;
 	}
 }
@@ -245,12 +264,13 @@ export class CacheDriver extends StorageDriver {
 
 	constructor(driver: KVNamespace) {
 		super(driver);
+		console.log("[CacheDriver] Initializing cache driver");
 	}
 
 	async write(packets: WasmPacket[], sentBy: string): Promise<void> {
+		console.log("[CacheDriver.write] Starting write operation", { packetsCount: packets.length, sentBy });
 		const kv = this.driver as KVNamespace;
 
-		// Convert WasmPackets to cache records
 		const cacheRecords = packets.map((packet) => {
 			const payloadBytes = packet.payload();
 			const message = new TextDecoder().decode(payloadBytes);

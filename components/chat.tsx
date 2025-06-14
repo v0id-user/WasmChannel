@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBoot } from "@/components/providers/BootProvider";
 import { useRoomStore } from "@/store/room";
 import { users } from "@/constants/chat";
@@ -21,8 +21,8 @@ import { LoadingState } from "./chat/LoadingState";
 export default function Chat() {
 	const { state: bootState } = useBoot();
 	const { socket: ws } = useRoomStore();
-
-	
+	const [isManualScrolling, setIsManualScrolling] = useState(false);
+	const scrollToBottomRef = useRef<(() => void) | null>(null);
 
 	// Chat state management
 	const {
@@ -37,7 +37,10 @@ export default function Chat() {
 		isClient,
 		isPending,
 		isError,
-		error
+		error,
+		// Infinite scroll related
+		hasMoreMessages,
+		loadMoreMessages,
 	} = useChatState();
 
 	// Typing timeout management
@@ -90,6 +93,13 @@ export default function Chat() {
 		};
 	}, [clearAllTimeouts]);
 
+	// Handle scroll to bottom
+	const handleScrollToBottom = () => {
+		if (scrollToBottomRef.current) {
+			scrollToBottomRef.current();
+		}
+	};
+
 	// Early return for loading state
 	if (!bootState.userId || !ws || !isClient || isPending) {
 		console.log("chat.tsx: Waiting...");
@@ -114,7 +124,7 @@ export default function Chat() {
 			dir="rtl"
 		>
 			<div
-				className="w-full max-w-2xl h-[600px] bg-white border-[0.5px] flex flex-col chat-container"
+				className="w-full max-w-2xl h-[600px] bg-white border-[0.5px] flex flex-col chat-container relative"
 				style={{ borderColor: "#000000" }}
 			>
 				<ChatHeader />
@@ -124,7 +134,33 @@ export default function Chat() {
 					typingUsers={typingUsers}
 					currentUserId={bootState.userId}
 					onReactionClick={handleReactionClick}
+					hasMoreMessages={hasMoreMessages}
+					onLoadMore={loadMoreMessages}
+					onManualScrollChange={setIsManualScrolling}
+					scrollToBottomRef={scrollToBottomRef}
 				/>
+				
+				{/* Manual scroll indicator - positioned above input */}
+				{isManualScrolling && (
+					<div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">
+						<button
+							onClick={handleScrollToBottom}
+							className="px-3 py-2 font-mono text-xs rounded border transition-all duration-200 hover:scale-105 active:scale-95"
+							style={{
+								backgroundColor: "rgba(102, 102, 102, 0.15)",
+								borderColor: "rgba(102, 102, 102, 0.3)",
+								color: "#888888",
+								backdropFilter: "blur(8px)",
+							}}
+						>
+							<div className="flex items-center gap-2">
+								<span>شاهد المحادثات الحديثة</span>
+								<span className="text-xs">↓</span>
+							</div>
+						</button>
+					</div>
+				)}
+
 				<MessageInput
 					newMessage={newMessage}
 					setNewMessage={setNewMessage}

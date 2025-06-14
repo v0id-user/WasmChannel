@@ -14,6 +14,7 @@ export interface ReactionCount {
 
 export interface Message {
 	id: string;
+	refrenceId: string;
 	userId: string;
 	text: string;
 	timestamp: Date;
