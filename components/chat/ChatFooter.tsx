@@ -30,27 +30,9 @@ export function ChatFooter() {
 				style={{ color: "#000000" }}
 			>
 				<a
-					href="#"
-					className="transition-colors font-mono"
-					style={{ color: "#000000" }}
-					onMouseEnter={handleLinkHover}
-					onMouseLeave={handleLinkLeave}
-				>
-					سياسة الخصوصية
-				</a>
-				<span style={{ color: "#0143EB" }}>•</span>
-				<a
-					href="#"
-					className="transition-colors font-mono"
-					style={{ color: "#000000" }}
-					onMouseEnter={handleLinkHover}
-					onMouseLeave={handleLinkLeave}
-				>
-					شروط الخدمة
-				</a>
-				<span style={{ color: "#0143EB" }}>•</span>
-				<a
-					href="#"
+					href="https://github.com/v0id-dev/WasmChannel"
+					target="_blank"
+					rel="noopener noreferrer"
 					className="transition-colors font-mono"
 					style={{ color: "#000000" }}
 					onMouseEnter={handleLinkHover}
@@ -84,7 +66,6 @@ export function ChatFooter() {
 						alt="Ko-fi"
 						width={14}
 						height={14}
-						style={{ filter: "brightness(0)" }}
 					/>
 				</a>
 			</div>
