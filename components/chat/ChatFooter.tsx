@@ -74,7 +74,7 @@ export function ChatFooter() {
 				className="mt-1 text-xs text-center font-mono"
 				style={{ color: "#0143EB" }}
 			>
-				تجربة • WebAssembly + Next.js
+				تجربة • WebAssembly + Next.js + Cloudflare Services
 			</div>
 		</>
 	);
