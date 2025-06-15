@@ -10,9 +10,9 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-	title: "Wasm Channel (Experimental Project)",
+	title: "قناة WASM (مشروع تجريبي)",
 	description:
-		"Chat application built with some WebAssembly features to test next.js with wasm",
+		"تطبيق دردشة مبني باستخدام ميزات WebAssembly لاختبار next.js مع wasm",
 };
 
 export default function RootLayout({

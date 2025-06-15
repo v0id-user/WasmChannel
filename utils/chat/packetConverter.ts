@@ -66,7 +66,6 @@ export function packetToMessage(
 			timestamp: new Date(parsedData.timestamp),
 			reactions: parsedData.reactions || [],
 			isOwn: packetUserId === currentUserId,
-			// TODO: Check if this is correct
 			refrenceId: packetMessageId,
 		};
 

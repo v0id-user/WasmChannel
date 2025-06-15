@@ -306,7 +306,6 @@ export class Room extends DurableObject {
 		console.log("Sending message to queue", fullPacket);
 		console.log("Sending message to cache", fullPacket);
 
-		// TODO: Test this
 		console.log("Env", this.env);
 		console.log("Queue", this.env.QUEUE_MESSAGES);
 
