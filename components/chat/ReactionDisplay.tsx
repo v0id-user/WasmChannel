@@ -67,13 +67,15 @@ export function ReactionDisplay({
 						}}
 						onMouseEnter={(e) => {
 							if (!hasUserReacted) {
-								(e.target as HTMLButtonElement).style.backgroundColor = "#000000";
+								(e.target as HTMLButtonElement).style.backgroundColor =
+									"#000000";
 								(e.target as HTMLButtonElement).style.color = "#FFFFFF";
 							}
 						}}
 						onMouseLeave={(e) => {
 							if (!hasUserReacted) {
-								(e.target as HTMLButtonElement).style.backgroundColor = "#F3F3F3";
+								(e.target as HTMLButtonElement).style.backgroundColor =
+									"#F3F3F3";
 								(e.target as HTMLButtonElement).style.color = "#000000";
 							}
 						}}
@@ -82,7 +84,9 @@ export function ReactionDisplay({
 						<span className={`text-xs ${isAnimating ? "animate-pulse" : ""}`}>
 							{reactionEmojis[reaction.kind]}
 						</span>
-						<span className="font-bold font-mono text-xs">{reaction.count}</span>
+						<span className="font-bold font-mono text-xs">
+							{reaction.count}
+						</span>
 					</button>
 				);
 			})}

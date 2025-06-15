@@ -79,14 +79,15 @@ export function ChatMessage({
 										color: "#0143EB",
 										borderColor: "#0143EB",
 									}}
-																onMouseEnter={(e) => {
-								(e.target as HTMLElement).style.backgroundColor = "#0143EB";
-								(e.target as HTMLElement).style.color = "#FFFFFF";
-							}}
-							onMouseLeave={(e) => {
-								(e.target as HTMLElement).style.backgroundColor = "transparent";
-								(e.target as HTMLElement).style.color = "#0143EB";
-							}}
+									onMouseEnter={(e) => {
+										(e.target as HTMLElement).style.backgroundColor = "#0143EB";
+										(e.target as HTMLElement).style.color = "#FFFFFF";
+									}}
+									onMouseLeave={(e) => {
+										(e.target as HTMLElement).style.backgroundColor =
+											"transparent";
+										(e.target as HTMLElement).style.color = "#0143EB";
+									}}
 									title="إضافة تفاعل"
 								>
 									<SmilePlus className="w-3 h-3" />
@@ -153,7 +154,8 @@ export function ChatMessage({
 									(e.target as HTMLElement).style.color = "#FFFFFF";
 								}}
 								onMouseLeave={(e) => {
-									(e.target as HTMLElement).style.backgroundColor = "transparent";
+									(e.target as HTMLElement).style.backgroundColor =
+										"transparent";
 									(e.target as HTMLElement).style.color = "#0143EB";
 								}}
 								title="إضافة تفاعل"

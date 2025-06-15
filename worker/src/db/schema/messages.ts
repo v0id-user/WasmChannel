@@ -26,7 +26,9 @@ export interface MessageReaction {
 }
 
 export const messages = sqliteTable("messages", {
-	id: text("id").primaryKey().$defaultFn(() => createId()),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => createId()),
 	refrenceId: text("refrence_id").notNull().unique(),
 	kind: text("kind", {
 		enum: Object.values(PacketKind) as [string, ...string[]],

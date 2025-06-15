@@ -212,7 +212,11 @@ app.get("/openapi.json", (c) => {
 export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch<Uint8Array>, env: Env) {
-		console.log("[Queue] Starting batch processing with", batch.messages.length, "messages");
+		console.log(
+			"[Queue] Starting batch processing with",
+			batch.messages.length,
+			"messages",
+		);
 
 		// Create database driver for persistence
 		console.log("[Queue] Initializing database driver");
@@ -247,13 +251,23 @@ export default {
 					const messageId = packet.message_id()!;
 					const reactionKind = packet.reaction_kind()!;
 					const userId = packet.user_id()!;
-					console.log("[Queue] Reaction details - Message:", messageId, "User:", userId, "Kind:", reactionKind);
+					console.log(
+						"[Queue] Reaction details - Message:",
+						messageId,
+						"User:",
+						userId,
+						"Kind:",
+						reactionKind,
+					);
 
 					reactionTasks.push(
 						dbDriver
 							.updateReaction(messageId, reactionKind, userId)
 							.then((success) => {
-								console.log("[Queue] Reaction update successful for message:", messageId);
+								console.log(
+									"[Queue] Reaction update successful for message:",
+									messageId,
+								);
 								return { success, messageId, userId };
 							})
 							.catch((error) => {

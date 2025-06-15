@@ -37,14 +37,21 @@ abstract class StorageDriver {
 		reactionKind: ReactionKind,
 		userId: string,
 	): { reactions: MessageReaction[]; updated: boolean } {
-		console.log("[manipulateReactions] Starting reaction manipulation", { reactionKind, userId });
+		console.log("[manipulateReactions] Starting reaction manipulation", {
+			reactionKind,
+			userId,
+		});
 		let reactions: MessageReaction[] = [];
 
 		try {
 			reactions = existingReactions ? JSON.parse(existingReactions) : [];
-			console.log("[manipulateReactions] Successfully parsed existing reactions");
+			console.log(
+				"[manipulateReactions] Successfully parsed existing reactions",
+			);
 		} catch {
-			console.log("[manipulateReactions] Failed to parse reactions, using empty array");
+			console.log(
+				"[manipulateReactions] Failed to parse reactions, using empty array",
+			);
 			reactions = [];
 		}
 
@@ -54,7 +61,10 @@ abstract class StorageDriver {
 		let updated = false;
 
 		if (existingReactionIndex >= 0) {
-			console.log("[manipulateReactions] Found existing reaction of kind", reactionKind);
+			console.log(
+				"[manipulateReactions] Found existing reaction of kind",
+				reactionKind,
+			);
 			const existingReaction = reactions[existingReactionIndex];
 			const userIndex = existingReaction.users.indexOf(userId);
 
@@ -83,7 +93,9 @@ abstract class StorageDriver {
 			updated = true;
 		}
 
-		console.log("[manipulateReactions] Reaction manipulation complete", { updated });
+		console.log("[manipulateReactions] Reaction manipulation complete", {
+			updated,
+		});
 		return { reactions, updated };
 	}
 }
@@ -98,8 +110,12 @@ export class DatabaseDriver extends StorageDriver {
 	}
 
 	async write(packets: WasmPacket[]): Promise<void> {
-		console.log("[DatabaseDriver.write] Starting write operation with", packets.length, "packets");
-		
+		console.log(
+			"[DatabaseDriver.write] Starting write operation with",
+			packets.length,
+			"packets",
+		);
+
 		const insertData: DatabaseMessageInsert[] = packets.map((packet) => {
 			if (!packet.message_id() || !packet.user_id()) {
 				throw new Error("Message id or user id are not set");
@@ -118,7 +134,11 @@ export class DatabaseDriver extends StorageDriver {
 
 		if (insertData.length > 0) {
 			try {
-				console.log("[DatabaseDriver.write] Inserting", insertData.length, "messages");
+				console.log(
+					"[DatabaseDriver.write] Inserting",
+					insertData.length,
+					"messages",
+				);
 				await this.db.insert(messages).values(insertData);
 				console.log("[DatabaseDriver.write] Successfully inserted messages");
 			} catch (error: any) {
@@ -129,7 +149,9 @@ export class DatabaseDriver extends StorageDriver {
 				) {
 					console.log(insertData);
 					console.log(error);
-					console.log("[DatabaseDriver.write] Duplicate message detected, ignoring");
+					console.log(
+						"[DatabaseDriver.write] Duplicate message detected, ignoring",
+					);
 					throw new Error(`Duplicate message detected ${error.message}`);
 				}
 				console.error("[DatabaseDriver.write] Error during insert:", error);
@@ -140,7 +162,7 @@ export class DatabaseDriver extends StorageDriver {
 
 	async read(): Promise<WasmPacket[]> {
 		console.log("[DatabaseDriver.read] Starting read operation");
-		
+
 		const msgs = await this.db
 			.select()
 			.from(messages)
@@ -171,14 +193,21 @@ export class DatabaseDriver extends StorageDriver {
 		reactionKind: ReactionKind,
 		userId: string,
 	): Promise<boolean> {
-		console.log("[DatabaseDriver.updateReaction] Starting reaction update", { messageId, reactionKind, userId });
-		
+		console.log("[DatabaseDriver.updateReaction] Starting reaction update", {
+			messageId,
+			reactionKind,
+			userId,
+		});
+
 		try {
 			const existingMessage = await this.db
 				.select()
 				.from(messages)
 				.where(
-					and(eq(messages.refrenceId, messageId), eq(messages.deletedAt, messages.createdAt)),
+					and(
+						eq(messages.refrenceId, messageId),
+						eq(messages.deletedAt, messages.createdAt),
+					),
 				)
 				.limit(1);
 
@@ -195,7 +224,9 @@ export class DatabaseDriver extends StorageDriver {
 			);
 
 			if (updated) {
-				console.log("[DatabaseDriver.updateReaction] Updating message in database");
+				console.log(
+					"[DatabaseDriver.updateReaction] Updating message in database",
+				);
 				await this.db
 					.update(messages)
 					.set({
@@ -217,17 +248,25 @@ export class DatabaseDriver extends StorageDriver {
 		limit: number = 50,
 		cursor?: string,
 	): Promise<DatabaseMessage[]> {
-		console.log("[DatabaseDriver.getMessages] Starting query", { limit, cursor });
-		
+		console.log("[DatabaseDriver.getMessages] Starting query", {
+			limit,
+			cursor,
+		});
+
 		const conditions = [eq(messages.deletedAt, messages.createdAt)];
-		console.log("[DatabaseDriver.getMessages] Base condition: messages not deleted");
+		console.log(
+			"[DatabaseDriver.getMessages] Base condition: messages not deleted",
+		);
 
 		if (cursor) {
 			// Check if cursor is a valid date
 			const cursorDate = new Date(cursor);
 			if (!isNaN(cursorDate.getTime())) {
 				conditions.push(lt(messages.createdAt, cursorDate));
-				console.log("[DatabaseDriver.getMessages] Added date cursor condition:", cursor);
+				console.log(
+					"[DatabaseDriver.getMessages] Added date cursor condition:",
+					cursor,
+				);
 			} else {
 				const message = await this.db
 					.select()
@@ -235,13 +274,16 @@ export class DatabaseDriver extends StorageDriver {
 					.where(eq(messages.refrenceId, cursor))
 					.limit(1);
 
-				if (!message[0].createdAt){
+				if (!message[0].createdAt) {
 					throw new Error(`Message ${cursor} not found`);
 				}
 
 				if (message.length) {
 					conditions.push(lt(messages.createdAt, message[0].createdAt));
-					console.log("[DatabaseDriver.getMessages] Added date cursor condition from reference ID:", message[0].createdAt);
+					console.log(
+						"[DatabaseDriver.getMessages] Added date cursor condition from reference ID:",
+						message[0].createdAt,
+					);
 				}
 			}
 		}
@@ -253,7 +295,11 @@ export class DatabaseDriver extends StorageDriver {
 			.limit(limit)
 			.orderBy(desc(messages.createdAt));
 
-		console.log("[DatabaseDriver.getMessages] Query complete, found", result.length, "messages");
+		console.log(
+			"[DatabaseDriver.getMessages] Query complete, found",
+			result.length,
+			"messages",
+		);
 		return result;
 	}
 }
@@ -268,7 +314,10 @@ export class CacheDriver extends StorageDriver {
 	}
 
 	async write(packets: WasmPacket[], sentBy: string): Promise<void> {
-		console.log("[CacheDriver.write] Starting write operation", { packetsCount: packets.length, sentBy });
+		console.log("[CacheDriver.write] Starting write operation", {
+			packetsCount: packets.length,
+			sentBy,
+		});
 		const kv = this.driver as KVNamespace;
 
 		const cacheRecords = packets.map((packet) => {

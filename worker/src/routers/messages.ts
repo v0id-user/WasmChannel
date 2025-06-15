@@ -27,7 +27,7 @@ export const getMessages = protectedBase.messages.get.handler(
 					cachedMessages?.length || 0,
 					"messages",
 				);
-				
+
 				if (cachedMessages?.length) {
 					// Check if cache meets the requested limit
 					if (cachedMessages.length >= requestedLimit) {
@@ -40,10 +40,15 @@ export const getMessages = protectedBase.messages.get.handler(
 							})),
 							source: "cache" as const,
 						};
-						console.log("[getMessages] Cache meets limit, returning messages from cache", output);
+						console.log(
+							"[getMessages] Cache meets limit, returning messages from cache",
+							output,
+						);
 						return output;
 					} else {
-						console.log("[getMessages] Cache doesn't meet limit, fetching additional from database");
+						console.log(
+							"[getMessages] Cache doesn't meet limit, fetching additional from database",
+						);
 						// Get cursor from last cached message for database fetch
 						const lastCachedMessage = cachedMessages[cachedMessages.length - 1];
 						const remainingLimit = requestedLimit - cachedMessages.length;
@@ -52,8 +57,9 @@ export const getMessages = protectedBase.messages.get.handler(
 						// Fetch additional messages from database
 						const additionalMessages = await dbDriver.getMessages(
 							remainingLimit,
-							// VERY BAD I'M SO ASHAMED OF DOING THIS BUT IT MUST WORK ANYWAY	
-							lastCachedMessage.createdAt?.toISOString() ?? new Date().toISOString(), // Use last cached
+							// VERY BAD I'M SO ASHAMED OF DOING THIS BUT IT MUST WORK ANYWAY
+							lastCachedMessage.createdAt?.toISOString() ??
+								new Date().toISOString(), // Use last cached
 						);
 						console.log(
 							"[getMessages] Additional database fetch result:",
@@ -63,11 +69,16 @@ export const getMessages = protectedBase.messages.get.handler(
 
 						// Merge and deduplicate messages by both id and referenceId
 						const allMessages = [...cachedMessages];
-						const existingIds = new Set(cachedMessages.map(msg => msg.id));
-						const existingRefIds = new Set(cachedMessages.map(msg => msg.refrenceId));
-						
+						const existingIds = new Set(cachedMessages.map((msg) => msg.id));
+						const existingRefIds = new Set(
+							cachedMessages.map((msg) => msg.refrenceId),
+						);
+
 						for (const msg of additionalMessages) {
-							if (!existingIds.has(msg.id) && !existingRefIds.has(msg.refrenceId)) {
+							if (
+								!existingIds.has(msg.id) &&
+								!existingRefIds.has(msg.refrenceId)
+							) {
 								allMessages.push(msg);
 								existingIds.add(msg.id);
 								existingRefIds.add(msg.refrenceId);
@@ -83,11 +94,16 @@ export const getMessages = protectedBase.messages.get.handler(
 							})),
 							source: "cache+database" as const,
 						};
-						console.log("[getMessages] Returning merged messages from cache and database:", output);
+						console.log(
+							"[getMessages] Returning merged messages from cache and database:",
+							output,
+						);
 						return output;
 					}
 				}
-				console.log("[getMessages] Cache empty or no results, fetching from database");
+				console.log(
+					"[getMessages] Cache empty or no results, fetching from database",
+				);
 			} else {
 				console.log("[getMessages] Cursor provided, skipping cache");
 			}

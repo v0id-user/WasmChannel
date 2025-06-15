@@ -139,7 +139,7 @@ export default function Chat() {
 					onManualScrollChange={setIsManualScrolling}
 					scrollToBottomRef={scrollToBottomRef}
 				/>
-				
+
 				{/* Manual scroll indicator - positioned above input */}
 				{isManualScrolling && (
 					<div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">

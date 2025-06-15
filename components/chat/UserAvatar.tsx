@@ -19,13 +19,13 @@ export function UserAvatar({ user, size = "sm" }: UserAvatarProps) {
 			"#4CAF50", // Green
 			"#FFC107", // Yellow
 		];
-		
+
 		// Get the sum of ASCII codes of first 4 characters
 		const sum = name
 			.slice(0, 4)
 			.split("")
 			.reduce((acc, char) => acc + char.charCodeAt(0), 0);
-		
+
 		// Use modulo to select a color
 		return colors[sum % colors.length];
 	};

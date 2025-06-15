@@ -38,7 +38,8 @@ export function ReactionPicker({
 						(e.target as HTMLButtonElement).style.transform = "scale(1.1)";
 					}}
 					onMouseLeave={(e) => {
-						(e.target as HTMLButtonElement).style.backgroundColor = "transparent";
+						(e.target as HTMLButtonElement).style.backgroundColor =
+							"transparent";
 						(e.target as HTMLButtonElement).style.borderColor = "#000000";
 						(e.target as HTMLButtonElement).style.transform = "scale(1)";
 					}}
