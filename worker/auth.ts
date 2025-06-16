@@ -88,6 +88,16 @@ export function createAuth(db: DrizzleD1Database) {
 				secure: process.env.DEBUG === "true" ? false : true,
 				sameSite: process.env.DEBUG === "true" ? "Lax" : "None",
 			},
+			ipAddress: {
+				ipAddressHeaders: [
+					"x-forwarded-for",
+					"x-real-ip",
+					"cf-connecting-ip",
+					"true-client-ip",
+					"cf-pseudo-ipv4",
+					"x-client-ip"
+				],
+			},
 		},
 		trustedOrigins: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [],
 	});
