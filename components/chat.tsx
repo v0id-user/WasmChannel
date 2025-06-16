@@ -145,7 +145,7 @@ export default function Chat() {
 					<div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">
 						<button
 							onClick={handleScrollToBottom}
-							className="px-3 py-2 font-mono text-xs rounded border transition-all duration-200 hover:scale-105 active:scale-95"
+							className="px-1 py-0.5 font-mono text-xs border transition-all duration-200 hover:scale-105 active:scale-95"
 							style={{
 								backgroundColor: "rgba(102, 102, 102, 0.15)",
 								borderColor: "rgba(102, 102, 102, 0.3)",
