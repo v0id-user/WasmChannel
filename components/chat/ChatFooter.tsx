@@ -43,6 +43,8 @@ export function ChatFooter() {
 				<span style={{ color: "#0143EB" }}>•</span>
 				<a
 					href="https://www.v0id.me"
+					target="_blank"
+					rel="noopener noreferrer"
 					className="transition-colors font-mono"
 					style={{ color: "#000000" }}
 					onMouseEnter={handleLinkHover}
