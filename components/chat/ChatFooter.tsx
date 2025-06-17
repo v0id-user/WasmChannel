@@ -30,7 +30,7 @@ export function ChatFooter() {
 				style={{ color: "#000000" }}
 			>
 				<a
-					href="https://github.com/v0id-dev/WasmChannel"
+					href="https://github.com/v0id-user/WasmChannel"
 					target="_blank"
 					rel="noopener noreferrer"
 					className="transition-colors font-mono"
