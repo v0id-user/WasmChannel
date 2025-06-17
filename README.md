@@ -159,4 +159,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 *This is an experimental project. It's meant to be a learning experience for me.*
 
+**⚠️ Important Notice:**
+This project is incomplete and experimental. Several features like proper message fetching and reaction systems are not fully implemented. Host and use this at your own risk as things may break. The primary purpose of this project was for my learning experience, and it has served that purpose.
+
 </div>
