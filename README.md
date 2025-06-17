@@ -94,18 +94,21 @@ bun run worker:dev       # Terminal 2: Worker
 WasmChannel uses a custom binary protocol for efficient communication:
 
 ```rust
-pub struct Packet {
-    pub kind: PacketKind,              // Message type
-    pub message_id: Option<String>,    // Unique identifier  
-    pub user_id: Option<String>,       // Sender ID
-    pub reaction_kind: Option<ReactionKind>, // Reaction type
-    pub payload: Vec<u8>,              // Compressed data
-    pub crc: u32,                      // Integrity check
+pub struct WasmPacket {
+    inner: Packet {
+        pub kind: PacketKind,              // Message type
+        pub message_id: Option<String>,    // Unique identifier  
+        pub user_id: Option<String>,       // Sender ID
+        pub reaction_kind: Option<ReactionKind>, // Reaction type
+        pub payload: Vec<u8>,              // LZ4-compressed data
+        pub serialized: bool,              // Serialization state
+        pub crc: u32,                      // CRC32 integrity check
+    }
 }
 ```
 
 **Protocol Features:**
-- LZ4 compression for payload optimization
+- LZ4 frame compression for payload optimization
 - CRC32 validation for data integrity
 - Binary serialization via Bincode
 - Type-safe packet handling in both Rust and TypeScript

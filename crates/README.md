@@ -54,11 +54,9 @@ The Rust crates provide high-performance WebAssembly modules for:
 ```toml
 [dependencies]
 wasm-bindgen = "0.2"
-serde = { version = "1.0", features = ["derive"] }
-bincode = "1.3"
+bincode = "2.0"
 lz4_flex = "0.11"
 js-sys = "0.3"
-wasm-bindgen-futures = "0.4"
 
 [dependencies.web-sys]
 version = "0.3"
@@ -70,90 +68,113 @@ features = ["console"]
 ### Packet Structure
 
 ```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(bincode::Encode, bincode::Decode, Clone)]
 pub struct Packet {
     pub kind: PacketKind,              // Message type identifier
     pub message_id: Option<String>,    // Unique message identifier
     pub user_id: Option<String>,       // Sender user identifier
     pub reaction_kind: Option<ReactionKind>, // Reaction type for reactions
     pub payload: Vec<u8>,              // LZ4-compressed message data
+    pub serialized: bool,              // Serialization state flag
     pub crc: u32,                      // CRC32 integrity checksum
+}
+
+#[wasm_bindgen]
+pub struct WasmPacket {
+    inner: Packet,                     // Internal packet structure
 }
 ```
 
 ### Packet Types
 
 ```rust
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[wasm_bindgen]
+#[derive(bincode::Encode, bincode::Decode, Copy, Clone)]
 pub enum PacketKind {
     Message,        // Chat message
+    OnlineUsers,    // Online user list
+    Delete,         // Message deletion
     Reaction,       // Message reaction
+    Joined,         // User joined room
     Typing,         // Typing indicator
-    UserJoined,     // User presence
-    UserLeft,       // User presence
-    Heartbeat,      // Connection keep-alive
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[wasm_bindgen]
+#[derive(bincode::Encode, bincode::Decode, Copy, Clone)]
 pub enum ReactionKind {
+    None,           // No reaction
     Like,           // 👍
+    Dislike,        // 👎
     Heart,          // ❤️
-    Laugh,          // 😂
-    Wow,            // 😮
-    Sad,            // 😢
-    Angry,          // 😡
+    Star,           // ⭐
 }
 ```
 
 ## Core Implementation
 
-### Packet Processing
+### WasmPacket Processing
 
 ```rust
-impl Packet {
-    // Serialize packet to binary format with compression
-    pub fn serialize(&self) -> Result<Vec<u8>, String> {
-        // 1. Serialize packet structure with bincode
-        let serialized = bincode::serialize(self)
-            .map_err(|e| format!("Serialization error: {}", e))?;
+#[wasm_bindgen]
+impl WasmPacket {
+    // Create new packet with LZ4 frame compression
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        kind: PacketKind, 
+        message_id: Option<String>, 
+        user_id: Option<String>, 
+        reaction_kind: Option<ReactionKind>, 
+        payload: Uint8Array
+    ) -> WasmPacket {
+        // Compress payload using LZ4 frame encoding
+        let mut compressed = Vec::new();
+        let mut encoder = lz4_flex::frame::FrameEncoder::new(&mut compressed);
+        io::copy(&mut payload.to_vec().as_slice(), &mut encoder)
+            .expect("Compression failed");
+        encoder.finish().unwrap();
         
-        // 2. Compress payload with LZ4
-        let compressed = lz4_flex::compress_prepend_size(&serialized);
+        // Calculate CRC32 for integrity
+        let crc = calculate_crc32(&compressed);
         
-        // 3. Calculate and append CRC32
-        let crc = crc32(&compressed);
-        let mut result = compressed;
-        result.extend_from_slice(&crc.to_le_bytes());
-        
-        Ok(result)
+        WasmPacket {
+            inner: Packet { 
+                kind, message_id, user_id, reaction_kind, 
+                payload: compressed, crc, serialized: false 
+            }
+        }
     }
-    
-    // Deserialize binary data to packet with validation
-    pub fn deserialize(data: &[u8]) -> Result<Self, String> {
-        // 1. Extract and validate CRC32
-        if data.len() < 4 {
-            return Err("Invalid packet size".to_string());
+
+    // Serialize packet to binary format
+    pub fn serialize(&self) -> Result<Uint8Array, JsValue> {
+        let mut serializable_inner = self.inner.clone();
+        serializable_inner.serialized = true;
+        
+        match bincode::encode_to_vec(&serializable_inner, bincode::config::standard()) {
+            Ok(bytes) => Ok(Uint8Array::from(&bytes[..])),
+            Err(_) => Err(JsValue::from_str("Serialization failed")),
         }
-        
-        let (compressed, crc_bytes) = data.split_at(data.len() - 4);
-        let expected_crc = u32::from_le_bytes([
-            crc_bytes[0], crc_bytes[1], crc_bytes[2], crc_bytes[3]
-        ]);
-        
-        let actual_crc = crc32(compressed);
-        if actual_crc != expected_crc {
-            return Err("CRC32 validation failed".to_string());
+    }
+
+    // Deserialize binary data to packet
+    #[wasm_bindgen(js_name = deserialize)]
+    pub fn deserialize_static(bytes: Uint8Array) -> Result<WasmPacket, JsValue> {
+        let bytes = bytes.to_vec();
+        match bincode::decode_from_slice::<Packet, _>(&bytes, bincode::config::standard()) {
+            Ok((packet, _)) => {
+                let mut inner = packet.clone();
+                inner.serialized = false;
+                Ok(WasmPacket { inner })
+            }
+            Err(e) => Err(JsValue::from_str(&format!("Failed to deserialize packet: {}", e))),
         }
-        
-        // 2. Decompress LZ4 data
-        let decompressed = lz4_flex::decompress_size_prepended(compressed)
-            .map_err(|e| format!("Decompression error: {}", e))?;
-        
-        // 3. Deserialize packet structure  
-        let packet: Packet = bincode::deserialize(&decompressed)
-            .map_err(|e| format!("Deserialization error: {}", e))?;
-        
-        Ok(packet)
+    }
+
+    // Get decompressed payload
+    pub fn payload(&self) -> Uint8Array {
+        let mut decompressed = Vec::new();
+        let mut decoder = lz4_flex::frame::FrameDecoder::new(&self.inner.payload[..]);
+        io::copy(&mut decoder, &mut decompressed).expect("Decompression failed");
+        Uint8Array::from(&decompressed[..])
     }
 }
 ```
@@ -202,60 +223,27 @@ const fn generate_crc32_table() -> [u32; 256] {
 
 ## JavaScript Bindings
 
-### WASM Exports
+### WASM Interface
+
+The `WasmPacket` struct provides a clean interface for JavaScript:
 
 ```rust
-use wasm_bindgen::prelude::*;
-
 #[wasm_bindgen]
-pub struct PacketProcessor;
-
-#[wasm_bindgen]
-impl PacketProcessor {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> PacketProcessor {
-        PacketProcessor
-    }
+impl WasmPacket {
+    // Accessor methods for packet data
+    pub fn serialized(&self) -> bool { self.inner.serialized }
+    pub fn message_id(&self) -> Option<String> { self.inner.message_id.clone() }
+    pub fn user_id(&self) -> Option<String> { self.inner.user_id.clone() }
+    pub fn kind(&self) -> PacketKind { self.inner.kind }
+    pub fn reaction_kind(&self) -> Option<ReactionKind> { self.inner.reaction_kind }
     
-    // Serialize packet to Uint8Array for JavaScript
-    #[wasm_bindgen]
-    pub fn serialize_packet(
-        &self,
-        kind: String,
-        message_id: Option<String>,
-        user_id: Option<String>,
-        payload: &[u8]
-    ) -> Result<Vec<u8>, JsValue> {
-        let packet_kind = match kind.as_str() {
-            "message" => PacketKind::Message,
-            "reaction" => PacketKind::Reaction,
-            "typing" => PacketKind::Typing,
-            _ => return Err(JsValue::from_str("Invalid packet kind")),
-        };
-        
-        let packet = Packet {
-            kind: packet_kind,
-            message_id,
-            user_id,
-            reaction_kind: None,
-            payload: payload.to_vec(),
-            crc: 0, // Will be calculated during serialization
-        };
-        
-        packet.serialize()
-            .map_err(|e| JsValue::from_str(&e))
-    }
+    // Main operations
+    pub fn serialize(&self) -> Result<Uint8Array, JsValue> { /* ... */ }
+    pub fn payload(&self) -> Uint8Array { /* ... */ }
     
-    // Deserialize Uint8Array to packet for JavaScript
-    #[wasm_bindgen]
-    pub fn deserialize_packet(&self, data: &[u8]) -> Result<JsValue, JsValue> {
-        let packet = Packet::deserialize(data)
-            .map_err(|e| JsValue::from_str(&e))?;
-        
-        // Convert to JavaScript object
-        serde_wasm_bindgen::to_value(&packet)
-            .map_err(|e| JsValue::from_str(&format!("JS conversion error: {}", e)))
-    }
+    // Static deserialization method
+    #[wasm_bindgen(js_name = deserialize)]
+    pub fn deserialize_static(bytes: Uint8Array) -> Result<WasmPacket, JsValue> { /* ... */ }
 }
 ```
 
@@ -267,40 +255,24 @@ impl PacketProcessor {
 [package]
 name = "wasmchannel"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen = "0.2.100"
 serde = { version = "1.0", features = ["derive"] }
-serde-wasm-bindgen = "0.4"
-bincode = "1.3"
-lz4_flex = "0.11"
-js-sys = "0.3"
+crc32fast = "1.4.2"
+js-sys = "0.3.77"
+bincode = "2.0.1"
+lz4_flex = "0.11.3"
 
 [dependencies.web-sys]
 version = "0.3"
 features = [
   "console",
-  "Performance",
-  "Window",
 ]
-
-[profile.release]
-# Optimize for size and speed
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = "abort"
-
-# Enable wee_alloc for smaller binary size
-[dependencies.wee_alloc]
-version = "0.4.5"
-
-[features]
-default = ["console_error_panic_hook"]
 ```
 
 ## Build Pipeline
@@ -334,60 +306,40 @@ The build pipeline automatically:
 1. **Compiles Rust to WASM** for both browser and Workers environments
 2. **Generates TypeScript bindings** with proper type definitions
 3. **Applies Cloudflare Workers patches** for V8 isolate compatibility
-4. **Optimizes binary size** with wee_alloc and LTO
+4. **Optimizes binary size** with wasm-opt in release mode
 5. **Creates dual outputs** for frontend and worker usage
 
 ## TypeScript Integration
 
-### Generated Bindings
+### TypeScript Integration
 
-```typescript
-// Generated wasmchannel.d.ts
-export class PacketProcessor {
-  constructor();
-  serialize_packet(
-    kind: string,
-    message_id?: string,
-    user_id?: string, 
-    payload: Uint8Array
-  ): Uint8Array;
-  
-  deserialize_packet(data: Uint8Array): any;
-}
-
-export interface Packet {
-  kind: string;
-  message_id?: string;
-  user_id?: string;
-  reaction_kind?: string;
-  payload: number[];
-  crc: number;
-}
-```
+The build process automatically generates TypeScript definitions and JavaScript bindings for seamless integration with your frontend code.
 
 ### Usage Example
 
 ```typescript
-import init, { PacketProcessor } from './public/wasm/wasmchannel.js';
+import init, { WasmPacket, PacketKind, ReactionKind } from './public/wasm/wasmchannel.js';
 
 // Initialize WASM module
 await init();
 
-// Create processor instance
-const processor = new PacketProcessor();
-
-// Serialize message
+// Create packet
 const messageData = new TextEncoder().encode("Hello, World!");
-const serialized = processor.serialize_packet(
-  "message",
-  "msg-123", 
-  "user-456",
+const packet = new WasmPacket(
+  PacketKind.Message,
+  null, // message_id
+  null, // user_id  
+  ReactionKind.None,
   messageData
 );
 
+// Serialize packet
+const serialized = packet.serialize();
+
 // Deserialize packet
-const packet = processor.deserialize_packet(serialized);
-console.log('Received packet:', packet);
+const deserialized = WasmPacket.deserialize(serialized);
+console.log('Packet kind:', deserialized.kind());
+console.log('Payload:', new TextDecoder().decode(deserialized.payload()));
 ```
 
 ## Performance Optimizations
@@ -408,19 +360,18 @@ impl Packet {
 ```
 
 ### Compression Efficiency
-- **LZ4**: Chosen for optimal speed/compression ratio
+- **LZ4 Frame Format**: Chosen for optimal speed/compression ratio
 - **Streaming**: Process data in chunks for large payloads
-- **Dictionary**: Precomputed compression dictionaries for common patterns
+- **FrameEncoder/Decoder**: Handles compression state automatically
 
 ### Binary Size Optimization
-```toml
-[profile.release]
-opt-level = "s"          # Optimize for size
-strip = true             # Remove debug symbols
-lto = true              # Link-time optimization
-codegen-units = 1       # Single codegen unit
-panic = "abort"         # Smaller panic handler
-```
+
+Optimization is handled by the custom build pipeline (`build-wasm.ts`) which uses `wasm-opt` with aggressive size optimization flags:
+
+- **Oz optimization level** for maximum size reduction
+- **Dead code elimination** and unused module removal
+- **Function and local reordering** for better compression
+- **Debug symbol stripping** for smaller binaries
 
 ## Testing
 
