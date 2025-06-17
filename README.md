@@ -138,15 +138,6 @@ wasmchannel/
 └── utils/              # Shared utilities
 ```
 
-## Contributing
-
-This is an experimental project exploring web performance boundaries. Contributions and feedback are welcome!
-
-1. Fork the repository
-2. Create a feature branch
-3. Build and test your changes
-4. Submit a pull request
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
