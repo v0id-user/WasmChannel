@@ -38,7 +38,6 @@ The Rust crates provide high-performance WebAssembly modules for:
 **Utils Module (`utils/`)**
 - CRC utility functions
 - Shared helper methods
-- Cross-platform compatibility
 
 ## Tech Stack
 

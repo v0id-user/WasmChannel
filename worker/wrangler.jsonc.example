@@ -1,0 +1,56 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wasmchannel",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-05-08",
+	"compatibility_flags": [
+		"nodejs_compat_v2",
+		"nodejs_compat_populate_process_env"
+	],
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"migrations_dir": "drizzle",
+			"binding": "DB",
+			"database_name": "wasmchannel",
+			"database_id": "your-database-id-here"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "your-kv-id-here"
+		}
+	],
+	"queues": {
+		"consumers": [
+			{
+				"queue": "wasmchannel",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5
+			}
+		],
+		"producers": [
+			{
+				"queue": "wasmchannel",
+				"binding": "QUEUE_MESSAGES"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"new_sqlite_classes": ["Room"],
+			"tag": "v1"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "Room",
+				"name": "ROOM"
+			}
+		]
+	}
+}

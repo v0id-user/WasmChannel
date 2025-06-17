@@ -1,0 +1,13 @@
+BETTER_AUTH_SECRET=xxxx
+BETTER_AUTH_URL=http://localhost:8787
+
+CLOUDFLARE_ACCOUNT_ID=xxxx
+CLOUDFLARE_DATABASE_ID=xxxxx
+CLOUDFLARE_D1_TOKEN=xxxx
+
+FRONTEND_URL=http://localhost:3000
+
+DOMAIN=.localhost
+WS_DOMAIN=localhost:8787
+BASE_DOMAIN=localhost:8787
+DEBUG=true

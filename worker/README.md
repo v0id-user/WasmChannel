@@ -79,17 +79,26 @@ cp .dev.vars.example .dev.vars
 2. **Configure environment variables**
 ```bash
 # .dev.vars
-BETTER_AUTH_SECRET=your-secret-key
-BETTER_AUTH_URL=http://localhost:3000
-DATABASE_URL=your-d1-database-url
-KV_NAMESPACE=your-kv-namespace
+BETTER_AUTH_SECRET=xxxx
+BETTER_AUTH_URL=http://localhost:8787
+
+CLOUDFLARE_ACCOUNT_ID=xxxx
+CLOUDFLARE_DATABASE_ID=xxxxx
+CLOUDFLARE_D1_TOKEN=xxxx
+
+FRONTEND_URL=http://localhost:3000
+
+DOMAIN=.localhost
+WS_DOMAIN=localhost:8787
+BASE_DOMAIN=localhost:8787
+DEBUG=true
 ```
 
 ### Database Setup
 
 1. **Create D1 database**
 ```bash
-npx wrangler d1 create wasmchannel-db
+bunx wrangler d1 create wasmchannel-db
 ```
 
 2. **Update wrangler.jsonc with database ID**
@@ -107,18 +116,24 @@ npx wrangler d1 create wasmchannel-db
 
 3. **Run migrations**
 ```bash
-# Local development
-npx wrangler d1 migrations apply wasmchannel-db --local
+# Generate, migrate, and apply all at once
+bun run migrate:all
 
-# Production
-npx wrangler d1 migrations apply wasmchannel-db
+# Or step by step:
+bun run db:generate    # Generate migration files
+bun run db:migrate     # Apply migrations locally
+bun run db:apply       # Apply to D1 database
+
+# Manual D1 commands (if needed)
+bunx wrangler d1 migrations apply DB --local    # Local
+bunx wrangler d1 migrations apply DB            # Production
 ```
 
 ### KV Namespace Setup
 
 ```bash
 # Create KV namespace
-npx wrangler kv:namespace create "wasmchannel-kv"
+bunx wrangler kv:namespace create "wasmchannel-kv"
 
 # Update wrangler.jsonc
 {
@@ -139,14 +154,22 @@ bun run dev
 
 # Type generation
 bun run cf-typegen
+bun run types:build    # Build TypeScript declarations
 
 # Database operations
 bun run db:generate    # Generate migrations
-bun run db:migrate     # Apply migrations locally
+bun run db:migrate     # Apply migrations locally  
+bun run db:apply       # Apply migrations to D1 database
 bun run db:studio      # Open Drizzle Studio
+bun run migrate:all    # Run all migration steps
+
+# Authentication
+bun run auth:generate  # Generate Better Auth types
+bun run auth:migrate   # Apply Better Auth migrations
 
 # Deployment
-bun run deploy
+bun run deploy         # Production deployment with minification
+bun run deploy:dev     # Development deployment
 ```
 
 ## Project Structure
@@ -213,31 +236,6 @@ Worker configuration:
 }
 ```
 
-## Database Schema
-
-### Messages Table
-```sql
-CREATE TABLE messages (
-  id TEXT PRIMARY KEY,
-  room_id TEXT NOT NULL,
-  user_id TEXT NOT NULL, 
-  content TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-```
-
-### Users Table
-```sql
-CREATE TABLE users (
-  id TEXT PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  avatar_url TEXT,
-  created_at INTEGER NOT NULL
-);
-```
-
 ## WebSocket Protocol
 
 The worker handles WebSocket connections through Durable Objects:
@@ -267,10 +265,10 @@ bun run deploy:dev
 
 ### Production Deployment
 ```bash
-# Build WASM modules
+# Build WASM modules first
 cd .. && bun run build:wasm:release
 
-# Deploy worker
+# Deploy with minification
 cd worker && bun run deploy
 ```
 
@@ -278,42 +276,12 @@ cd worker && bun run deploy
 
 ```bash
 # Set production secrets
-npx wrangler secret put BETTER_AUTH_SECRET
-npx wrangler secret put DATABASE_URL
+bunx wrangler secret put BETTER_AUTH_SECRET
+bunx wrangler secret put DATABASE_URL
+# ...
+
+# or copy them from .dev.vars and add them from the console 
 ```
-
-## Monitoring & Debugging
-
-### Logs
-```bash
-# Tail worker logs
-npx wrangler tail
-
-# View specific deployment logs  
-npx wrangler tail --format=pretty
-```
-
-### Analytics
-- Cloudflare Workers Analytics Dashboard
-- D1 Analytics for database performance
-- Custom metrics via Worker Analytics Engine
-
-## Performance Optimization
-
-### Durable Object Best Practices
-- Minimize state serialization
-- Batch database operations
-- Use WebSocket hibernation for idle connections
-
-### Database Optimization
-- Indexed queries for message retrieval
-- Connection pooling
-- Prepared statements via Drizzle
-
-### WASM Integration
-- Efficient memory management
-- Minimal serialization overhead  
-- Optimized compression algorithms
 
 ## Troubleshooting
 
@@ -322,7 +290,7 @@ npx wrangler tail --format=pretty
 **Database Connection Errors**
 ```bash
 # Verify D1 binding configuration
-npx wrangler d1 list
+bunx wrangler d1 list
 ```
 
 **WebSocket Connection Failures**
@@ -339,24 +307,17 @@ npx wrangler d1 list
 
 ```bash
 # Local development with remote database
-npx wrangler dev --remote
+bunx wrangler dev --remote
 
 # Test specific routes
 curl https://your-worker.workers.dev/api/health
 
-# Database inspection
-npx wrangler d1 execute wasmchannel-db --command="SELECT * FROM messages LIMIT 10"
+# Database inspection  
+bunx wrangler d1 execute DB --command="SELECT * FROM messages LIMIT 10"
+
+# Open Drizzle Studio for database GUI
+bun run db:studio
 ```
-
-## Contributing
-
-When contributing to the worker backend:
-
-1. Follow TypeScript best practices
-2. Use Drizzle for all database operations
-3. Test WebSocket functionality locally
-4. Ensure WASM integration works correctly
-5. Update migrations for schema changes
 
 ## Resources
 

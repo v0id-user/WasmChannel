@@ -10,11 +10,13 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"types:build": "tsc -p tsconfig.json --emitDeclarationOnly",
-		"bdg": "bunx drizzle-kit generate",
-		"bdm": "bunx drizzle-kit migrate",
-		"wda": "bunx wrangler d1 migrations apply DB",
-		"mall": "bun bdg && bun bdm && bun wda",
+		"db:generate": "bunx drizzle-kit generate",
+		"db:migrate": "bunx drizzle-kit migrate",
+		"db:apply": "bunx wrangler d1 migrations apply DB",
+		"db:studio": "bunx drizzle-kit studio",
+		"migrate:all": "bun run db:generate && bun run db:migrate && bun run db:apply",
 		"deploy": "wrangler deploy --minify",
+		"deploy:dev": "wrangler deploy",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"auth:generate": "bunx @better-auth/cli generate",
 		"auth:migrate": "bunx @better-auth/cli migrate"
