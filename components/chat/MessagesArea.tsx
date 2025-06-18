@@ -15,7 +15,7 @@ interface MessagesAreaProps {
 	onLoadMore: () => void;
 	// Manual scroll props
 	onManualScrollChange: (isManualScrolling: boolean) => void;
-	scrollToBottomRef: React.MutableRefObject<(() => void) | null>;
+	scrollToBottomRef: React.RefObject <(() => void) | null>;
 }
 
 export function MessagesArea({
@@ -38,18 +38,8 @@ export function MessagesArea({
 		useState(false);
 	const previousScrollHeight = useRef<number>(0);
 
-	// Sort messages by timestamp to ensure chronological order
-	const sortedGroupedMessages = useMemo(() => {
-		return [...groupedMessages].sort((a, b) => {
-			const aTime = a.message.timestamp
-				? new Date(a.message.timestamp).getTime()
-				: 0;
-			const bTime = b.message.timestamp
-				? new Date(b.message.timestamp).getTime()
-				: 0;
-			return aTime - bTime; // Oldest first (chronological order)
-		});
-	}, [groupedMessages]);
+	// Messages are already sorted chronologically during grouping
+	const sortedGroupedMessages = groupedMessages;
 
 	const scrollToBottom = useCallback(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

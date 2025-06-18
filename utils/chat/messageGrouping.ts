@@ -8,8 +8,15 @@ export interface GroupedMessage {
 }
 
 export function groupMessagesByUser(messages: Message[]): GroupedMessage[] {
-	return messages.reduce((acc, message, index) => {
-		const prevMessage = messages[index - 1];
+	// Sort messages by timestamp first to ensure chronological order
+	const sortedMessages = [...messages].sort((a, b) => {
+		const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+		const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+		return aTime - bTime; // Oldest first (chronological order)
+	});
+
+	return sortedMessages.reduce((acc, message, index) => {
+		const prevMessage = sortedMessages[index - 1];
 		const showAvatar = !prevMessage || prevMessage.userId !== message.userId;
 
 		// Find user or create a fallback user with userId as name
