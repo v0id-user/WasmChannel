@@ -157,7 +157,7 @@ export default function WhatInTheWorldIsThis() {
 							className="hover:underline hover:text-black transition"
 							style={{ color: "#333" }}
 						>
-							github.com/v0id_user
+							github.com/v0id-user
 						</a>
 						<a
 							href="https://reddit.com/u/v0id_user"
