@@ -89,7 +89,7 @@ export default function WhatInTheWorldIsThis() {
 								href: "https://x.com/v0id_user/status/1935250850953211964",
 								label: "كيف تعمل الرسائل المرسلة من المستخدمين",
 							},
-						].map(({ href, label }, idx) => (
+						].map(({ href, label }) => (
 							<li key={href}>
 								<a
 									href={href}

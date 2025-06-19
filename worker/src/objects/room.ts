@@ -231,6 +231,11 @@ export class Room extends DurableObject {
 			// Validate packets coming from clients, it will throw an error if the packet is invalid
 			this.#validateClientPacket(packet);
 
+			if (packet.payload().length >= 1000) {
+				console.log("Payload is too long", packet.payload());
+				throw new Error("Payload is too long");
+			}
+
 			// Route to appropriate handler based on packet type
 			if (packet.kind() === PacketKind.Message) {
 				await this.#handleMessagePacket(packet, senderId);
@@ -293,6 +298,11 @@ export class Room extends DurableObject {
 		packet: WasmPacket,
 		senderId: string,
 	): Promise<void> {
+		if (packet.payload().length >= 1000) {
+			console.log("Payload is too long", packet.payload());
+			throw new Error("Payload is too long");
+		}
+
 		const messageId = packet.message_id()!;
 
 		const fullPacket = new WasmPacket(

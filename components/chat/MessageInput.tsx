@@ -12,6 +12,7 @@ export function MessageInput({
 	onSendMessage,
 }: MessageInputProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const MAX_LENGTH = 256;
 
 	const adjustTextareaHeight = useCallback(() => {
 		const textarea = textareaRef.current;
@@ -41,7 +42,11 @@ export function MessageInput({
 				<textarea
 					ref={textareaRef}
 					value={newMessage}
-					onChange={(e) => setNewMessage(e.target.value)}
+					onChange={(e) => {
+						if (e.target.value.length <= MAX_LENGTH) {
+							setNewMessage(e.target.value);
+						}
+					}}
 					onKeyDown={handleKeyPress}
 					placeholder="اكتب رسالتك هنا..."
 					className="flex-1 resize-none px-2 py-1 text-sm border font-mono min-h-[28px] leading-5 focus:outline-none transition-colors"
@@ -60,10 +65,15 @@ export function MessageInput({
 					}}
 					rows={1}
 					aria-label="كتابة رسالة جديدة"
+					maxLength={MAX_LENGTH}
 				/>
 				<button
-					onClick={onSendMessage}
-					disabled={!newMessage.trim()}
+					onClick={() => {
+						if (newMessage.trim().length > 0 && newMessage.length <= MAX_LENGTH) {
+							onSendMessage();
+						}
+					}}
+					disabled={!newMessage.trim() || newMessage.length > MAX_LENGTH}
 					className="px-3 py-1 text-sm flex-shrink-0 transition-colors border font-bold tracking-wide uppercase font-mono"
 					style={{
 						backgroundColor: newMessage.trim() ? "#0143EB" : "#F3F3F3",
@@ -92,7 +102,7 @@ export function MessageInput({
 				className="text-xs mt-1 text-center font-mono"
 				style={{ color: "#0143EB" }}
 			>
-				اضغط Enter للإرسال، Shift+Enter للسطر الجديد
+				{`اضغط Enter للإرسال، Shift+Enter للسطر الجديد (${newMessage.length}/${MAX_LENGTH})`}
 			</div>
 		</div>
 	);

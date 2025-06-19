@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import type { User } from "@/types/chat";
 import { ReactionKind } from "@/utils/wasm/init";
 import { GroupedMessage } from "@/utils/chat/messageGrouping";
