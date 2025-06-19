@@ -40,6 +40,7 @@ export function MessageInput({
 		>
 			<div className="flex gap-2 items-end">
 				<textarea
+					disabled // Temporary disable sending messages due to attacks
 					ref={textareaRef}
 					value={newMessage}
 					onChange={(e) => {
