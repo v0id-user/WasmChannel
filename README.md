@@ -14,8 +14,7 @@
 </div>
 
 ## Overview
-
-WasmChannel combines the performance of WebAssembly with the scalability of Cloudflare's edge infrastructure to create a high-performance real-time chat experience.
+WasmChannel combines the performance of WebAssembly with the scalability of Cloudflare's edge infrastructure to create a high-performance real-time chat experience in an intentionally over engineered distributed system.
 
 ### Key Features
 
