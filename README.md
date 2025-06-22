@@ -34,7 +34,7 @@ WasmChannel combines the performance of WebAssembly with the scalability of Clou
 ### Core Components
 
 - **Frontend**: Next.js with React hooks for real-time UI
-- **WASM Layer**: Rust-compiled WebAssembly for high-performance packet processing
+- **WASM Layer**: Rust-compiled WebAssembly for high-performance packet processing as protocol layer over websocket
 - **Backend**: Cloudflare Workers & Queues for database async writes and Durable Objects for stateful connections
 - **Protocol**: Custom binary format with LZ4 compression and CRC32 validation
 
