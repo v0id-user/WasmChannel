@@ -35,6 +35,7 @@ WasmChannel combines the performance of WebAssembly with the scalability of Clou
 - **Optimized bandwidth** usage through compression
 
 ## Architecture
+![Processing Messages Architecture](arch/prcessing_messages.png)
 
 ### Core Components
 
