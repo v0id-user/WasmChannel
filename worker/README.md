@@ -146,6 +146,51 @@ bunx wrangler kv:namespace create "wasmchannel-kv"
 }
 ```
 
+### Queue Setup
+
+The backend uses Cloudflare Queues for efficient message persistence with batch processing:
+
+```bash
+# Create queue
+bunx wrangler queues create wasmchannel
+
+# Update wrangler.jsonc with queue configuration
+{
+  "queues": {
+    "consumers": [
+      {
+        "queue": "wasmchannel",
+        "max_batch_size": 10,    // Process up to 10 messages per batch
+        "max_batch_timeout": 5   // Wait maximum 5 seconds before processing batch
+      }
+    ],
+    "producers": [
+      {
+        "queue": "wasmchannel",
+        "binding": "QUEUE_MESSAGES"
+      }
+    ]
+  }
+}
+```
+
+#### Message Flow Architecture
+
+The system follows a multi-tier approach for optimal performance and reliability:
+
+1. **WebSocket Reception** - Messages received via WebSocket connections in Durable Objects
+2. **Immediate Broadcast** - Messages instantly broadcast to all connected WebSocket clients for low latency
+3. **Cache Layer** - Messages immediately stored in KV for fast retrieval and temporary persistence
+4. **Queue Processing** - Messages sent to Cloudflare Queue for batch processing
+5. **Database Persistence** - Queue consumer processes messages in batches and persists to D1 database
+
+**Benefits:**
+- **Ultra-Low Latency** - Messages broadcast immediately to connected users before persistence
+- **Immediate Response** - Users see messages instantly from cache for reconnecting clients
+- **Reliability** - Queue ensures messages aren't lost even during high traffic
+- **Efficiency** - Batch processing (10 messages or 5-second intervals) reduces database load
+- **Scalability** - Queue handles traffic spikes automatically
+
 ## Development Commands
 
 ```bash
