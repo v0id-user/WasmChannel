@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SiteUnavailableNotice from "./SiteUnavailableNotice";
+// import SiteUnavailableNotice from "./SiteUnavailableNotice";
 
 const SEEN_KEY = "whatInTheWorldIsThis_seen";
 const SEEN_TIME_KEY = "whatInTheWorldIsThis_seen_time";
@@ -9,19 +9,19 @@ const ONE_HOUR = 60 * 60 * 1000;
 
 export default function WhatInTheWorldIsThis() {
 	const [open, setOpen] = useState(false);
-	const [showNotice, setShowNotice] = useState(false);
-	const [shouldShowMainModal, setShouldShowMainModal] = useState(false);
+	// const [showNotice, setShowNotice] = useState(false);
+	// const [shouldShowMainModal, setShouldShowMainModal] = useState(false);
 
 	useEffect(() => {
 		const lastSeen = localStorage.getItem(SEEN_TIME_KEY);
 		const now = Date.now();
 
 		if (!lastSeen || now - Number(lastSeen) > ONE_HOUR) {
-			setShouldShowMainModal(true);
+			// setShouldShowMainModal(true);
 			setOpen(true);
 		} else {
 			// If main modal shouldn't show, show notice immediately
-			setShowNotice(true);
+			// setShowNotice(true);
 		}
 	}, []);
 
@@ -32,13 +32,13 @@ export default function WhatInTheWorldIsThis() {
 		
 		// Show the notice modal after closing the main modal
 		setTimeout(() => {
-			setShowNotice(true);
+			// setShowNotice(true);
 		}, 300); // Small delay for smooth transition
 	};
 
-	const handleNoticeClose = () => {
-		setShowNotice(false);
-	};
+	// const handleNoticeClose = () => {
+	// 	// setShowNotice(false);
+	// };
 
 	return (
 		<>
@@ -213,11 +213,11 @@ export default function WhatInTheWorldIsThis() {
 					</div>
 				</div>
 			)}
-			{showNotice && (
+			{/* {showNotice && (
 				<SiteUnavailableNotice 
 					onClose={handleNoticeClose}
 				/>
-			)}
+			)} */}
 		</>
 	);
 }
