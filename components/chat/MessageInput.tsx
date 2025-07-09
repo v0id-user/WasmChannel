@@ -40,7 +40,6 @@ export function MessageInput({
 		>
 			<div className="flex gap-2 items-end">
 				<textarea
-					disabled // Temporary disable sending messages due to attacks
 					ref={textareaRef}
 					value={newMessage}
 					onChange={(e) => {
@@ -74,7 +73,6 @@ export function MessageInput({
 							onSendMessage();
 						}
 					}}
-					disabled={true} // Temporary disable sending messages due to attacks
 					// disabled={!newMessage.trim() || newMessage.length > MAX_LENGTH}
 					className="px-3 py-1 text-sm flex-shrink-0 transition-colors border font-bold tracking-wide uppercase font-mono"
 					style={{

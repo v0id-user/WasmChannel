@@ -220,8 +220,6 @@ export class Room extends DurableObject {
 		isServer: boolean = false,
 	): Promise<void> {
 		try {
-			// Temporary disable sending messages due to attacks
-			return;
 			const packet = deserializePacket(message);
 
 			if (isServer) {
@@ -302,8 +300,6 @@ export class Room extends DurableObject {
 		packet: WasmPacket,
 		senderId: string,
 	): Promise<void> {
-		// Temporary disable sending messages due to attacks
-		return;
 		if (packet.payload().length >= 1000) {
 			console.log("Payload is too long", packet.payload());
 			throw new Error("Payload is too long");

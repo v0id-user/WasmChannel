@@ -8,8 +8,6 @@ function send(ws: WebSocket, packet: WasmPacket) {
 }
 
 export function sendMessage(ws: WebSocket, payload: string, messageId: string) {
-	// Temporary disable sending messages due to attacks
-	return;
 	// Use the new constructor with message_id and user_id
 	const packet = new WasmPacket(
 		PacketKind.Message,
