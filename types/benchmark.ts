@@ -21,7 +21,7 @@ export interface ComparisonEntry {
 
 export interface LogEntry {
 	timestamp: string;
-	type: 'info' | 'success' | 'error' | 'warning';
+	type: "info" | "success" | "error" | "warning";
 	message: string;
 	details?: {
 		operations?: number;
@@ -45,7 +45,7 @@ export interface LogEntry {
 	};
 }
 
-export type BenchmarkMode = 'unfair' | 'raw' | 'compressed';
-export type PayloadSize = '11b' | '2kb' | '10kb';
+export type BenchmarkMode = "unfair" | "raw" | "compressed";
+export type PayloadSize = "11b" | "2kb" | "10kb";
 export type TestDuration = 5 | 10 | 15 | 30 | 60;
-export type AutoRunCount = 5 | 10 | 20 | 50 | 100; 
+export type AutoRunCount = 5 | 10 | 20 | 50 | 100;

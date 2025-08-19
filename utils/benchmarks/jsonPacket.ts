@@ -1,19 +1,19 @@
 // JSON Protocol Implementation - Mirror of Rust packet.rs
 export enum JsonPacketKind {
 	Message = "Message",
-	OnlineUsers = "OnlineUsers", 
+	OnlineUsers = "OnlineUsers",
 	Delete = "Delete",
 	Reaction = "Reaction",
 	Joined = "Joined",
-	Typing = "Typing"
+	Typing = "Typing",
 }
 
 export enum JsonReactionKind {
 	None = "None",
-	Like = "Like", 
+	Like = "Like",
 	Dislike = "Dislike",
 	Heart = "Heart",
-	Star = "Star"
+	Star = "Star",
 }
 
 export interface PacketData {
@@ -32,7 +32,7 @@ export const compressData = (data: number[]): number[] => {
 	const compressed: number[] = [];
 	let count = 1;
 	let current = data[0];
-	
+
 	for (let i = 1; i < data.length; i++) {
 		if (data[i] === current && count < 255) {
 			count++;
@@ -64,14 +64,14 @@ export class JsonPacket {
 	constructor(
 		kind: JsonPacketKind,
 		message_id?: string,
-		user_id?: string, 
+		user_id?: string,
 		reaction_kind?: JsonReactionKind,
 		payload: number[] = [],
-		useCompression: boolean = false
+		useCompression: boolean = false,
 	) {
 		const processedPayload = useCompression ? compressData(payload) : payload;
 		const crc = this.calculateSimpleCrc32(processedPayload);
-		
+
 		this.data = {
 			kind,
 			message_id,
@@ -79,7 +79,7 @@ export class JsonPacket {
 			reaction_kind,
 			payload: processedPayload,
 			serialized: false,
-			crc
+			crc,
 		};
 	}
 
@@ -88,10 +88,13 @@ export class JsonPacket {
 		return JSON.stringify(serializedData);
 	}
 
-	static deserialize(jsonString: string, useCompression: boolean = false): JsonPacket | null {
+	static deserialize(
+		jsonString: string,
+		useCompression: boolean = false,
+	): JsonPacket | null {
 		try {
 			const parsed = JSON.parse(jsonString) as PacketData;
-			
+
 			// Create packet with raw payload first
 			const packet = new JsonPacket(
 				parsed.kind,
@@ -99,9 +102,9 @@ export class JsonPacket {
 				parsed.user_id,
 				parsed.reaction_kind,
 				useCompression ? decompressData(parsed.payload) : parsed.payload,
-				false // Don't re-compress
+				false, // Don't re-compress
 			);
-			
+
 			packet.data = { ...parsed, serialized: false };
 			return packet;
 		} catch {
@@ -110,17 +113,19 @@ export class JsonPacket {
 	}
 
 	getPayload(useCompression: boolean = false): number[] {
-		return useCompression ? decompressData(this.data.payload) : [...this.data.payload];
+		return useCompression
+			? decompressData(this.data.payload)
+			: [...this.data.payload];
 	}
 
 	private calculateSimpleCrc32(data: number[]): number {
-		let crc = 0xFFFFFFFF;
+		let crc = 0xffffffff;
 		for (const byte of data) {
 			crc ^= byte;
 			for (let i = 0; i < 8; i++) {
-				crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+				crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
 			}
 		}
-		return (crc ^ 0xFFFFFFFF) >>> 0;
+		return (crc ^ 0xffffffff) >>> 0;
 	}
-} 
+}

@@ -28,11 +28,11 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 	// Sort entries by payload size ascending
 	const sortedEntries = useMemo(() => {
 		const sizeOrder: Record<PayloadSize, number> = {
-			'11b': 1,
-			'2kb': 2,
-			'10kb': 3,
+			"11b": 1,
+			"2kb": 2,
+			"10kb": 3,
 		};
-		
+
 		return [...entries].sort((a, b) => {
 			const sizeCompare = sizeOrder[a.payloadSize] - sizeOrder[b.payloadSize];
 			if (sizeCompare !== 0) return sizeCompare;
@@ -42,25 +42,28 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 	}, [entries]);
 
 	const calculateAdvantage = (rustOps: number, jsonOps: number) => {
-		if (rustOps === jsonOps) return { percentage: 0, winner: 'tie' as const };
+		if (rustOps === jsonOps) return { percentage: 0, winner: "tie" as const };
 		if (rustOps > jsonOps) {
 			return {
-				percentage: ((rustOps / jsonOps - 1) * 100),
-				winner: 'rust' as const
+				percentage: (rustOps / jsonOps - 1) * 100,
+				winner: "rust" as const,
 			};
 		} else {
 			return {
-				percentage: ((jsonOps / rustOps - 1) * 100),
-				winner: 'json' as const
+				percentage: (jsonOps / rustOps - 1) * 100,
+				winner: "json" as const,
 			};
 		}
 	};
 
-	const getWinnerColor = (winner: 'rust' | 'json' | 'tie') => {
+	const getWinnerColor = (winner: "rust" | "json" | "tie") => {
 		switch (winner) {
-			case 'rust': return '#00FF5F'; // Green for WASM advantage
-			case 'json': return '#FF4444'; // Red for JSON advantage
-			case 'tie': return '#FFB300'; // Orange for tie
+			case "rust":
+				return "#00FF5F"; // Green for WASM advantage
+			case "json":
+				return "#FF4444"; // Red for JSON advantage
+			case "tie":
+				return "#FFB300"; // Orange for tie
 		}
 	};
 
@@ -75,10 +78,13 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 	const formatNumber = (num: number) => {
 		// Convert to integer and manually format with commas
 		const cleanNum = Math.floor(Number(num) || 0);
-		return cleanNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+		return cleanNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	};
 
-	const BarChart = ({ rustOps, jsonOps }: { rustOps: number; jsonOps: number }) => {
+	const BarChart = ({
+		rustOps,
+		jsonOps,
+	}: { rustOps: number; jsonOps: number }) => {
 		const maxOps = Math.max(rustOps, jsonOps);
 		const rustWidth = (rustOps / maxOps) * 100;
 		const jsonWidth = (jsonOps / maxOps) * 100;
@@ -86,7 +92,9 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 		return (
 			<div className="space-y-2">
 				<div className="flex items-center gap-2">
-					<div className="w-12 text-xs font-mono" style={{ color: "#000000" }}>🦀 RUST</div>
+					<div className="w-12 text-xs font-mono" style={{ color: "#000000" }}>
+						🦀 RUST
+					</div>
 					<div className="flex-1 h-4 bg-gray-200 relative">
 						<div
 							className="h-full transition-all duration-300"
@@ -96,14 +104,19 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 							}}
 						/>
 						<div className="absolute right-2 top-0 h-full flex items-center">
-							<span className="text-xs font-mono font-bold" style={{ color: "#000000" }}>
+							<span
+								className="text-xs font-mono font-bold"
+								style={{ color: "#000000" }}
+							>
 								{formatNumber(rustOps)}
 							</span>
 						</div>
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
-					<div className="w-12 text-xs font-mono" style={{ color: "#000000" }}>📄 JSON</div>
+					<div className="w-12 text-xs font-mono" style={{ color: "#000000" }}>
+						📄 JSON
+					</div>
 					<div className="flex-1 h-4 bg-gray-200 relative">
 						<div
 							className="h-full transition-all duration-300"
@@ -113,7 +126,10 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 							}}
 						/>
 						<div className="absolute right-2 top-0 h-full flex items-center">
-							<span className="text-xs font-mono font-bold" style={{ color: "#000000" }}>
+							<span
+								className="text-xs font-mono font-bold"
+								style={{ color: "#000000" }}
+							>
 								{formatNumber(jsonOps)}
 							</span>
 						</div>
@@ -125,8 +141,14 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 
 	if (entries.length === 0) {
 		return (
-			<div className="text-center p-8 border" style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}>
-				<div className="text-lg font-mono font-bold mb-2" style={{ color: "#000000" }}>
+			<div
+				className="text-center p-8 border"
+				style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}
+			>
+				<div
+					className="text-lg font-mono font-bold mb-2"
+					style={{ color: "#000000" }}
+				>
 					NO COMPARISON DATA
 				</div>
 				<div className="text-sm font-mono" style={{ color: "#0143EB" }}>
@@ -141,18 +163,24 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<div className="text-2xl font-bold font-mono tracking-wide" style={{ color: "#000000" }}>
+					<div
+						className="text-2xl font-bold font-mono tracking-wide"
+						style={{ color: "#000000" }}
+					>
 						COMPARISON TABLE
 					</div>
-					<div className="px-2 py-1 text-xs border font-mono font-bold" style={{
-						borderColor: "#000000",
-						backgroundColor: "#FFFFFF",
-						color: "#0143EB"
-					}}>
+					<div
+						className="px-2 py-1 text-xs border font-mono font-bold"
+						style={{
+							borderColor: "#000000",
+							backgroundColor: "#FFFFFF",
+							color: "#0143EB",
+						}}
+					>
 						{entries.length} RESULTS
 					</div>
 				</div>
-				
+
 				<div className="flex items-center gap-2">
 					{/* Graph Mode Toggle */}
 					<button
@@ -161,7 +189,7 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 						style={{
 							borderColor: "#000000",
 							backgroundColor: graphMode ? "#0143EB" : "#F3F3F3",
-							color: graphMode ? "#FFFFFF" : "#000000"
+							color: graphMode ? "#FFFFFF" : "#000000",
 						}}
 					>
 						{graphMode ? "📊 GRAPH" : "📋 TABLE"}
@@ -175,7 +203,7 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 							style={{
 								borderColor: "#000000",
 								backgroundColor: "#F3F3F3",
-								color: "#000000"
+								color: "#000000",
 							}}
 						>
 							🗑️ CLEAR
@@ -185,41 +213,63 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 			</div>
 
 			{/* Table/Graph Content */}
-			<div className="border" style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}>
+			<div
+				className="border"
+				style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}
+			>
 				{graphMode ? (
 					/* Graph Mode */
 					<div className="p-4 space-y-6">
 						{sortedEntries.map((entry) => {
-							const advantage = calculateAdvantage(entry.rustOps, entry.jsonOps);
+							const advantage = calculateAdvantage(
+								entry.rustOps,
+								entry.jsonOps,
+							);
 							return (
-								<div key={entry.id} className="border p-4" style={{ borderColor: "#000000", backgroundColor: "#FFFFFF" }}>
+								<div
+									key={entry.id}
+									className="border p-4"
+									style={{ borderColor: "#000000", backgroundColor: "#FFFFFF" }}
+								>
 									<div className="flex items-center justify-between mb-4">
 										<div className="flex items-center gap-2">
-											<div className="px-2 py-1 text-xs font-mono font-bold border" style={{
-												borderColor: "#000000",
-												backgroundColor: "#F3F3F3",
-												color: "#000000"
-											}}>
+											<div
+												className="px-2 py-1 text-xs font-mono font-bold border"
+												style={{
+													borderColor: "#000000",
+													backgroundColor: "#F3F3F3",
+													color: "#000000",
+												}}
+											>
 												{formatPayloadSize(entry.payloadSize)}
 											</div>
-											<div className="px-2 py-1 text-xs font-mono font-bold border" style={{
-												borderColor: "#000000",
-												backgroundColor: entry.mode === 'unfair' ? "#FFB300" : "#F3F3F3",
-												color: "#000000"
-											}}>
+											<div
+												className="px-2 py-1 text-xs font-mono font-bold border"
+												style={{
+													borderColor: "#000000",
+													backgroundColor:
+														entry.mode === "unfair" ? "#FFB300" : "#F3F3F3",
+													color: "#000000",
+												}}
+											>
 												{formatMode(entry.mode)}
 											</div>
 										</div>
-										
-										<div className="text-sm font-mono font-bold" style={{
-											color: getWinnerColor(advantage.winner)
-										}}>
-											{advantage.winner === 'tie' ? 'TIE' : 
-											 advantage.winner === 'rust' ? `RUST +${advantage.percentage.toFixed(1)}%` :
-											 `JSON +${advantage.percentage.toFixed(1)}%`}
+
+										<div
+											className="text-sm font-mono font-bold"
+											style={{
+												color: getWinnerColor(advantage.winner),
+											}}
+										>
+											{advantage.winner === "tie"
+												? "TIE"
+												: advantage.winner === "rust"
+													? `RUST +${advantage.percentage.toFixed(1)}%`
+													: `JSON +${advantage.percentage.toFixed(1)}%`}
 										</div>
 									</div>
-									
+
 									<BarChart rustOps={entry.rustOps} jsonOps={entry.jsonOps} />
 								</div>
 							);
@@ -241,48 +291,79 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 						</thead>
 						<tbody>
 							{sortedEntries.map((entry, index) => {
-								const advantage = calculateAdvantage(entry.rustOps, entry.jsonOps);
+								const advantage = calculateAdvantage(
+									entry.rustOps,
+									entry.jsonOps,
+								);
 								const isEvenRow = index % 2 === 0;
-								
+
 								return (
-									<tr key={entry.id} style={{
-										backgroundColor: isEvenRow ? "#FFFFFF" : "#F8F8F8"
-									}}>
+									<tr
+										key={entry.id}
+										style={{
+											backgroundColor: isEvenRow ? "#FFFFFF" : "#F8F8F8",
+										}}
+									>
 										<td className="p-2 font-bold" style={{ color: "#000000" }}>
 											{formatPayloadSize(entry.payloadSize)}
 										</td>
-										<td className="p-2" style={{ 
-											color: entry.mode === 'unfair' ? "#FFB300" : "#0143EB" 
-										}}>
+										<td
+											className="p-2"
+											style={{
+												color: entry.mode === "unfair" ? "#FFB300" : "#0143EB",
+											}}
+										>
 											{formatMode(entry.mode)}
 										</td>
-										<td className="p-2 text-right font-bold" style={{
-											color: advantage.winner === 'rust' ? "#00FF5F" : "#000000"
-										}}>
+										<td
+											className="p-2 text-right font-bold"
+											style={{
+												color:
+													advantage.winner === "rust" ? "#00FF5F" : "#000000",
+											}}
+										>
 											{formatNumber(entry.rustOps)}
 										</td>
-										<td className="p-2 text-right font-bold" style={{
-											color: advantage.winner === 'json' ? "#FF4444" : "#000000"
-										}}>
+										<td
+											className="p-2 text-right font-bold"
+											style={{
+												color:
+													advantage.winner === "json" ? "#FF4444" : "#000000",
+											}}
+										>
 											{formatNumber(entry.jsonOps)}
 										</td>
-										<td className="p-2 text-center font-bold" style={{
-											color: getWinnerColor(advantage.winner)
-										}}>
-											{advantage.winner === 'tie' ? '🤝' : 
-											 advantage.winner === 'rust' ? '🦀' : '📄'}
+										<td
+											className="p-2 text-center font-bold"
+											style={{
+												color: getWinnerColor(advantage.winner),
+											}}
+										>
+											{advantage.winner === "tie"
+												? "🤝"
+												: advantage.winner === "rust"
+													? "🦀"
+													: "📄"}
 										</td>
-										<td className="p-2 text-right font-bold" style={{
-											color: getWinnerColor(advantage.winner)
-										}}>
-											{advantage.winner === 'tie' ? '0.0%' : `+${advantage.percentage.toFixed(1)}%`}
+										<td
+											className="p-2 text-right font-bold"
+											style={{
+												color: getWinnerColor(advantage.winner),
+											}}
+										>
+											{advantage.winner === "tie"
+												? "0.0%"
+												: `+${advantage.percentage.toFixed(1)}%`}
 										</td>
-										<td className="p-2 text-center text-xs" style={{ color: "#0143EB" }}>
-											{new Date(entry.timestamp).toLocaleTimeString('en-US', {
+										<td
+											className="p-2 text-center text-xs"
+											style={{ color: "#0143EB" }}
+										>
+											{new Date(entry.timestamp).toLocaleTimeString("en-US", {
 												hour12: false,
-												hour: '2-digit',
-												minute: '2-digit',
-												second: '2-digit'
+												hour: "2-digit",
+												minute: "2-digit",
+												second: "2-digit",
 											})}
 										</td>
 									</tr>
@@ -301,11 +382,12 @@ const BenchmarkComparisonTable = memo(function BenchmarkComparisonTable({
 					<span style={{ color: "#FFB300" }}>●</span> TIE/UNFAIR
 				</div>
 				<div style={{ color: "#0143EB" }}>
-					CLICK GRAPH/TABLE TOGGLE TO SWITCH VIEWS • RESULTS SORTED BY PAYLOAD SIZE
+					CLICK GRAPH/TABLE TOGGLE TO SWITCH VIEWS • RESULTS SORTED BY PAYLOAD
+					SIZE
 				</div>
 			</div>
 		</div>
 	);
 });
 
-export default BenchmarkComparisonTable; 
+export default BenchmarkComparisonTable;

@@ -95,7 +95,7 @@ export function createAuth(db: DrizzleD1Database) {
 					"cf-connecting-ip",
 					"true-client-ip",
 					"cf-pseudo-ipv4",
-					"x-client-ip"
+					"x-client-ip",
 				],
 			},
 		},

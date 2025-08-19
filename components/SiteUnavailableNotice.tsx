@@ -7,9 +7,9 @@ interface SiteUnavailableNoticeProps {
 	harassmentLink?: string;
 }
 
-export default function SiteUnavailableNotice({ 
+export default function SiteUnavailableNotice({
 	onClose,
-	harassmentLink = "https://x.com/v0id_user/status/1935639524782059884" 
+	harassmentLink = "https://x.com/v0id_user/status/1935639524782059884",
 }: SiteUnavailableNoticeProps) {
 	const [open, setOpen] = useState(false);
 
@@ -54,7 +54,7 @@ export default function SiteUnavailableNotice({
 						className="text-lg font-black tracking-wide font-mono"
 						style={{ color: "#000" }}
 					>
-						⚠️إشعار 
+						⚠️إشعار
 					</span>
 				</div>
 				{/* Content */}
@@ -96,4 +96,4 @@ export default function SiteUnavailableNotice({
 			</div>
 		</div>
 	);
-} 
+}

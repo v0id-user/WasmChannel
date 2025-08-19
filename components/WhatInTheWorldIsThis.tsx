@@ -29,7 +29,7 @@ export default function WhatInTheWorldIsThis() {
 		setOpen(false);
 		localStorage.setItem(SEEN_KEY, "true");
 		localStorage.setItem(SEEN_TIME_KEY, Date.now().toString());
-		
+
 		// Show the notice modal after closing the main modal
 		setTimeout(() => {
 			// setShowNotice(true);
@@ -48,7 +48,8 @@ export default function WhatInTheWorldIsThis() {
 					className="fixed inset-0 z-50 flex items-center justify-center"
 					style={{
 						background: "rgba(0,0,0,0.15)",
-						fontFamily: "var(--font-ibm-plex-sans-arabic), monospace, sans-serif",
+						fontFamily:
+							"var(--font-ibm-plex-sans-arabic), monospace, sans-serif",
 					}}
 				>
 					<div
@@ -83,15 +84,18 @@ export default function WhatInTheWorldIsThis() {
 								}}
 							>
 								{"حياك، هذي تجربة بنيتها انا #V0ID\n" +
-								"اختبر فيها ميزات لغة البرمجة Rust\n" +
-								"وطريقة تفاعلها عند بنائها كـ WebAssembly\n" +
-								"مع الـ Frontend والـ Backend.\n\n" +
-								"كذلك اختبر في هذي التجربة البنية التحتية الخاصة بـ Cloudflare\n" +
-								"عن طريق استغلالي لجميع الخدمات المقدمة منهم مثل:\n" +
-								"Workers, KV, D1, Queues.\n\n" +
-								"أتحدث بتفصيل أكثر في منشورات اضع لك روابطها في الاسفل."}
+									"اختبر فيها ميزات لغة البرمجة Rust\n" +
+									"وطريقة تفاعلها عند بنائها كـ WebAssembly\n" +
+									"مع الـ Frontend والـ Backend.\n\n" +
+									"كذلك اختبر في هذي التجربة البنية التحتية الخاصة بـ Cloudflare\n" +
+									"عن طريق استغلالي لجميع الخدمات المقدمة منهم مثل:\n" +
+									"Workers, KV, D1, Queues.\n\n" +
+									"أتحدث بتفصيل أكثر في منشورات اضع لك روابطها في الاسفل."}
 							</p>
-							<ul className="mb-6 list-disc pr-6 text-xs" style={{ color: "#222" }}>
+							<ul
+								className="mb-6 list-disc pr-6 text-xs"
+								style={{ color: "#222" }}
+							>
 								{[
 									{
 										href: "https://x.com/v0id_user/status/1935125510700343652",
@@ -99,7 +103,8 @@ export default function WhatInTheWorldIsThis() {
 									},
 									{
 										href: "https://x.com/v0id_user/status/1935170771032178913",
-										label: "اختياري ل KV كان خاطئ ولماذا Redis كانت ستكون خيار افضل",
+										label:
+											"اختياري ل KV كان خاطئ ولماذا Redis كانت ستكون خيار افضل",
 									},
 									{
 										href: "https://x.com/v0id_user/status/1935250850953211964",
@@ -147,7 +152,10 @@ export default function WhatInTheWorldIsThis() {
 							<div className="mb-2 font-bold" style={{ color: "#222" }}>
 								تابعني على منصاتي
 							</div>
-							<div className="flex flex-col gap-1 text-xs" style={{ direction: "ltr", textAlign: "left" }}>
+							<div
+								className="flex flex-col gap-1 text-xs"
+								style={{ direction: "ltr", textAlign: "left" }}
+							>
 								<a
 									href="https://x.com/v0id_user"
 									target="_blank"
@@ -202,11 +210,29 @@ export default function WhatInTheWorldIsThis() {
 								>
 									www.v0id.me
 								</a>
-								<div className="mt-1" style={{ color: "#333", fontFamily: "monospace", fontSize: "0.85em" }}>
-									Email: <a href="mailto:hey@v0id.me" className="hover:underline" style={{ color: "#0143EB" }}>hey@v0id.me</a>
+								<div
+									className="mt-1"
+									style={{
+										color: "#333",
+										fontFamily: "monospace",
+										fontSize: "0.85em",
+									}}
+								>
+									Email:{" "}
+									<a
+										href="mailto:hey@v0id.me"
+										className="hover:underline"
+										style={{ color: "#0143EB" }}
+									>
+										hey@v0id.me
+									</a>
 									{" | "}
-									<span title="أي بريد على v0id.me سيصلني 😁">anything(at)v0id.me</span>
-									<span className="ml-1" style={{ color: "#888" }}>will end up in my inbox :P</span>
+									<span title="أي بريد على v0id.me سيصلني 😁">
+										anything(at)v0id.me
+									</span>
+									<span className="ml-1" style={{ color: "#888" }}>
+										will end up in my inbox :P
+									</span>
 								</div>
 							</div>
 						</div>

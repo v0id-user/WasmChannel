@@ -1,7 +1,12 @@
 "use client";
 
 import { memo } from "react";
-import type { BenchmarkMode, PayloadSize, TestDuration, AutoRunCount } from "@/types/benchmark";
+import type {
+	BenchmarkMode,
+	PayloadSize,
+	TestDuration,
+	AutoRunCount,
+} from "@/types/benchmark";
 import { getModeDescription } from "@/utils/benchmarks/helpers";
 
 interface BenchmarkControlsProps {
@@ -47,23 +52,29 @@ const BenchmarkControls = memo(function BenchmarkControls({
 }: BenchmarkControlsProps) {
 	return (
 		<div className="bg-white border p-6" style={{ borderColor: "#000000" }}>
-			<h2 className="text-xl font-bold font-mono tracking-wide mb-4" style={{ color: "#000000" }}>
+			<h2
+				className="text-xl font-bold font-mono tracking-wide mb-4"
+				style={{ color: "#000000" }}
+			>
 				BENCHMARK CONFIGURATION
 			</h2>
 
 			{/* Mode Selection */}
 			<div className="mb-6">
-				<label className="block text-sm font-bold font-mono mb-2" style={{ color: "#000000" }}>
+				<label
+					className="block text-sm font-bold font-mono mb-2"
+					style={{ color: "#000000" }}
+				>
 					BENCHMARK MODE:
 				</label>
 				<select
 					value={benchmarkMode}
 					onChange={(e) => onModeChange(e.target.value as BenchmarkMode)}
 					className="w-full p-2 border text-sm font-mono focus:outline-none"
-					style={{ 
+					style={{
 						borderColor: "#000000",
 						backgroundColor: "#FFFFFF",
-						color: "#000000"
+						color: "#000000",
 					}}
 					onFocus={(e) => {
 						e.target.style.borderColor = "#0143EB";
@@ -75,8 +86,12 @@ const BenchmarkControls = memo(function BenchmarkControls({
 					}}
 					disabled={isRunning || isAutoRunning}
 				>
-					<option value="unfair">❌ Unfair (JSON basic vs WASM compressed)</option>
-					<option value="raw" disabled>🚫 Raw Mode (Impossible - WASM always compressed)</option>
+					<option value="unfair">
+						❌ Unfair (JSON basic vs WASM compressed)
+					</option>
+					<option value="raw" disabled>
+						🚫 Raw Mode (Impossible - WASM always compressed)
+					</option>
 					<option value="compressed">⚖️ Fair (Both compressed)</option>
 				</select>
 				<p className="text-xs font-mono mt-1" style={{ color: "#0143EB" }}>
@@ -86,17 +101,20 @@ const BenchmarkControls = memo(function BenchmarkControls({
 
 			{/* Payload Size Selection */}
 			<div className="mb-6">
-				<label className="block text-sm font-bold font-mono mb-2" style={{ color: "#000000" }}>
+				<label
+					className="block text-sm font-bold font-mono mb-2"
+					style={{ color: "#000000" }}
+				>
 					PAYLOAD SIZE:
 				</label>
 				<select
 					value={payloadSize}
 					onChange={(e) => onPayloadSizeChange(e.target.value as PayloadSize)}
 					className="w-full p-2 border text-sm font-mono focus:outline-none"
-					style={{ 
+					style={{
 						borderColor: "#000000",
 						backgroundColor: "#FFFFFF",
-						color: "#000000"
+						color: "#000000",
 					}}
 					onFocus={(e) => {
 						e.target.style.borderColor = "#0143EB";
@@ -119,17 +137,22 @@ const BenchmarkControls = memo(function BenchmarkControls({
 
 			{/* Test Duration Selection */}
 			<div className="mb-6">
-				<label className="block text-sm font-bold font-mono mb-2" style={{ color: "#000000" }}>
+				<label
+					className="block text-sm font-bold font-mono mb-2"
+					style={{ color: "#000000" }}
+				>
 					TEST DURATION:
 				</label>
 				<select
 					value={testDuration}
-					onChange={(e) => onDurationChange(Number(e.target.value) as TestDuration)}
+					onChange={(e) =>
+						onDurationChange(Number(e.target.value) as TestDuration)
+					}
 					className="w-full p-2 border text-sm font-mono focus:outline-none"
-					style={{ 
+					style={{
 						borderColor: "#000000",
 						backgroundColor: "#FFFFFF",
-						color: "#000000"
+						color: "#000000",
 					}}
 					onFocus={(e) => {
 						e.target.style.borderColor = "#0143EB";
@@ -153,67 +176,91 @@ const BenchmarkControls = memo(function BenchmarkControls({
 			</div>
 
 			{/* Mode Explanation */}
-			<div className="p-3 border mb-4" style={{ 
-				borderColor: "#000000",
-				backgroundColor: benchmarkMode === 'unfair' ? "#F3F3F3" : "#FFFFFF"
-			}}>
+			<div
+				className="p-3 border mb-4"
+				style={{
+					borderColor: "#000000",
+					backgroundColor: benchmarkMode === "unfair" ? "#F3F3F3" : "#FFFFFF",
+				}}
+			>
 				<div className="text-sm font-mono">
-					{benchmarkMode === 'unfair' ? (
+					{benchmarkMode === "unfair" ? (
 						<>
-							<div className="font-bold mb-1" style={{ color: "#000000" }}>⚠️ WHY THIS IS UNFAIR:</div>
+							<div className="font-bold mb-1" style={{ color: "#000000" }}>
+								⚠️ WHY THIS IS UNFAIR:
+							</div>
 							<div className="text-xs" style={{ color: "#0143EB" }}>
-								• WASM: LZ4 compression + CRC32 + bincode + WASM overhead<br/>
-								• JSON: Simple JSON.stringify + basic CRC32<br/>
-								• Result: WASM does 10x more work!
+								• WASM: LZ4 compression + CRC32 + bincode + WASM overhead
+								<br />• JSON: Simple JSON.stringify + basic CRC32
+								<br />• Result: WASM does 10x more work!
 							</div>
 						</>
-					) : benchmarkMode === 'raw' ? (
+					) : benchmarkMode === "raw" ? (
 						<>
-							<div className="font-bold mb-1" style={{ color: "#000000" }}>🚫 RAW MODE NOT POSSIBLE:</div>
+							<div className="font-bold mb-1" style={{ color: "#000000" }}>
+								🚫 RAW MODE NOT POSSIBLE:
+							</div>
 							<div className="text-xs" style={{ color: "#0143EB" }}>
-								Rust WASM has LZ4 compression baked into the code.<br/>
-								Lines 55-58 in packet.rs always compress payload.<br/>
+								Rust WASM has LZ4 compression baked into the code.
+								<br />
+								Lines 55-58 in packet.rs always compress payload.
+								<br />
 								Cannot be disabled without modifying Rust source.
 							</div>
 						</>
 					) : (
 						<>
-							<div className="font-bold mb-1" style={{ color: "#000000" }}>✅ FAIR COMPARISON:</div>
+							<div className="font-bold mb-1" style={{ color: "#000000" }}>
+								✅ FAIR COMPARISON:
+							</div>
 							<div className="text-xs" style={{ color: "#0143EB" }}>
-								Both implementations use compression and equivalent work complexity.
+								Both implementations use compression and equivalent work
+								complexity.
 							</div>
 						</>
 					)}
 				</div>
 			</div>
-			
+
 			<div className="space-y-4 mb-6">
 				<div className="font-mono text-sm" style={{ color: "#000000" }}>
 					<span className="font-bold">TEST DATA:</span> Random data
 				</div>
 				<div className="font-mono text-sm" style={{ color: "#000000" }}>
-					<span className="font-bold">DURATION:</span> {testDuration} seconds per implementation
+					<span className="font-bold">DURATION:</span> {testDuration} seconds
+					per implementation
 				</div>
 			</div>
 
 			{/* Auto-Run Section */}
-			<div className="border p-4 mb-6" style={{ borderColor: "#000000", backgroundColor: "#F8F8F8" }}>
-				<div className="text-lg font-bold font-mono mb-3" style={{ color: "#000000" }}>
-					  AUTO-RUN TESTS
+			<div
+				className="border p-4 mb-6"
+				style={{ borderColor: "#000000", backgroundColor: "#F8F8F8" }}
+			>
+				<div
+					className="text-lg font-bold font-mono mb-3"
+					style={{ color: "#000000" }}
+				>
+					AUTO-RUN TESTS
 				</div>
-				
+
 				<div className="mb-4">
-					<label className="block text-sm font-bold font-mono mb-2" style={{ color: "#000000" }}>
+					<label
+						className="block text-sm font-bold font-mono mb-2"
+						style={{ color: "#000000" }}
+					>
 						NUMBER OF TESTS:
 					</label>
 					<select
 						value={autoRunCount}
-						onChange={(e) => onAutoRunCountChange(Number(e.target.value) as AutoRunCount)}
+						onChange={(e) =>
+							onAutoRunCountChange(Number(e.target.value) as AutoRunCount)
+						}
 						className="w-full p-2 border text-sm font-mono focus:outline-none"
-						style={{ 
+						style={{
 							borderColor: "#000000",
 							backgroundColor: "#FFFFFF",
-							color: "#000000"
+							color: "#000000",
 						}}
 						disabled={isRunning || isAutoRunning}
 					>
@@ -230,21 +277,34 @@ const BenchmarkControls = memo(function BenchmarkControls({
 
 				{isAutoRunning && (
 					<div className="mb-4 space-y-2">
-						<div className="flex justify-between text-sm font-mono" style={{ color: "#000000" }}>
+						<div
+							className="flex justify-between text-sm font-mono"
+							style={{ color: "#000000" }}
+						>
 							<span>AUTO-RUN PROGRESS:</span>
-							<span>{autoRunCurrent}/{autoRunTotal}</span>
+							<span>
+								{autoRunCurrent}/{autoRunTotal}
+							</span>
 						</div>
-						<div className="w-full border h-3" style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}>
-							<div 
+						<div
+							className="w-full border h-3"
+							style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}
+						>
+							<div
 								className="h-full transition-all duration-300"
-								style={{ 
+								style={{
 									width: `${autoRunProgress}%`,
-									backgroundColor: "#00FF5F"
+									backgroundColor: "#00FF5F",
 								}}
 							></div>
 						</div>
 						<div className="text-xs font-mono" style={{ color: "#0143EB" }}>
-							Est. time remaining: {((autoRunTotal - autoRunCurrent) * testDuration * 2 / 60).toFixed(1)} min
+							Est. time remaining:{" "}
+							{(
+								((autoRunTotal - autoRunCurrent) * testDuration * 2) /
+								60
+							).toFixed(1)}{" "}
+							min
 						</div>
 					</div>
 				)}
@@ -256,7 +316,7 @@ const BenchmarkControls = memo(function BenchmarkControls({
 						style={{
 							backgroundColor: "#00FF5F",
 							color: "#000000",
-							borderColor: "#000000"
+							borderColor: "#000000",
 						}}
 						onMouseEnter={(e) => {
 							(e.target as HTMLButtonElement).style.backgroundColor = "#000000";
@@ -267,7 +327,7 @@ const BenchmarkControls = memo(function BenchmarkControls({
 							(e.target as HTMLButtonElement).style.color = "#000000";
 						}}
 					>
-						  START AUTO-RUN ({autoRunCount} TESTS)
+						START AUTO-RUN ({autoRunCount} TESTS)
 					</button>
 				) : isAutoRunning ? (
 					<button
@@ -276,7 +336,7 @@ const BenchmarkControls = memo(function BenchmarkControls({
 						style={{
 							backgroundColor: "#FF4444",
 							color: "#FFFFFF",
-							borderColor: "#000000"
+							borderColor: "#000000",
 						}}
 						onMouseEnter={(e) => {
 							(e.target as HTMLButtonElement).style.backgroundColor = "#000000";
@@ -288,7 +348,10 @@ const BenchmarkControls = memo(function BenchmarkControls({
 						⏹️ STOP AUTO-RUN
 					</button>
 				) : (
-					<div className="text-center py-2 text-sm font-mono" style={{ color: "#0143EB" }}>
+					<div
+						className="text-center py-2 text-sm font-mono"
+						style={{ color: "#0143EB" }}
+					>
 						AUTO-RUN DISABLED DURING MANUAL TEST
 					</div>
 				)}
@@ -301,7 +364,7 @@ const BenchmarkControls = memo(function BenchmarkControls({
 					style={{
 						backgroundColor: "#0143EB",
 						color: "#FFFFFF",
-						borderColor: "#000000"
+						borderColor: "#000000",
 					}}
 					onMouseEnter={(e) => {
 						(e.target as HTMLButtonElement).style.backgroundColor = "#000000";
@@ -312,31 +375,42 @@ const BenchmarkControls = memo(function BenchmarkControls({
 						(e.target as HTMLButtonElement).style.color = "#FFFFFF";
 					}}
 				>
-					  START SINGLE BENCHMARK
+					START SINGLE BENCHMARK
 				</button>
 			) : isAutoRunning ? (
-				<div className="text-center py-3 text-lg font-mono font-bold" style={{ color: "#00FF5F" }}>
-					  AUTO-RUN IN PROGRESS...
+				<div
+					className="text-center py-3 text-lg font-mono font-bold"
+					style={{ color: "#00FF5F" }}
+				>
+					AUTO-RUN IN PROGRESS...
 				</div>
 			) : (
 				<div className="space-y-4">
-					<div className="font-bold font-mono tracking-wide" style={{ color: "#000000" }}>
+					<div
+						className="font-bold font-mono tracking-wide"
+						style={{ color: "#000000" }}
+					>
 						RUNNING SINGLE BENCHMARK...
 					</div>
-					<div className="w-full border h-3" style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}>
-						<div 
+					<div
+						className="w-full border h-3"
+						style={{ borderColor: "#000000", backgroundColor: "#F3F3F3" }}
+					>
+						<div
 							className="h-full transition-all duration-300"
-							style={{ 
+							style={{
 								width: `${progress}%`,
-								backgroundColor: "#0143EB"
+								backgroundColor: "#0143EB",
 							}}
 						></div>
 					</div>
-					<div className="font-mono font-bold" style={{ color: "#0143EB" }}>{progress}%</div>
+					<div className="font-mono font-bold" style={{ color: "#0143EB" }}>
+						{progress}%
+					</div>
 				</div>
 			)}
 		</div>
 	);
 });
 
-export default BenchmarkControls; 
+export default BenchmarkControls;

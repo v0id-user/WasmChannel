@@ -15,7 +15,7 @@ interface MessagesAreaProps {
 	onLoadMore: () => void;
 	// Manual scroll props
 	onManualScrollChange: (isManualScrolling: boolean) => void;
-	scrollToBottomRef: React.RefObject <(() => void) | null>;
+	scrollToBottomRef: React.RefObject<(() => void) | null>;
 }
 
 export function MessagesArea({

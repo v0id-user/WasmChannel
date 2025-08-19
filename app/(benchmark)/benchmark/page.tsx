@@ -3,11 +3,11 @@
  *
  * Built by Cursor.
  * Watched by #V0ID.
- * 
+ *
  * Pull requests welcome. But don't just bring new code, bring data.
  *
  * git clone https://github.com/v0id-user/WasmChannel.git
- * 
+ *
  */
 
 "use client";
@@ -53,13 +53,16 @@ const BenchmarkPage = memo(function BenchmarkPage() {
 		<div className="min-h-screen p-4" style={{ backgroundColor: "#F3F3F3" }}>
 			<div className="max-w-6xl mx-auto">
 				<div className="text-center mb-8">
-					<h1 className="text-4xl font-bold font-mono tracking-wide mb-2" style={{ color: "#000000" }}>
+					<h1
+						className="text-4xl font-bold font-mono tracking-wide mb-2"
+						style={{ color: "#000000" }}
+					>
 						BENCHMARK
 					</h1>
 					<p className="font-mono text-sm mb-4" style={{ color: "#0143EB" }}>
 						Performance Benchmark: Rust WASM vs JSON
 					</p>
-					
+
 					{/* CLI-like WASM Status */}
 					<div
 						className="inline-flex items-center gap-1 px-2 py-1 font-mono text-xs"
@@ -71,14 +74,17 @@ const BenchmarkPage = memo(function BenchmarkPage() {
 							boxShadow: "0 1px 0 #0002",
 							letterSpacing: "0.02em",
 							userSelect: "none",
-							minHeight: "1.5rem"
+							minHeight: "1.5rem",
 						}}
 					>
 						<span style={{ fontWeight: 700 }}>
 							{isWasmWarmedUp ? "▸ WASM: WARMED UP" : "▸ WASM: COLD START"}
 						</span>
 						{!isWasmWarmedUp && (
-							<span className="ml-2 text-[10px] opacity-60" style={{ fontWeight: 400 }}>
+							<span
+								className="ml-2 text-[10px] opacity-60"
+								style={{ fontWeight: 400 }}
+							>
 								(JIT overhead)
 							</span>
 						)}
@@ -108,19 +114,13 @@ const BenchmarkPage = memo(function BenchmarkPage() {
 					/>
 
 					{/* Console Logs */}
-					<BenchmarkConsole
-						logs={logs}
-						onClear={clearLogs}
-					/>
+					<BenchmarkConsole logs={logs} onClear={clearLogs} />
 				</div>
 
 				{/* Results Section */}
 				{results && !isRunning && !isAutoRunning && (
 					<div className="mt-6">
-						<BenchmarkResults
-							results={results}
-							onRunAgain={runBenchmark}
-						/>
+						<BenchmarkResults results={results} onRunAgain={runBenchmark} />
 					</div>
 				)}
 

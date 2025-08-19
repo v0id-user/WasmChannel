@@ -106,7 +106,6 @@ export class Room extends DurableObject {
 	}
 
 	async webSocketMessage(ws: WebSocket, event: string | ArrayBuffer) {
-	
 		const clientId = this.clientsBySocket.get(ws);
 		if (!clientId) return;
 
@@ -141,7 +140,6 @@ export class Room extends DurableObject {
 		console.log(
 			`Message from client ${this.clientsBySocket.get(ws)}: ${messageData}`,
 		);
-		
 
 		await this.#broadcastToOthers(messageData, clientId);
 	}
